@@ -17,6 +17,7 @@ interface NicknameScreenProps {
   onStart: () => void
   startDisabled: boolean
   startDisabledHint?: string
+  startLabel?: string
 }
 
 export function NicknameScreen({
@@ -33,7 +34,8 @@ export function NicknameScreen({
   balance,
   onStart,
   startDisabled,
-  startDisabledHint
+  startDisabledHint,
+  startLabel
 }: NicknameScreenProps) {
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -104,7 +106,7 @@ export function NicknameScreen({
             </div>
           </div>
           <button id="startBtn" className="primary" type="submit" disabled={startDisabled} aria-disabled={startDisabled}>
-            Играть
+            {startLabel ?? 'Играть'}
           </button>
           {startDisabled && startDisabledHint && (
             <p className="start-hint">{startDisabledHint}</p>

@@ -8,11 +8,12 @@ interface UseConnectionOptions {
   controller: GameController
   token?: string | null
   onAuthError?: () => void
+  onBalanceUpdate?: (balance: number) => void
 }
 
 export type ConnectionStatus = 'idle' | 'connecting' | 'connected'
 
-export function useConnection({ controller, token, onAuthError }: UseConnectionOptions) {
+export function useConnection({ controller, token, onAuthError, onBalanceUpdate }: UseConnectionOptions) {
   const wsRef = useRef<WebSocket | null>(null)
   const [status, setStatus] = useState<ConnectionStatus>('idle')
 
@@ -75,16 +76,23 @@ export function useConnection({ controller, token, onAuthError }: UseConnectionO
             }
             controller.setAlive(true)
             controller.setCashoutPending(false)
+            const nextBalance =
+              typeof message.balance === 'number'
+                ? Math.max(0, Math.floor(message.balance))
+                : Math.max(0, Math.floor(controller.getAccount().balance))
+            const nextBet =
+              typeof message.currentBet === 'number'
+                ? Math.max(0, Math.floor(message.currentBet))
+                : Math.max(0, Math.floor(controller.getAccount().currentBet))
             controller.applyBalanceUpdate({
-              balance: typeof message.balance === 'number' ? message.balance : controller.getAccount().balance,
-              currentBet:
-                  typeof message.currentBet === 'number' ? message.currentBet : controller.getAccount().currentBet,
-              total:
-                  typeof message.balance === 'number' && typeof message.currentBet === 'number'
-                      ? message.balance + message.currentBet
-                      : undefined,
+              balance: nextBalance,
+              currentBet: nextBet,
+              total: nextBalance + nextBet,
               cashedOut: false
             })
+            if (typeof message.balance === 'number') {
+              onBalanceUpdate?.(nextBalance)
+            }
             if (typeof message.width === 'number' && typeof message.height === 'number') {
               const radius = typeof message.radius === 'number' ? message.radius : Math.min(message.width, message.height) / 2
               controller.setWorld({
@@ -122,6 +130,9 @@ export function useConnection({ controller, token, onAuthError }: UseConnectionO
                 currentBet: message.you.currentBet,
                 total: message.you.totalBalance
               })
+              if (typeof message.you.balance === 'number') {
+                onBalanceUpdate?.(Math.max(0, Math.floor(message.you.balance)))
+              }
             }
             controller.applySnapshot(message)
           }
@@ -130,9 +141,15 @@ export function useConnection({ controller, token, onAuthError }: UseConnectionO
           }
           if (message.type === 'balance') {
             controller.applyBalanceUpdate(message)
+            if (typeof message.balance === 'number') {
+              onBalanceUpdate?.(Math.max(0, Math.floor(message.balance)))
+            }
           }
           if (message.type === 'cashout_confirmed') {
             controller.showCashout(message.balance)
+            if (typeof message.balance === 'number') {
+              onBalanceUpdate?.(Math.max(0, Math.floor(message.balance)))
+            }
           }
           if (message.type === 'error' && message.code === 'cashout_failed') {
             controller.setCashoutPending(false)
@@ -145,6 +162,12 @@ export function useConnection({ controller, token, onAuthError }: UseConnectionO
               ws.close(4001, message.code)
             }
           }
+          if (message.type === 'error' && message.code === 'already_connected') {
+            controller.setNicknameVisible(true)
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.close(4003, message.code)
+            }
+          }
           if (message.type === 'error' && message.code === 'insufficient_balance') {
             controller.setNicknameVisible(true)
           }
@@ -154,7 +177,7 @@ export function useConnection({ controller, token, onAuthError }: UseConnectionO
           }
         }
       },
-      [closeConnection, controller, onAuthError, token]
+      [closeConnection, controller, onAuthError, onBalanceUpdate, token]
   )
 
   const requestRespawn = useCallback((betAmount: number) => {

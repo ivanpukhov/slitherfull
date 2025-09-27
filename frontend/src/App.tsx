@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useGame } from './hooks/useGame'
 import { useCanvas } from './hooks/useCanvas'
 import { useConnection } from './hooks/useConnection'
@@ -27,10 +27,16 @@ function App() {
 
   const game = useGame()
   const auth = useAuth()
-  const connection = useConnection({ controller: game.controller, token: auth.token, onAuthError: auth.logout })
+  const [authModalOpen, setAuthModalOpen] = useState(false)
+  const connection = useConnection({
+    controller: game.controller,
+    token: auth.token,
+    onAuthError: auth.logout,
+    onBalanceUpdate: auth.syncBalance
+  })
   const controller = game.controller
-  const { setNickname, setBetValue } = game
-  const accountBalance = game.account.balance
+  const { setNickname, setBetValue, setRetryBetValue } = game
+  const accountStateSyncedRef = useRef(false)
 
   useCanvas({ canvasRef, minimapRef, controller: game.controller })
   usePointerControls({ controller: game.controller, canvasRef })
@@ -43,63 +49,90 @@ function App() {
     touchControlsRef
   })
 
+  const normalizeBetInput = useCallback((value: string, maxBalanceValue: number) => {
+    if (value === '') return ''
+    const max = Math.max(0, Math.floor(maxBalanceValue || 0))
+    if (max <= 0) return ''
+    const parsed = Math.floor(Number(value))
+    if (!Number.isFinite(parsed)) return ''
+    if (parsed <= 0) return '0'
+    return String(Math.min(parsed, max))
+  }, [])
+
   useEffect(() => {
     if (auth.status === 'authenticated' && auth.user) {
-      const account = controller.getAccount()
-      const desiredBalance = auth.user.balance
-      if (
-        account.balance !== desiredBalance ||
-        account.currentBet !== 0 ||
-        account.total !== desiredBalance ||
-        account.cashedOut
-      ) {
+      controller.setNicknameLock(true)
+      const wasSynced = accountStateSyncedRef.current
+      if (!wasSynced) {
         controller.setAccountState({
-          balance: desiredBalance,
+          balance: auth.user.balance,
           currentBet: 0,
-          total: desiredBalance,
+          total: auth.user.balance,
           cashedOut: false
         })
+        accountStateSyncedRef.current = true
       }
-      controller.setNicknameLock(true)
+      const available = Math.max(0, Math.floor(auth.user.balance))
       if (game.nickname !== auth.user.nickname) {
         setNickname(auth.user.nickname)
       }
-      if (auth.user.balance <= 0) {
-        if (game.betValue !== '') {
-          setBetValue('')
+      if (available <= 0) {
+        if (game.betValue !== '') setBetValue('')
+        if (game.retryBetValue !== '') setRetryBetValue('')
+      } else {
+        const normalizedBet = normalizeBetInput(game.betValue, available)
+        if (!game.betValue && !wasSynced) {
+          setBetValue(String(Math.min(available, 1)))
+        } else if (normalizedBet !== game.betValue) {
+          setBetValue(normalizedBet)
         }
-      } else if (!game.betValue || Number(game.betValue) <= 0) {
-        const suggested = Math.max(1, Math.min(auth.user.balance, Number(game.betValue) || 1))
-        setBetValue(String(suggested))
+        const normalizedRetryBet = normalizeBetInput(game.retryBetValue, available)
+        if (normalizedRetryBet !== game.retryBetValue) {
+          setRetryBetValue(normalizedRetryBet)
+        }
       }
+      setAuthModalOpen(false)
     } else if (auth.status === 'unauthenticated') {
-      const account = controller.getAccount()
-      if (account.balance !== 0 || account.currentBet !== 0 || account.total !== 0 || account.cashedOut) {
-        controller.setAccountState({ balance: 0, currentBet: 0, total: 0, cashedOut: false })
-      }
+      accountStateSyncedRef.current = false
       controller.setNicknameLock(false)
+      controller.setAccountState({ balance: 0, currentBet: 0, total: 0, cashedOut: false })
       if (game.nickname !== '') {
         setNickname('')
       }
       if (game.betValue !== '') {
         setBetValue('')
       }
+      if (game.retryBetValue !== '') {
+        setRetryBetValue('')
+      }
     }
-  }, [auth.status, auth.user, controller, game.nickname, game.betValue, setNickname, setBetValue])
+  }, [
+    auth.status,
+    auth.user,
+    controller,
+    game.betValue,
+    game.nickname,
+    game.retryBetValue,
+    normalizeBetInput,
+    setNickname,
+    setBetValue,
+    setRetryBetValue
+  ])
 
   useEffect(() => {
-    if (auth.status === 'authenticated' && auth.user && auth.user.balance !== accountBalance) {
-      auth.syncBalance(accountBalance)
+    if (auth.status === 'checking') {
+      setAuthModalOpen(false)
     }
-  }, [auth.status, auth.user, accountBalance, auth.syncBalance])
+  }, [auth.status])
 
   const handleNicknameChange = useCallback((value: string) => {
     game.setNickname(value)
   }, [game])
 
   const handleBetChange = useCallback((value: string) => {
-    game.setBetValue(value)
-  }, [game])
+    const normalized = normalizeBetInput(value, game.account.balance)
+    game.setBetValue(normalized)
+  }, [game, normalizeBetInput])
 
   const handleBetBlur = useCallback(() => {
     const sanitized = sanitizeBetValue(game.betValue, game.account.balance)
@@ -113,19 +146,20 @@ function App() {
   }, [game])
 
   const handleRetryBetChange = useCallback((value: string) => {
-    game.setRetryBetValue(value)
-  }, [game])
+    const normalized = normalizeBetInput(value, game.account.balance)
+    setRetryBetValue(normalized)
+  }, [game, normalizeBetInput, setRetryBetValue])
 
   const handleRetryBetBlur = useCallback(() => {
     const sanitized = sanitizeBetValue(game.retryBetValue, game.account.balance)
     if (sanitized > 0) {
-      game.setRetryBetValue(String(sanitized))
+      setRetryBetValue(String(sanitized))
     } else if (game.account.balance > 0) {
-      game.setRetryBetValue('1')
+      setRetryBetValue('1')
     } else {
-      game.setRetryBetValue('')
+      setRetryBetValue('')
     }
-  }, [game])
+  }, [game, setRetryBetValue])
 
   const handleStart = useCallback(() => {
     if (auth.status !== 'authenticated' || !auth.user) {
@@ -142,7 +176,7 @@ function App() {
       game.setBetValue('')
     }
     connection.startGame(name, game.selectedSkin, betAmount > 0 ? betAmount : null)
-  }, [connection, game])
+  }, [auth.status, auth.user, connection, game])
 
   const handleRetry = useCallback(() => {
     const balance = game.account.balance
@@ -162,22 +196,25 @@ function App() {
     window.location.reload()
   }, [connection])
 
-  const startDisabled = auth.status !== 'authenticated' || !auth.user || game.account.balance <= 0
-  const startHint = auth.status === 'checking'
-    ? 'Проверяем авторизацию...'
-    : auth.status !== 'authenticated'
-      ? 'Войдите в аккаунт, чтобы начать игру.'
-      : game.account.balance <= 0
-        ? 'Недостаточно монет на балансе.'
-        : undefined
+  const isAuthenticated = auth.status === 'authenticated' && Boolean(auth.user)
+  const startLabel = useMemo(() => {
+    if (auth.status === 'checking') return 'Загрузка...'
+    return isAuthenticated ? 'Играть' : 'Авторизоваться'
+  }, [auth.status, isAuthenticated])
+
+  const startDisabled = auth.status === 'checking' || (isAuthenticated && game.account.balance <= 0)
+  const startHint = isAuthenticated && game.account.balance <= 0 ? 'Недостаточно монет на балансе.' : undefined
+
+  const handlePrimaryAction = isAuthenticated ? handleStart : () => setAuthModalOpen(true)
 
   return (
     <div>
       <AuthModal
-        open={auth.status !== 'authenticated'}
+        open={authModalOpen}
         status={auth.status}
         onLogin={auth.login}
         onRegister={auth.register}
+        onClose={() => setAuthModalOpen(false)}
       />
       <canvas id="canvas" ref={canvasRef} />
       <ScorePanel score={game.score} scoreMeta={game.scoreMeta} account={game.account} />
@@ -203,8 +240,9 @@ function App() {
         onBetChange={handleBetChange}
         onBetBlur={handleBetBlur}
         balance={game.account.balance}
-        onStart={handleStart}
+        onStart={handlePrimaryAction}
         startDisabled={startDisabled}
+        startLabel={startLabel}
         startDisabledHint={startHint}
       />
       <DeathScreen

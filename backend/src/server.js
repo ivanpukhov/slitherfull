@@ -97,6 +97,7 @@ const kills = new KillLogger()
 const world = new World(cfg, kills, accountService)
 
 const sockets = new Map()
+const activeUsers = new Map()
 
 function send(ws, obj) {
     if (ws.readyState === WebSocket.OPEN) ws.send(encode(obj))
@@ -153,6 +154,15 @@ wss.on('connection', (ws) => {
                     try { ws.close(4002, 'no_balance') } catch (err) { /* ignore */ }
                     return
                 }
+                const existingWs = activeUsers.get(userRecord.id)
+                if (existingWs && existingWs !== ws) {
+                    if (existingWs.readyState === WebSocket.OPEN || existingWs.readyState === WebSocket.CONNECTING) {
+                        send(ws, { type: MSG_ERROR, code: 'already_connected' })
+                        try { ws.close(4003, 'already_connected') } catch (err) { /* ignore */ }
+                        return
+                    }
+                    activeUsers.delete(userRecord.id)
+                }
                 const player = world.addPlayer(
                     ws,
                     userRecord.nickname || authUser.nickname || '',
@@ -160,6 +170,7 @@ wss.on('connection', (ws) => {
                     { userId: userRecord.id, balance, nickname: userRecord.nickname || authUser.nickname || '' }
                 )
                 sockets.set(ws, { playerId: player.id, userId: userRecord.id })
+                activeUsers.set(userRecord.id, ws)
                 send(ws, {
                     type: MSG_WELCOME,
                     id: player.id,
@@ -220,7 +231,13 @@ wss.on('connection', (ws) => {
     ws.on('close', () => {
         const entry = sockets.get(ws)
         sockets.delete(ws)
-        if (entry && entry.playerId) world.removePlayer(entry.playerId)
+        if (entry) {
+            if (entry.playerId) world.removePlayer(entry.playerId)
+            const activeWs = activeUsers.get(entry.userId)
+            if (activeWs === ws) {
+                activeUsers.delete(entry.userId)
+            }
+        }
     })
 })
 
