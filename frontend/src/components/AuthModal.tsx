@@ -6,11 +6,12 @@ interface AuthModalProps {
   status: 'checking' | 'authenticated' | 'unauthenticated'
   onLogin: (email: string, password: string) => Promise<AuthResult>
   onRegister: (email: string, password: string, nickname: string) => Promise<AuthResult>
+  onClose?: () => void
 }
 
 type AuthMode = 'login' | 'register'
 
-export function AuthModal({ open, status, onLogin, onRegister }: AuthModalProps) {
+export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthModalProps) {
   const [mode, setMode] = useState<AuthMode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -22,6 +23,11 @@ export function AuthModal({ open, status, onLogin, onRegister }: AuthModalProps)
   const isLoading = status === 'checking' || submitting
 
   const title = useMemo(() => (mode === 'login' ? 'Вход в аккаунт' : 'Регистрация'), [mode])
+
+  const handleClose = () => {
+    if (isLoading) return
+    onClose?.()
+  }
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -52,6 +58,17 @@ export function AuthModal({ open, status, onLogin, onRegister }: AuthModalProps)
   return (
     <div className={overlayClass} aria-hidden={!open}>
       <div className="card auth-card">
+        {onClose && (
+          <button
+            type="button"
+            className="auth-close"
+            onClick={handleClose}
+            aria-label="Закрыть окно авторизации"
+            disabled={isLoading}
+          >
+            ×
+          </button>
+        )}
         <div className="auth-toggle" role="tablist">
           <button
             type="button"
