@@ -2,13 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { sanitizeBetValue, safeParse } from '../utils/helpers'
 import type { GameController } from './useGame'
 
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080'
+
 interface UseConnectionOptions {
   controller: GameController
+  token?: string | null
+  onAuthError?: () => void
 }
 
 export type ConnectionStatus = 'idle' | 'connecting' | 'connected'
 
-export function useConnection({ controller }: UseConnectionOptions) {
+export function useConnection({ controller, token, onAuthError }: UseConnectionOptions) {
   const wsRef = useRef<WebSocket | null>(null)
   const [status, setStatus] = useState<ConnectionStatus>('idle')
 
@@ -39,20 +43,20 @@ export function useConnection({ controller }: UseConnectionOptions) {
 
   const connect = useCallback(
       (name: string, skin: string, betAmount: number | null) => {
+        if (!token) {
+          return
+        }
         closeConnection()
         controller.setNicknameVisible(false)
         controller.setPendingBet(betAmount)
         controller.setAlive(false)
-        const origin = 'ws://localhost:8080'
-
-
-        const ws = new WebSocket(origin)
+        const ws = new WebSocket(WS_URL)
         wsRef.current = ws
         setStatus('connecting')
 
         ws.onopen = () => {
           setStatus('connected')
-          ws.send(JSON.stringify({ type: 'join', name, skin }))
+          ws.send(JSON.stringify({ type: 'join', name, skin, token }))
         }
 
         ws.onclose = () => {
@@ -65,7 +69,10 @@ export function useConnection({ controller }: UseConnectionOptions) {
           const message = safeParse<any>(event.data)
           if (!message) return
           if (message.type === 'welcome') {
-            if (message.id) controller.setMe(message.id, name)
+            if (message.id) {
+              const resolvedName = typeof message.name === 'string' ? message.name : name
+              controller.setMe(message.id, resolvedName)
+            }
             controller.setAlive(true)
             controller.setCashoutPending(false)
             controller.applyBalanceUpdate({
@@ -131,9 +138,23 @@ export function useConnection({ controller }: UseConnectionOptions) {
             controller.setCashoutPending(false)
             controller.resetCashoutHold()
           }
+          if (message.type === 'error' && (message.code === 'auth_required' || message.code === 'invalid_token')) {
+            controller.setNicknameVisible(true)
+            onAuthError?.()
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.close(4001, message.code)
+            }
+          }
+          if (message.type === 'error' && message.code === 'insufficient_balance') {
+            controller.setNicknameVisible(true)
+          }
+          if (message.type === 'error' && message.code === 'balance_persist_failed') {
+            controller.setNicknameVisible(true)
+            controller.applyBalanceUpdate({ balance: controller.getAccount().balance })
+          }
         }
       },
-      [closeConnection, controller]
+      [closeConnection, controller, onAuthError, token]
   )
 
   const requestRespawn = useCallback((betAmount: number) => {

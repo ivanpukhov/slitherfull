@@ -124,9 +124,10 @@ function trimPathToLength(player, maxLength) {
 }
 
 class World {
-    constructor(cfg, killLogger) {
+    constructor(cfg, killLogger, accountStore) {
         this.cfg = cfg
         this.killLogger = killLogger
+        this.accountStore = accountStore
         this.players = new Map()
         this.foods = new Map()
         this.playerCells = new Map()
@@ -145,8 +146,6 @@ class World {
         this.maxTurnRate = typeof cfg.maxTurnRate === 'number'
             ? cfg.maxTurnRate
             : cfg.maxTurn * cfg.tickRate
-
-        this.initialBalance = 1000
 
         for (let i = 0; i < cfg.initialFood; i++) this.spawnFood()
     }
@@ -196,13 +195,17 @@ class World {
         this.spawnFoodAt(p.x, p.y, 1)
     }
 
-    addPlayer(ws, name, skin) {
+    addPlayer(ws, name, skin, context = {}) {
         const id = randomUUID()
         const spawn = randomPointInCircle(this.centerX, this.centerY, this.radius * 0.95)
+        const balance = Math.max(0, Math.floor(Number(context.balance ?? 0)))
+        const nickname = typeof context.nickname === 'string' && context.nickname.trim()
+            ? context.nickname.trim()
+            : (typeof name === 'string' ? name : '')
         const p = {
             id,
             ws,
-            name: name || "",
+            name: nickname || "",
             skin: skin || "default",
             x: spawn.x,
             y: spawn.y,
@@ -220,9 +223,10 @@ class World {
             msgCountWindow: 0,
             lastMsgWindowTs: Date.now(),
             r: this.cfg.headRadius,
-            balance: this.initialBalance,
+            balance,
             currentBet: 0,
-            cashedOut: false
+            cashedOut: false,
+            userId: context.userId || null
         }
         p.dir = p.angle
         p.targetAngle = p.angle
@@ -522,7 +526,7 @@ class World {
         }
     }
 
-    placeBet(p, amount) {
+    async placeBet(p, amount) {
         if (!p || p.cashedOut) {
             return { ok: false, error: 'cashout' }
         }
@@ -544,6 +548,15 @@ class World {
         }
         p.balance = balance - finalBet
         p.currentBet = finalBet
+        try {
+            if (this.accountStore && p.userId) {
+                await this.accountStore.updateBalance(p.userId, Math.max(0, Math.floor(p.balance)))
+            }
+        } catch (err) {
+            p.balance = balance
+            p.currentBet = 0
+            return { ok: false, error: 'balance_persist_failed' }
+        }
         this.notifyBalance(p)
         return {
             ok: true,
@@ -553,16 +566,21 @@ class World {
         }
     }
 
-    cashOut(p) {
+    async cashOut(p) {
         if (!p || p.cashedOut) {
             return { ok: false, error: 'cashout' }
         }
         const refund = Math.max(0, Math.floor(p.currentBet || 0))
-        if (refund > 0) {
-            p.balance = Math.max(0, Math.floor(p.balance || 0)) + refund
-        } else {
-            p.balance = Math.max(0, Math.floor(p.balance || 0))
+        const prevBalance = Math.max(0, Math.floor(p.balance || 0))
+        const finalBalance = refund > 0 ? prevBalance + refund : prevBalance
+        try {
+            if (this.accountStore && p.userId) {
+                await this.accountStore.updateBalance(p.userId, finalBalance)
+            }
+        } catch (err) {
+            return { ok: false, error: 'balance_persist_failed' }
         }
+        p.balance = finalBalance
         p.currentBet = 0
         p.cashedOut = true
         p.alive = false
@@ -575,7 +593,6 @@ class World {
         this.playerCells.delete(p.id)
         this.players.delete(p.id)
         this.notifyBalance(p)
-        const finalBalance = Math.max(0, Math.floor(p.balance))
         if (p.ws) {
             this.send(p.ws, {
                 type: MSG_CASHOUT_CONFIRMED,

@@ -1,17 +1,22 @@
-# React + Vite
+# Slither frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Overview
+This package contains the Vite + React client for the slither arena. It now includes a modal-based authentication flow, persistent nicknames and balance-aware UI states.
 
-Currently, two official plugins are available:
+## Key pieces
+- **`src/components/AuthModal.tsx`** – handles login/registration inside a modal on the lobby screen.
+- **`src/hooks/useAuth.ts`** – manages JWT storage, session refresh (`/api/auth/me`) and exposes helpers for the rest of the app.
+- **`src/hooks/useConnection.ts`** – attaches the JWT to the `join` WebSocket payload and reacts to auth-related error codes.
+- **`src/components/NicknameScreen.tsx`** – nickname field is now auto-filled/locked for authenticated users and start button is disabled when the balance is zero.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Development
+```bash
+npm install
+npm run dev
+```
+The dev server reads API/WS endpoints from the root `.env` file (`VITE_API_BASE_URL`, `VITE_WS_URL`). Tokens are stored in `localStorage` under `slither_token`.
 
-## React Compiler
-
-The React Compiler is not enabled on this template. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-# slither.io.client
+## UX notes
+- If the token becomes invalid the connection hook logs the user out and reopens the auth modal.
+- Successful cashouts trigger a `cashout_confirmed` event which updates both the in-game HUD and the persisted balance via the backend.
+- Users with insufficient balance cannot start a new match; the lobby explains the reason below the start button.
