@@ -1,5 +1,8 @@
 // src/server.js
+require('dotenv').config()
 const http = require('http')
+const express = require('express')
+const cors = require('cors')
 const WebSocket = require('ws')
 const {
     decode,
@@ -17,6 +20,10 @@ const {
 } = require('./protocol')
 const { World } = require('./world')
 const { KillLogger } = require('./logger')
+const { sequelize } = require('./db/sequelize')
+const authRouter = require('./routes/auth')
+const { verifyToken } = require('./services/authService')
+const accountService = require('./services/accountService')
 
 const cfg = {
     port: process.env.PORT ? parseInt(process.env.PORT) : 8080,
@@ -71,10 +78,23 @@ const cfg = {
     joinThrottleMs: 2000
 }
 
-const server = http.createServer()
+const app = express()
+const allowAllOrigins = !process.env.CLIENT_ORIGIN || process.env.CLIENT_ORIGIN === '*'
+const allowedOrigins = allowAllOrigins
+    ? '*'
+    : process.env.CLIENT_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
+
+app.use(cors({ origin: allowedOrigins, credentials: false }))
+app.use(express.json())
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok' })
+})
+app.use('/api/auth', authRouter)
+
+const server = http.createServer(app)
 const wss = new WebSocket.Server({ server })
 const kills = new KillLogger()
-const world = new World(cfg, kills)
+const world = new World(cfg, kills, accountService)
 
 const sockets = new Map()
 
@@ -105,68 +125,102 @@ wss.on('connection', (ws) => {
             return
         }
 
-        if (msg.type === MSG_JOIN) {
-            const t = nowMs()
-            if (t - ws.lastJoinTs < cfg.joinThrottleMs) return
-            ws.lastJoinTs = t
-            const p = world.addPlayer(ws, msg.name || "", msg.skin || "")
-            sockets.set(ws, p.id)
-            send(ws, {
-                type: MSG_WELCOME,
-                id: p.id,
-                width: cfg.width,
-                height: cfg.height,
-                radius: world.radius,
-                minLength: cfg.minLength,
-                baseLength: cfg.baseLength,
-                balance: Math.max(0, Math.floor(p.balance || 0)),
-                currentBet: Math.max(0, Math.floor(p.currentBet || 0))
-            })
-            return
-        }
-
-        if (!entry) return
-        const id = entry
-        const p = world.players.get(id)
-        if (!p) return
-
-        const now = nowMs()
-        if (now - p.lastMsgWindowTs > 1000) {
-            p.lastMsgWindowTs = now
-            p.msgCountWindow = 0
-        }
-        p.msgCountWindow++
-        if (p.msgCountWindow > cfg.maxMsgsPerSec) return
-
-        if (msg.type === MSG_INPUT) world.handleInput(p, msg)
-        if (msg.type === MSG_SET_BET) {
-            const result = world.placeBet(p, msg.amount)
-            if (!result?.ok) {
-                send(ws, { type: MSG_ERROR, code: result?.error || 'bet_failed' })
+        ;(async () => {
+            if (msg.type === MSG_JOIN) {
+                const t = nowMs()
+                if (t - ws.lastJoinTs < cfg.joinThrottleMs) return
+                ws.lastJoinTs = t
+                const token = typeof msg.token === 'string' ? msg.token : null
+                if (!token) {
+                    send(ws, { type: MSG_ERROR, code: 'auth_required' })
+                    return
+                }
+                const authUser = await verifyToken(token)
+                if (!authUser) {
+                    send(ws, { type: MSG_ERROR, code: 'invalid_token' })
+                    try { ws.close(4001, 'unauthorized') } catch (err) { /* ignore */ }
+                    return
+                }
+                const userRecord = await accountService.getUserById(authUser.id)
+                if (!userRecord) {
+                    send(ws, { type: MSG_ERROR, code: 'auth_required' })
+                    try { ws.close(4001, 'unauthorized') } catch (err) { /* ignore */ }
+                    return
+                }
+                const balance = Math.max(0, Math.floor(userRecord.balance || 0))
+                if (balance <= 0) {
+                    send(ws, { type: MSG_ERROR, code: 'insufficient_balance' })
+                    try { ws.close(4002, 'no_balance') } catch (err) { /* ignore */ }
+                    return
+                }
+                const player = world.addPlayer(
+                    ws,
+                    userRecord.nickname || authUser.nickname || '',
+                    msg.skin || '',
+                    { userId: userRecord.id, balance, nickname: userRecord.nickname || authUser.nickname || '' }
+                )
+                sockets.set(ws, { playerId: player.id, userId: userRecord.id })
+                send(ws, {
+                    type: MSG_WELCOME,
+                    id: player.id,
+                    name: player.name,
+                    width: cfg.width,
+                    height: cfg.height,
+                    radius: world.radius,
+                    minLength: cfg.minLength,
+                    baseLength: cfg.baseLength,
+                    balance: Math.max(0, Math.floor(player.balance || 0)),
+                    currentBet: Math.max(0, Math.floor(player.currentBet || 0))
+                })
+                return
             }
-            return
-        }
-        if (msg.type === MSG_RESPAWN) {
-            world.respawn(p)
-            return
-        }
-        if (msg.type === MSG_CASHOUT_REQUEST) {
-            const result = world.cashOut(p)
-            if (!result?.ok) {
-                send(ws, { type: MSG_ERROR, code: result?.error || 'cashout_failed' })
-            } else {
-                setTimeout(() => {
-                    try { ws.close(1000, 'cashout') } catch (err) { /* ignore */ }
-                }, 100)
+
+            if (!entry) return
+            const { playerId } = entry
+            const p = world.players.get(playerId)
+            if (!p) return
+
+            const now = nowMs()
+            if (now - p.lastMsgWindowTs > 1000) {
+                p.lastMsgWindowTs = now
+                p.msgCountWindow = 0
             }
-            return
-        }
+            p.msgCountWindow++
+            if (p.msgCountWindow > cfg.maxMsgsPerSec) return
+
+            if (msg.type === MSG_INPUT) world.handleInput(p, msg)
+            if (msg.type === MSG_SET_BET) {
+                const result = await world.placeBet(p, msg.amount)
+                if (!result?.ok) {
+                    send(ws, { type: MSG_ERROR, code: result?.error || 'bet_failed' })
+                }
+                return
+            }
+            if (msg.type === MSG_RESPAWN) {
+                world.respawn(p)
+                return
+            }
+            if (msg.type === MSG_CASHOUT_REQUEST) {
+                const result = await world.cashOut(p)
+                if (!result?.ok) {
+                    send(ws, { type: MSG_ERROR, code: result?.error || 'cashout_failed' })
+                } else {
+                    setTimeout(() => {
+                        try { ws.close(1000, 'cashout') } catch (err) { /* ignore */ }
+                    }, 100)
+                }
+                return
+            }
+        })().catch((err) => {
+            console.error('ws message error', err)
+            send(ws, { type: MSG_ERROR, code: 'server_error' })
+        })
     })
 
     ws.on('close', () => {
-        const id = sockets.get(ws)
+        const entry = sockets.get(ws)
         sockets.delete(ws)
-        if (id) world.removePlayer(id)
+        if (entry && entry.playerId) world.removePlayer(entry.playerId)
     })
 })
 
@@ -218,4 +272,14 @@ setInterval(() => {
 }, Math.floor(1000 / cfg.snapshotRate))
 
 
-server.listen(cfg.port)
+async function start() {
+    try {
+        await sequelize.sync()
+        server.listen(cfg.port)
+    } catch (err) {
+        console.error('Failed to start server', err)
+        process.exit(1)
+    }
+}
+
+start()

@@ -143,6 +143,7 @@ interface GameUIState {
   cashoutScreen: CashoutScreenState
   nicknameVisible: boolean
   nickname: string
+  nicknameLocked: boolean
   selectedSkin: string
   betValue: string
   retryBetValue: string
@@ -176,9 +177,9 @@ interface InternalState {
 }
 
 const initialAccount: AccountState = {
-  balance: 1000,
+  balance: 0,
   currentBet: 0,
-  total: 1000,
+  total: 0,
   cashedOut: false
 }
 
@@ -218,6 +219,7 @@ const initialUI: GameUIState = {
   },
   nicknameVisible: true,
   nickname: '',
+  nicknameLocked: false,
   selectedSkin: 'default',
   betValue: '10',
   retryBetValue: '',
@@ -276,6 +278,11 @@ export class GameController {
     this.notify()
   }
 
+  setNicknameLock(locked: boolean) {
+    this.state.ui.nicknameLocked = locked
+    this.notify()
+  }
+
   setSelectedSkin(skin: string) {
     this.state.ui.selectedSkin = skin
     this.notify()
@@ -315,6 +322,21 @@ export class GameController {
         this.state.ui.cashout.pending = false
       }
     }
+    this.state.account = next
+    this.refreshCashoutState()
+    this.notify()
+  }
+
+  setAccountState(payload: Partial<AccountState>) {
+    const next = { ...this.state.account }
+    if (typeof payload.balance === 'number') next.balance = Math.max(0, Math.floor(payload.balance))
+    if (typeof payload.currentBet === 'number') next.currentBet = Math.max(0, Math.floor(payload.currentBet))
+    if (typeof payload.total === 'number') {
+      next.total = Math.max(0, Math.floor(payload.total))
+    } else {
+      next.total = Math.max(0, next.balance + next.currentBet)
+    }
+    if (typeof payload.cashedOut === 'boolean') next.cashedOut = payload.cashedOut
     this.state.account = next
     this.refreshCashoutState()
     this.notify()
@@ -1002,6 +1024,7 @@ export function useGame() {
     cashoutScreen: ui.cashoutScreen,
     nicknameScreenVisible: ui.nicknameVisible,
     nickname: ui.nickname,
+    nicknameLocked: ui.nicknameLocked,
     selectedSkin: ui.selectedSkin,
     skinName,
     betValue: ui.betValue,

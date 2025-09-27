@@ -6,6 +6,7 @@ interface NicknameScreenProps {
   visible: boolean
   nickname: string
   onNicknameChange: (value: string) => void
+  nicknameLocked: boolean
   selectedSkin: string
   onSelectSkin: (skin: string) => void
   skinName: string
@@ -14,12 +15,15 @@ interface NicknameScreenProps {
   onBetBlur: () => void
   balance: number
   onStart: () => void
+  startDisabled: boolean
+  startDisabledHint?: string
 }
 
 export function NicknameScreen({
   visible,
   nickname,
   onNicknameChange,
+  nicknameLocked,
   selectedSkin,
   onSelectSkin,
   skinName,
@@ -27,10 +31,13 @@ export function NicknameScreen({
   onBetChange,
   onBetBlur,
   balance,
-  onStart
+  onStart,
+  startDisabled,
+  startDisabledHint
 }: NicknameScreenProps) {
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
+    if (startDisabled) return
     onStart()
   }
 
@@ -50,8 +57,16 @@ export function NicknameScreen({
             placeholder="Ваш ник"
             autoComplete="off"
             value={nickname}
-            onChange={(event) => onNicknameChange(event.target.value)}
+            onChange={(event) => {
+              if (!nicknameLocked) {
+                onNicknameChange(event.target.value)
+              }
+            }}
+            disabled={nicknameLocked}
           />
+          {nicknameLocked && (
+            <p className="nickname-note">Никнейм закреплён за аккаунтом.</p>
+          )}
           <div className="skin-picker">
             <div className="caption">
               <span>Скины</span>
@@ -88,9 +103,12 @@ export function NicknameScreen({
               Доступно: <span id="betBalanceDisplay">{formatNumber(balance)}</span>
             </div>
           </div>
-          <button id="startBtn" className="primary" type="submit">
+          <button id="startBtn" className="primary" type="submit" disabled={startDisabled} aria-disabled={startDisabled}>
             Играть
           </button>
+          {startDisabled && startDisabledHint && (
+            <p className="start-hint">{startDisabledHint}</p>
+          )}
         </form>
       </div>
     </div>

@@ -1,10 +1,11 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useGame } from './hooks/useGame'
 import { useCanvas } from './hooks/useCanvas'
 import { useConnection } from './hooks/useConnection'
 import { useJoystick } from './hooks/useJoystick'
 import { usePointerControls } from './hooks/usePointerControls'
 import { sanitizeBetValue } from './utils/helpers'
+import { useAuth } from './hooks/useAuth'
 import { ScorePanel } from './components/ScorePanel'
 import { Leaderboard } from './components/Leaderboard'
 import { Minimap } from './components/Minimap'
@@ -13,6 +14,7 @@ import { CashoutControl } from './components/CashoutControl'
 import { NicknameScreen } from './components/NicknameScreen'
 import { DeathScreen } from './components/DeathScreen'
 import { CashoutScreen } from './components/CashoutScreen'
+import { AuthModal } from './components/AuthModal'
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -24,7 +26,11 @@ function App() {
   const touchControlsRef = useRef<HTMLDivElement>(null)
 
   const game = useGame()
-  const connection = useConnection({ controller: game.controller })
+  const auth = useAuth()
+  const connection = useConnection({ controller: game.controller, token: auth.token, onAuthError: auth.logout })
+  const controller = game.controller
+  const { setNickname, setBetValue } = game
+  const accountBalance = game.account.balance
 
   useCanvas({ canvasRef, minimapRef, controller: game.controller })
   usePointerControls({ controller: game.controller, canvasRef })
@@ -36,6 +42,56 @@ function App() {
     cashoutButtonRef,
     touchControlsRef
   })
+
+  useEffect(() => {
+    if (auth.status === 'authenticated' && auth.user) {
+      const account = controller.getAccount()
+      const desiredBalance = auth.user.balance
+      if (
+        account.balance !== desiredBalance ||
+        account.currentBet !== 0 ||
+        account.total !== desiredBalance ||
+        account.cashedOut
+      ) {
+        controller.setAccountState({
+          balance: desiredBalance,
+          currentBet: 0,
+          total: desiredBalance,
+          cashedOut: false
+        })
+      }
+      controller.setNicknameLock(true)
+      if (game.nickname !== auth.user.nickname) {
+        setNickname(auth.user.nickname)
+      }
+      if (auth.user.balance <= 0) {
+        if (game.betValue !== '') {
+          setBetValue('')
+        }
+      } else if (!game.betValue || Number(game.betValue) <= 0) {
+        const suggested = Math.max(1, Math.min(auth.user.balance, Number(game.betValue) || 1))
+        setBetValue(String(suggested))
+      }
+    } else if (auth.status === 'unauthenticated') {
+      const account = controller.getAccount()
+      if (account.balance !== 0 || account.currentBet !== 0 || account.total !== 0 || account.cashedOut) {
+        controller.setAccountState({ balance: 0, currentBet: 0, total: 0, cashedOut: false })
+      }
+      controller.setNicknameLock(false)
+      if (game.nickname !== '') {
+        setNickname('')
+      }
+      if (game.betValue !== '') {
+        setBetValue('')
+      }
+    }
+  }, [auth.status, auth.user, controller, game.nickname, game.betValue, setNickname, setBetValue])
+
+  useEffect(() => {
+    if (auth.status === 'authenticated' && auth.user && auth.user.balance !== accountBalance) {
+      auth.syncBalance(accountBalance)
+    }
+  }, [auth.status, auth.user, accountBalance, auth.syncBalance])
 
   const handleNicknameChange = useCallback((value: string) => {
     game.setNickname(value)
@@ -72,7 +128,10 @@ function App() {
   }, [game])
 
   const handleStart = useCallback(() => {
-    const name = game.nickname.trim() || 'Anon'
+    if (auth.status !== 'authenticated' || !auth.user) {
+      return
+    }
+    const name = game.nickname.trim() || auth.user.nickname
     const balance = game.account.balance
     const betAmount = sanitizeBetValue(game.betValue, balance)
     if (betAmount > 0) {
@@ -103,8 +162,23 @@ function App() {
     window.location.reload()
   }, [connection])
 
+  const startDisabled = auth.status !== 'authenticated' || !auth.user || game.account.balance <= 0
+  const startHint = auth.status === 'checking'
+    ? 'Проверяем авторизацию...'
+    : auth.status !== 'authenticated'
+      ? 'Войдите в аккаунт, чтобы начать игру.'
+      : game.account.balance <= 0
+        ? 'Недостаточно монет на балансе.'
+        : undefined
+
   return (
     <div>
+      <AuthModal
+        open={auth.status !== 'authenticated'}
+        status={auth.status}
+        onLogin={auth.login}
+        onRegister={auth.register}
+      />
       <canvas id="canvas" ref={canvasRef} />
       <ScorePanel score={game.score} scoreMeta={game.scoreMeta} account={game.account} />
       <Leaderboard entries={game.leaderboard} meName={game.controller.state.meName} />
@@ -121,6 +195,7 @@ function App() {
         visible={game.nicknameScreenVisible}
         nickname={game.nickname}
         onNicknameChange={handleNicknameChange}
+        nicknameLocked={game.nicknameLocked}
         selectedSkin={game.selectedSkin}
         onSelectSkin={game.setSelectedSkin}
         skinName={game.skinName}
@@ -129,6 +204,8 @@ function App() {
         onBetBlur={handleBetBlur}
         balance={game.account.balance}
         onStart={handleStart}
+        startDisabled={startDisabled}
+        startDisabledHint={startHint}
       />
       <DeathScreen
         state={game.deathScreen}
