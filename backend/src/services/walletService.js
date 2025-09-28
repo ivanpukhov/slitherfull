@@ -97,6 +97,35 @@ async function transferGameToUser(userId, amountUnits) {
   return { units }
 }
 
+async function transferUserToUser(fromUserId, toUserId, amountUnits) {
+  if (!fromUserId) throw new Error('missing_source_user_id')
+  if (!toUserId) throw new Error('missing_destination_user_id')
+  if (Number(fromUserId) === Number(toUserId)) {
+    throw new Error('same_user_transfer')
+  }
+  const [fromUser, toUser] = await Promise.all([
+    User.findByPk(fromUserId),
+    User.findByPk(toUserId)
+  ])
+  if (!fromUser) throw new Error('source_user_not_found')
+  if (!toUser) throw new Error('destination_user_not_found')
+  const lamports = unitsToLamports(amountUnits)
+  if (lamports <= 0) throw new Error('invalid_amount')
+  const current = await solana.getBalance(fromUser.walletPublicKey)
+  if (current < lamports) {
+    throw new Error('insufficient_funds')
+  }
+  await solana.transferLamports(fromUser.walletSecretKey, toUser.walletPublicKey, lamports)
+  const [fromBalance, toBalance] = await Promise.all([
+    refreshUserBalance(fromUser),
+    refreshUserBalance(toUser)
+  ])
+  return {
+    from: { userId: fromUser.id, units: fromBalance.units },
+    to: { userId: toUser.id, units: toBalance.units }
+  }
+}
+
 async function getWalletProfile(userId) {
   const user = await User.findByPk(userId)
   if (!user) return null
@@ -171,6 +200,7 @@ module.exports = {
   requestInitialAirdrop,
   transferUserToGame,
   transferGameToUser,
+  transferUserToUser,
   getWalletProfile,
   requestUserAirdrop,
   getAdminOverview

@@ -35,4 +35,38 @@ router.get('/overview', async (req, res) => {
   }
 })
 
+router.post('/transfer', async (req, res) => {
+  const { fromType, toType, fromUserId, toUserId, amount } = req.body || {}
+  const normalizedAmount = Number(amount)
+  if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+    return res.status(400).json({ error: 'invalid_amount' })
+  }
+  try {
+    let result = null
+    if (fromType === 'game' && toType === 'user') {
+      if (!toUserId) return res.status(400).json({ error: 'missing_destination_user_id' })
+      result = await walletService.transferGameToUser(toUserId, normalizedAmount)
+    } else if (fromType === 'user' && toType === 'game') {
+      if (!fromUserId) return res.status(400).json({ error: 'missing_source_user_id' })
+      result = await walletService.transferUserToGame(fromUserId, normalizedAmount)
+    } else if (fromType === 'user' && toType === 'user') {
+      if (!fromUserId || !toUserId) {
+        return res.status(400).json({ error: 'missing_user_id' })
+      }
+      result = await walletService.transferUserToUser(fromUserId, toUserId, normalizedAmount)
+    } else {
+      return res.status(400).json({ error: 'unsupported_transfer_type' })
+    }
+    res.json({ status: 'ok', result })
+  } catch (err) {
+    const message = err?.message || 'transfer_failed'
+    const status =
+      message === 'insufficient_funds' || message.endsWith('_not_found') || message.startsWith('missing_') ||
+      message === 'same_user_transfer'
+        ? 400
+        : 500
+    res.status(status).json({ error: message })
+  }
+})
+
 module.exports = router
