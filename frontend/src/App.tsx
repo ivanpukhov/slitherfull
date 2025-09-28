@@ -6,6 +6,7 @@ import { useJoystick } from './hooks/useJoystick'
 import { usePointerControls } from './hooks/usePointerControls'
 import { sanitizeBetValue } from './utils/helpers'
 import { useAuth } from './hooks/useAuth'
+import { useWallet } from './hooks/useWallet'
 import { ScorePanel } from './components/ScorePanel'
 import { Leaderboard } from './components/Leaderboard'
 import { Minimap } from './components/Minimap'
@@ -15,8 +16,9 @@ import { NicknameScreen } from './components/NicknameScreen'
 import { DeathScreen } from './components/DeathScreen'
 import { CashoutScreen } from './components/CashoutScreen'
 import { AuthModal } from './components/AuthModal'
+import { AdminDashboard } from './components/AdminDashboard'
 
-function App() {
+function GameView() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const minimapRef = useRef<HTMLCanvasElement>(null)
   const joystickRef = useRef<HTMLDivElement>(null)
@@ -27,6 +29,7 @@ function App() {
 
   const game = useGame()
   const auth = useAuth()
+  const wallet = useWallet({ token: auth.token })
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const connection = useConnection({
     controller: game.controller,
@@ -125,6 +128,12 @@ function App() {
     }
   }, [auth.status])
 
+  useEffect(() => {
+    if (wallet.profile && auth.status === 'authenticated') {
+      auth.syncBalance(wallet.profile.inGameBalance)
+    }
+  }, [wallet.profile, auth.status, auth.syncBalance])
+
   const handleNicknameChange = useCallback((value: string) => {
     game.setNickname(value)
   }, [game])
@@ -196,6 +205,14 @@ function App() {
     window.location.reload()
   }, [connection])
 
+  const handleWalletRefresh = useCallback(() => {
+    wallet.refresh()
+  }, [wallet])
+
+  const handleWalletTopUp = useCallback(() => {
+    wallet.requestAirdrop(1)
+  }, [wallet])
+
   const isAuthenticated = auth.status === 'authenticated' && Boolean(auth.user)
   const startLabel = useMemo(() => {
     if (auth.status === 'checking') return 'Загрузка...'
@@ -217,7 +234,18 @@ function App() {
         onClose={() => setAuthModalOpen(false)}
       />
       <canvas id="canvas" ref={canvasRef} />
-      <ScorePanel score={game.score} scoreMeta={game.scoreMeta} account={game.account} />
+      <ScorePanel
+        score={game.score}
+        scoreMeta={game.scoreMeta}
+        account={game.account}
+        walletAddress={wallet.profile?.walletAddress || auth.user?.walletAddress || null}
+        walletSol={wallet.profile?.sol}
+        walletUsd={wallet.profile?.usd ?? null}
+        usdRate={wallet.profile?.usdRate ?? null}
+        walletLoading={wallet.loading}
+        onRefreshWallet={handleWalletRefresh}
+        onTopUp={handleWalletTopUp}
+      />
       <Leaderboard entries={game.leaderboard} meName={game.controller.state.meName} />
       <Minimap ref={minimapRef} />
       <TouchControls
@@ -252,8 +280,24 @@ function App() {
         onRetry={handleRetry}
       />
       <CashoutScreen state={game.cashoutScreen} onClose={handleCashoutClose} />
+      {game.transfer.pending && (
+        <div className="transfer-overlay">
+          <div className="transfer-modal">
+            <div className="transfer-spinner" />
+            <div className="transfer-text">{game.transfer.message || 'Перевод средств…'}</div>
+          </div>
+        </div>
+      )}
     </div>
   )
+}
+
+function App() {
+  const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+  if (isAdminRoute) {
+    return <AdminDashboard />
+  }
+  return <GameView />
 }
 
 export default App

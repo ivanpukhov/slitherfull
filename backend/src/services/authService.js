@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const { User } = require('../models/User')
+const walletService = require('./walletService')
 
 const JWT_SECRET = process.env.JWT_SECRET || 'development-secret'
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
@@ -11,7 +12,8 @@ function sanitizeUser(user) {
     id: user.id,
     email: user.email,
     nickname: user.nickname,
-    balance: user.balance
+    balance: user.balance,
+    walletAddress: user.walletPublicKey || null
   }
 }
 
@@ -34,12 +36,16 @@ async function registerUser({ email, password, nickname }) {
     return { ok: false, error: 'nickname_taken' }
   }
   const passwordHash = await bcrypt.hash(password, 10)
+  const wallet = await walletService.createUserWallet()
   const user = await User.create({
     email: normalizedEmail,
     passwordHash,
     nickname: normalizedNickname,
-    balance: 10
+    balance: 0,
+    walletPublicKey: wallet.publicKey,
+    walletSecretKey: wallet.secretKey
   })
+  await walletService.requestInitialAirdrop(user)
   const token = createToken(user)
   return { ok: true, user: sanitizeUser(user), token }
 }
@@ -57,6 +63,7 @@ async function loginUser({ email, password }) {
   if (!match) {
     return { ok: false, error: 'invalid_credentials' }
   }
+  await walletService.refreshUserBalance(user).catch(() => null)
   const token = createToken(user)
   return { ok: true, user: sanitizeUser(user), token }
 }

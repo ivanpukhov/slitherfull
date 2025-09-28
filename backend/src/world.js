@@ -1,6 +1,7 @@
 // src/world.js
 const { SpatialHash } = require('./spatial')
 const { v4: randomUUID } = require('uuid')
+const walletService = require('./services/walletService')
 
 const {
     MSG_BALANCE,
@@ -546,13 +547,33 @@ class World {
         if (finalBet <= 0) {
             return { ok: false, error: 'insufficient_balance' }
         }
-        p.balance = balance - finalBet
+        try {
+            if (p.userId) {
+                const refreshed = await walletService.transferUserToGame(p.userId, finalBet)
+                if (refreshed && typeof refreshed.units === 'number') {
+                    p.balance = Math.max(0, Math.floor(refreshed.units))
+                } else {
+                    p.balance = Math.max(0, balance - finalBet)
+                }
+            } else {
+                p.balance = balance - finalBet
+            }
+        } catch (err) {
+            return { ok: false, error: err.message === 'insufficient_funds' ? 'insufficient_balance' : 'transfer_failed' }
+        }
         p.currentBet = finalBet
         try {
             if (this.accountStore && p.userId) {
                 await this.accountStore.updateBalance(p.userId, Math.max(0, Math.floor(p.balance)))
             }
         } catch (err) {
+            if (p.userId) {
+                try {
+                    await walletService.transferGameToUser(p.userId, finalBet)
+                } catch (transferErr) {
+                    console.error('Failed to revert bet transfer', transferErr)
+                }
+            }
             p.balance = balance
             p.currentBet = 0
             return { ok: false, error: 'balance_persist_failed' }
@@ -572,15 +593,25 @@ class World {
         }
         const refund = Math.max(0, Math.floor(p.currentBet || 0))
         const prevBalance = Math.max(0, Math.floor(p.balance || 0))
-        const finalBalance = refund > 0 ? prevBalance + refund : prevBalance
+        let finalBalance = refund > 0 ? prevBalance + refund : prevBalance
+        try {
+            if (p.userId && refund > 0) {
+                const refreshed = await walletService.transferGameToUser(p.userId, refund)
+                if (refreshed && typeof refreshed.units === 'number') {
+                    finalBalance = Math.max(0, Math.floor(refreshed.units))
+                }
+            }
+        } catch (err) {
+            return { ok: false, error: 'cashout_transfer_failed' }
+        }
+        p.balance = finalBalance
         try {
             if (this.accountStore && p.userId) {
-                await this.accountStore.updateBalance(p.userId, finalBalance)
+                await this.accountStore.updateBalance(p.userId, Math.max(0, Math.floor(p.balance)))
             }
         } catch (err) {
             return { ok: false, error: 'balance_persist_failed' }
         }
-        p.balance = finalBalance
         p.currentBet = 0
         p.cashedOut = true
         p.alive = false
