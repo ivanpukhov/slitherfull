@@ -22,8 +22,11 @@ const { World } = require('./world')
 const { KillLogger } = require('./logger')
 const { sequelize } = require('./db/sequelize')
 const authRouter = require('./routes/auth')
+const walletRouter = require('./routes/wallet')
+const adminRouter = require('./routes/admin')
 const { verifyToken } = require('./services/authService')
 const accountService = require('./services/accountService')
+const walletService = require('./services/walletService')
 
 const cfg = {
     port: process.env.PORT ? parseInt(process.env.PORT) : 8080,
@@ -90,6 +93,8 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok' })
 })
 app.use('/api/auth', authRouter)
+app.use('/api/wallet', walletRouter)
+app.use('/api/admin', adminRouter)
 
 const server = http.createServer(app)
 const wss = new WebSocket.Server({ server })
@@ -148,6 +153,7 @@ wss.on('connection', (ws) => {
                     try { ws.close(4001, 'unauthorized') } catch (err) { /* ignore */ }
                     return
                 }
+                await walletService.refreshUserBalance(userRecord).catch(() => null)
                 const balance = Math.max(0, Math.floor(userRecord.balance || 0))
                 if (balance <= 0) {
                     send(ws, { type: MSG_ERROR, code: 'insufficient_balance' })
@@ -291,7 +297,8 @@ setInterval(() => {
 
 async function start() {
     try {
-        await sequelize.sync()
+        await sequelize.sync({ alter: true })
+        await walletService.ensureGameWallet()
         server.listen(cfg.port)
     } catch (err) {
         console.error('Failed to start server', err)

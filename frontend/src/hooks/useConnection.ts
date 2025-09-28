@@ -114,6 +114,7 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
             if (pendingBet !== null && ws.readyState === WebSocket.OPEN) {
               const desired = sanitizeBetValue(pendingBet, controller.getAccount().balance)
               if (desired > 0) {
+                controller.setTransferState(true, 'Перевод средств…')
                 ws.send(JSON.stringify({ type: 'set_bet', amount: desired }))
               }
               controller.setPendingBet(null)
@@ -134,6 +135,9 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
                 onBalanceUpdate?.(Math.max(0, Math.floor(message.you.balance)))
               }
             }
+            if (controller.getUI().transfer.pending) {
+              controller.setTransferState(false)
+            }
             controller.applySnapshot(message)
           }
           if (message.type === 'death') {
@@ -144,16 +148,19 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
             if (typeof message.balance === 'number') {
               onBalanceUpdate?.(Math.max(0, Math.floor(message.balance)))
             }
+            controller.setTransferState(false)
           }
           if (message.type === 'cashout_confirmed') {
             controller.showCashout(message.balance)
             if (typeof message.balance === 'number') {
               onBalanceUpdate?.(Math.max(0, Math.floor(message.balance)))
             }
+            controller.setTransferState(false)
           }
           if (message.type === 'error' && message.code === 'cashout_failed') {
             controller.setCashoutPending(false)
             controller.resetCashoutHold()
+            controller.setTransferState(false)
           }
           if (message.type === 'error' && (message.code === 'auth_required' || message.code === 'invalid_token')) {
             controller.setNicknameVisible(true)
@@ -170,10 +177,15 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
           }
           if (message.type === 'error' && message.code === 'insufficient_balance') {
             controller.setNicknameVisible(true)
+            controller.setTransferState(false)
           }
           if (message.type === 'error' && message.code === 'balance_persist_failed') {
             controller.setNicknameVisible(true)
             controller.applyBalanceUpdate({ balance: controller.getAccount().balance })
+            controller.setTransferState(false)
+          }
+          if (message.type === 'error' && message.code === 'transfer_failed') {
+            controller.setTransferState(false)
           }
         }
       },
@@ -183,6 +195,7 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
   const requestRespawn = useCallback((betAmount: number) => {
     const ws = wsRef.current
     if (!ws || ws.readyState !== WebSocket.OPEN) return
+    controller.setTransferState(true, 'Перевод средств…')
     ws.send(JSON.stringify({ type: 'set_bet', amount: betAmount }))
     ws.send(JSON.stringify({ type: 'respawn' }))
   }, [])

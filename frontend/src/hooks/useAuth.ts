@@ -5,6 +5,7 @@ export interface AuthUser {
   email: string
   nickname: string
   balance: number
+  walletAddress: string | null
 }
 
 type AuthStatus = 'checking' | 'authenticated' | 'unauthenticated'

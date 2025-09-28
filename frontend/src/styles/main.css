@@ -100,6 +100,89 @@
             color: #f8fafc;
         }
 
+        #scorePanel .wallet-section {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        #scorePanel .wallet-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: clamp(12px, 2.6vw, 14px);
+            font-weight: 600;
+            color: #e0f2fe;
+        }
+
+        #scorePanel .wallet-label {
+            color: rgba(148, 163, 184, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        #scorePanel .wallet-value {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #scorePanel .wallet-rate {
+            font-size: 11px;
+            color: rgba(148, 163, 184, 0.7);
+        }
+
+        #scorePanel .wallet-address {
+            font-size: clamp(11px, 2.2vw, 13px);
+            color: rgba(226, 232, 240, 0.9);
+            word-break: break-all;
+            line-height: 1.4;
+        }
+
+        #scorePanel .wallet-hash {
+            display: block;
+            margin-top: 4px;
+            font-family: 'JetBrains Mono', Menlo, Monaco, Consolas, 'Courier New', monospace;
+        }
+
+        #scorePanel .wallet-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        #scorePanel .wallet-button {
+            flex: 1;
+            padding: 6px 10px;
+            border-radius: 10px;
+            border: none;
+            background: linear-gradient(135deg, #38bdf8, #2563eb);
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+        }
+
+        #scorePanel .wallet-button.secondary {
+            background: rgba(148, 163, 184, 0.2);
+            color: #e2e8f0;
+        }
+
+        #scorePanel .wallet-button:disabled {
+            opacity: 0.6;
+            cursor: default;
+            box-shadow: none;
+        }
+
+        #scorePanel .wallet-button:not(:disabled):hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px rgba(56, 189, 248, 0.35);
+        }
+
         #cashoutControl {
             position: fixed;
             left: 50%;
@@ -138,6 +221,212 @@
             cursor: default;
             opacity: 0.45;
             box-shadow: none;
+        }
+
+        .transfer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            backdrop-filter: blur(4px);
+        }
+
+        .transfer-modal {
+            background: rgba(15, 23, 42, 0.92);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 16px;
+            padding: 24px 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            min-width: min(90vw, 320px);
+            box-shadow: 0 24px 48px rgba(15, 23, 42, 0.45);
+        }
+
+        .transfer-spinner {
+            width: 48px;
+            height: 48px;
+            border-radius: 999px;
+            border: 4px solid rgba(56, 189, 248, 0.25);
+            border-top-color: #38bdf8;
+            animation: spin 1s linear infinite;
+        }
+
+        .transfer-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e2e8f0;
+            text-align: center;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .admin-wrapper {
+            min-height: 100vh;
+            background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), #020617);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+        }
+
+        .admin-card {
+            width: min(960px, 100%);
+            background: rgba(15, 23, 42, 0.88);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 24px;
+            padding: 32px;
+            color: #e2e8f0;
+            box-shadow: 0 24px 48px rgba(2, 6, 23, 0.45);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .admin-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .admin-form label {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: rgba(148, 163, 184, 0.9);
+        }
+
+        .admin-form input {
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            background: rgba(15, 23, 42, 0.6);
+            color: #f8fafc;
+        }
+
+        .admin-form button {
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #38bdf8, #2563eb);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .admin-error {
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: rgba(248, 113, 113, 0.18);
+            color: #fecaca;
+            font-size: 13px;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .admin-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .admin-actions button {
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            background: rgba(56, 189, 248, 0.2);
+            color: #bae6fd;
+        }
+
+        .admin-actions .admin-secondary {
+            background: rgba(248, 113, 113, 0.2);
+            color: #fecaca;
+        }
+
+        .admin-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            border-radius: 18px;
+            padding: 16px 20px;
+        }
+
+        .summary-label {
+            display: block;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(148, 163, 184, 0.7);
+            margin-bottom: 6px;
+        }
+
+        .summary-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+
+        .summary-address {
+            display: block;
+            margin-top: 4px;
+            font-size: 13px;
+            color: rgba(148, 163, 184, 0.85);
+            word-break: break-all;
+        }
+
+        .admin-table {
+            overflow-x: auto;
+        }
+
+        .admin-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .admin-table th,
+        .admin-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+            text-align: left;
+        }
+
+        .admin-table th {
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            color: rgba(148, 163, 184, 0.7);
+        }
+
+        .admin-table tbody tr:hover {
+            background: rgba(30, 41, 59, 0.45);
+        }
+
+        .admin-table .mono {
+            font-family: 'JetBrains Mono', Menlo, Monaco, Consolas, 'Courier New', monospace;
         }
 
         .cashout-button.holding {

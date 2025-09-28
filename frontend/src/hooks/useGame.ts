@@ -148,6 +148,10 @@ interface GameUIState {
   betValue: string
   retryBetValue: string
   touchControlsEnabled: boolean
+  transfer: {
+    pending: boolean
+    message: string
+  }
 }
 
 interface InternalState {
@@ -223,7 +227,11 @@ const initialUI: GameUIState = {
   selectedSkin: 'default',
   betValue: '10',
   retryBetValue: '',
-  touchControlsEnabled: false
+  touchControlsEnabled: false,
+  transfer: {
+    pending: false,
+    message: ''
+  }
 }
 
 export class GameController {
@@ -307,6 +315,14 @@ export class GameController {
     this.notify()
   }
 
+  setTransferState(pending: boolean, message?: string) {
+    this.state.ui.transfer = {
+      pending,
+      message: message ?? (pending ? 'Перевод средств…' : '')
+    }
+    this.notify()
+  }
+
   applyBalanceUpdate(payload: Partial<AccountState> & { cashedOut?: boolean }) {
     const next = { ...this.state.account }
     if (typeof payload.balance === 'number') next.balance = Math.max(0, Math.floor(payload.balance))
@@ -323,6 +339,9 @@ export class GameController {
       }
     }
     this.state.account = next
+    if (this.state.ui.transfer.pending) {
+      this.state.ui.transfer = { pending: false, message: '' }
+    }
     this.refreshCashoutState()
     this.notify()
   }
@@ -1022,6 +1041,7 @@ export function useGame() {
     boost: ui.boost,
     deathScreen: ui.death,
     cashoutScreen: ui.cashoutScreen,
+    transfer: ui.transfer,
     nicknameScreenVisible: ui.nicknameVisible,
     nickname: ui.nickname,
     nicknameLocked: ui.nicknameLocked,

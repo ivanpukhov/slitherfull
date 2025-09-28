@@ -30,7 +30,16 @@ User.init(
     balance: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 10
+      defaultValue: 0
+    },
+    walletPublicKey: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true
+    },
+    walletSecretKey: {
+      type: DataTypes.TEXT,
+      allowNull: false
     }
   },
   {
