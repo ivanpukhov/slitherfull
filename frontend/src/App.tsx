@@ -206,12 +206,23 @@ function GameView() {
 
   const isAuthenticated = auth.status === 'authenticated' && Boolean(auth.user)
   const startLabel = useMemo(() => {
+    if (game.cashout.pending) return 'Ожидание вывода'
+    if (game.transfer.pending) return 'Обработка...'
     if (auth.status === 'checking') return 'Загрузка...'
     return isAuthenticated ? 'Играть' : 'Авторизоваться'
-  }, [auth.status, isAuthenticated])
+  }, [auth.status, game.cashout.pending, game.transfer.pending, isAuthenticated])
 
-  const startDisabled = auth.status === 'checking' || (isAuthenticated && game.account.balance <= 0)
-  const startHint = isAuthenticated && game.account.balance <= 0 ? 'Недостаточно монет на балансе.' : undefined
+  const startDisabled =
+    auth.status === 'checking' ||
+    game.cashout.pending ||
+    game.transfer.pending ||
+    (isAuthenticated && game.account.balance <= 0)
+  const startHint = useMemo(() => {
+    if (game.cashout.pending) return 'Дождитесь подтверждения вывода средств.'
+    if (game.transfer.pending) return 'Проводим транзакцию с вашим балансом.'
+    if (isAuthenticated && game.account.balance <= 0) return 'Недостаточно монет на балансе.'
+    return undefined
+  }, [game.cashout.pending, game.transfer.pending, isAuthenticated, game.account.balance])
 
   const handlePrimaryAction = isAuthenticated ? handleStart : () => setAuthModalOpen(true)
 
@@ -265,6 +276,9 @@ function GameView() {
         onRetryBetBlur={handleRetryBetBlur}
         onRetry={handleRetry}
         retryDisabled={!game.lastResult?.showRetryControls || game.account.balance <= 0}
+        cashoutPending={game.cashout.pending}
+        transferPending={game.transfer.pending}
+        transferMessage={game.transfer.message}
       />
       {game.transfer.pending && (
         <div className="transfer-overlay">
