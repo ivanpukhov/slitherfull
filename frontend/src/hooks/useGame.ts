@@ -23,15 +23,16 @@ export const SKIN_LABELS: Record<string, string> = {
 }
 
 export const FOOD_PULSE_SPEED = 4.2
-export const CAMERA_SMOOTH = 6.5
-export const POSITION_SMOOTH = 14
-export const ANGLE_SMOOTH = 12
+export const CAMERA_SMOOTH = 4.2
+export const POSITION_SMOOTH = 9.5
+export const ANGLE_SMOOTH = 8.5
 export const CAMERA_ZOOM = 1.18
-export const MAX_PREDICTION_SECONDS = 0.45
-export const SEGMENT_SPACING = 6
+export const MAX_PREDICTION_SECONDS = 0.32
+export const SEGMENT_SPACING = 5
 export const LENGTH_EPS = 1e-3
 export const MINIMAP_SIZE = 188
 export const CASHOUT_HOLD_MS = 2000
+export const RENDER_PATH_BLEND = 0.18
 
 export interface AccountState {
   balance: number
@@ -449,12 +450,29 @@ export class GameController {
 
   triggerCashout() {
     if (!this.canRequestCashout()) return
+    const pendingBalance = Math.max(0, this.state.account.total)
+    this.state.alive = false
+    this.state.ui.nicknameVisible = true
     this.state.ui.cashout = {
       label: 'Запрос вывода...',
       hint: 'Запрос обрабатывается',
       disabled: true,
       holding: false,
       pending: true
+    }
+    this.state.ui.transfer = {
+      pending: true,
+      message: 'Вывод средств обрабатывается...'
+    }
+    this.state.ui.lastResult = {
+      title: 'Запрос на вывод отправлен',
+      details: [
+        'Вы возвращены в лобби, игра завершена.',
+        'Мы зафиксировали ваш баланс и завершим перевод автоматически.'
+      ],
+      showRetryControls: false,
+      retryBalance: formatNumber(pendingBalance),
+      variant: 'cashout'
     }
     this.state.cashoutHold = { start: null, frame: null, triggered: true, source: null }
     this.notify()
@@ -840,17 +858,33 @@ export class GameController {
       snake.renderPath = targetPath.slice()
       return
     }
-    const smoothed: SnakePoint[] = []
-    const blend = 0.3
-    const count = Math.min(prev.length, targetPath.length)
-    for (let i = 0; i < count; i++) {
+    const baseBlend = RENDER_PATH_BLEND
+    const limit = Math.min(prev.length, targetPath.length)
+    const blended: SnakePoint[] = []
+    for (let i = 0; i < limit; i++) {
       const point = prev[i]
       const target = targetPath[i]
-      smoothed.push({ x: lerp(point.x, target.x, blend), y: lerp(point.y, target.y, blend) })
+      const mix = limit > 1 ? i / (limit - 1) : 1
+      const dynamicBlend = Math.min(0.45, baseBlend + mix * 0.12)
+      blended.push({
+        x: lerp(point.x, target.x, dynamicBlend),
+        y: lerp(point.y, target.y, dynamicBlend)
+      })
     }
-    for (let i = count; i < targetPath.length; i++) {
-      smoothed.push(targetPath[i])
+    for (let i = limit; i < targetPath.length; i++) {
+      blended.push(targetPath[i])
     }
+    const smoothed: SnakePoint[] = blended.map((point, index, array) => {
+      if (index === 0 || index === array.length - 1) {
+        return point
+      }
+      const prevPoint = array[index - 1]
+      const nextPoint = array[index + 1]
+      return {
+        x: (prevPoint.x + point.x * 2 + nextPoint.x) / 4,
+        y: (prevPoint.y + point.y * 2 + nextPoint.y) / 4
+      }
+    })
     snake.renderPath = smoothed
     this.fitPathLength(snake.renderPath, Math.max(SEGMENT_SPACING * 2, snake.length || 0), SEGMENT_SPACING)
   }

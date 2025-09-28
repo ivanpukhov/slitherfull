@@ -31,6 +31,9 @@ interface NicknameScreenProps {
   onRetryBetBlur: () => void
   onRetry: () => void
   retryDisabled?: boolean
+  cashoutPending?: boolean
+  transferPending?: boolean
+  transferMessage?: string
 }
 
 export function NicknameScreen({
@@ -61,7 +64,10 @@ export function NicknameScreen({
   onRetryBetChange,
   onRetryBetBlur,
   onRetry,
-  retryDisabled
+  retryDisabled,
+  cashoutPending,
+  transferPending,
+  transferMessage
 }: NicknameScreenProps) {
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -148,16 +154,56 @@ export function NicknameScreen({
   }
 
   return (
-    <div id="nicknameScreen" className={visible ? 'overlay' : 'overlay hidden'}>
+    <div id="nicknameScreen" className={visible ? 'overlay overlay--lobby' : 'overlay overlay--lobby hidden'}>
       <div className="card lobby-card">
-        <form onSubmit={handleSubmit} className="lobby-form">
-          <div className="lobby-header">
-            <h2>Slither — онлайн арена</h2>
+        <div className="lobby-hero">
+          <div className="lobby-hero-copy">
+            <span className="lobby-badge">Real-time bet arena</span>
+            <h2>Slither X — арена мгновенных ставок</h2>
             <p>
-              Выберите никнейм и скин, чтобы начать игру. На компьютере управляйте мышью и удерживайте её кнопку, чтобы
-              ускориться. На смартфоне используйте виртуальный джойстик и кнопку ускорения.
+              Управляйте своим змеем, удерживайте зону и фиксируйте прибыль. Плавная камера, мягкая анимация хвоста и
+              киберпанковая атмосфера создают профессиональный опыт для хардкорных игроков.
             </p>
+            <div className="lobby-hero-metrics">
+              <div className="metric">
+                <span className="metric-value">{formatNumber(balance)}</span>
+                <span className="metric-label">Ваш баланс</span>
+              </div>
+              <div className="metric">
+                <span className="metric-value">{formatNumber(currentBet)}</span>
+                <span className="metric-label">Активная ставка</span>
+              </div>
+              <div className="metric">
+                <span className="metric-value">{skinName}</span>
+                <span className="metric-label">Выбранный скин</span>
+              </div>
+            </div>
           </div>
+          <div className="lobby-hero-visual" aria-hidden="true">
+            <div className="hero-orb hero-orb-primary" />
+            <div className="hero-orb hero-orb-secondary" />
+            <div className="hero-grid">
+              <span>Плавный геймплей</span>
+              <span>Solana-ready</span>
+              <span>Прозрачные ставки</span>
+            </div>
+          </div>
+        </div>
+        <form onSubmit={handleSubmit} className="lobby-form">
+          {(cashoutPending || transferPending) && (
+            <div className={`status-banner${cashoutPending ? ' status-banner-cashout' : ''}`}>
+              <div className="status-indicator" />
+              <div className="status-content">
+                <div className="status-title">
+                  {cashoutPending ? 'Вывод средств выполняется' : 'Транзакция в обработке'}
+                </div>
+                <p>
+                  {transferMessage ||
+                    (cashoutPending ? 'Мы завершаем перевод на ваш кошелек.' : 'Подождите, операция скоро завершится.')}
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="lobby-grid">
             <section className="lobby-panel lobby-panel-left">
