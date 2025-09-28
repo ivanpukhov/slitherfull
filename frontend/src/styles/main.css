@@ -545,6 +545,194 @@
             width: min(420px, 90vw);
         }
 
+        .lobby-card {
+            width: min(1100px, 94vw);
+            text-align: left;
+        }
+
+        .lobby-card h2 {
+            text-align: left;
+        }
+
+        .lobby-card p {
+            text-align: left;
+        }
+
+        .lobby-form {
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        .lobby-header {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .lobby-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .lobby-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (min-width: 1180px) {
+            .lobby-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        .lobby-panel {
+            background: rgba(12, 19, 31, 0.7);
+            border: 1px solid rgba(94, 117, 151, 0.28);
+            border-radius: 20px;
+            padding: 20px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            min-height: 0;
+        }
+
+        .lobby-title {
+            margin: 0;
+            font-size: 15px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(148, 163, 184, 0.72);
+        }
+
+        .field-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(226, 232, 240, 0.9);
+            letter-spacing: 0.02em;
+        }
+
+        .lobby-panel .skin-picker {
+            margin-top: 4px;
+        }
+
+        .lobby-panel .nickname-note {
+            margin-bottom: 0;
+        }
+
+        .bet-summary {
+            margin-top: 12px;
+        }
+
+        .lobby-panel-center {
+            justify-content: flex-start;
+        }
+
+        .lobby-panel-center .primary {
+            margin-top: 6px;
+        }
+
+        .lobby-panel-center .start-hint {
+            margin-top: 12px;
+            margin-bottom: 0;
+            color: rgba(248, 250, 252, 0.7);
+            text-align: left;
+        }
+
+        .lobby-panel-right .wallet-section {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .lobby-panel-right .wallet-row {
+            font-size: 14px;
+        }
+
+        .lobby-panel-right .wallet-address {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(10, 18, 30, 0.65);
+            border: 1px solid rgba(59, 76, 103, 0.38);
+            border-radius: 14px;
+            padding: 12px 14px;
+        }
+
+        .wallet-address-text {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .wallet-address .wallet-hash {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-family: 'JetBrains Mono', Menlo, Monaco, Consolas, 'Courier New', monospace;
+            color: rgba(226, 232, 240, 0.88);
+        }
+
+        .wallet-copy-button {
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: rgba(148, 163, 184, 0.18);
+            color: #e2e8f0;
+            border-radius: 12px;
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .wallet-copy-button:hover {
+            background: rgba(148, 163, 184, 0.32);
+            border-color: rgba(226, 232, 240, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .wallet-copy-button:active {
+            transform: translateY(0);
+        }
+
+        .wallet-copy-button:disabled {
+            opacity: 0.6;
+            cursor: default;
+            transform: none;
+        }
+
+        .wallet-section .wallet-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .wallet-section .wallet-actions .wallet-button {
+            flex: 1;
+            min-width: 140px;
+        }
+
+        @media (max-width: 767px) {
+            .lobby-card {
+                padding: 24px 22px 28px;
+            }
+
+            .lobby-panel {
+                padding: 18px 16px;
+            }
+
+            .wallet-section .wallet-actions .wallet-button {
+                min-width: unset;
+            }
+        }
+
         .auth-card {
             width: min(420px, 92vw);
             max-width: 440px;
