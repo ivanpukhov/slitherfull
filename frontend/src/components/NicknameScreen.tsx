@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { formatNumber } from '../utils/helpers'
-import { SKINS, SKIN_LABELS } from '../hooks/useGame'
+import { SKINS, SKIN_LABELS, type LastResultState } from '../hooks/useGame'
 
 interface NicknameScreenProps {
   visible: boolean
@@ -25,7 +25,12 @@ interface NicknameScreenProps {
   usdRate?: number | null
   walletLoading?: boolean
   onRefreshWallet?: () => void
-  onTopUp?: () => void
+  lastResult?: LastResultState | null
+  retryBetValue: string
+  onRetryBetChange: (value: string) => void
+  onRetryBetBlur: () => void
+  onRetry: () => void
+  retryDisabled?: boolean
 }
 
 export function NicknameScreen({
@@ -51,7 +56,12 @@ export function NicknameScreen({
   usdRate,
   walletLoading,
   onRefreshWallet,
-  onTopUp
+  lastResult,
+  retryBetValue,
+  onRetryBetChange,
+  onRetryBetBlur,
+  onRetry,
+  retryDisabled
 }: NicknameScreenProps) {
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -70,7 +80,21 @@ export function NicknameScreen({
   }, [usdRate, walletSol, walletUsd])
 
   const formattedSol = typeof walletSol === 'number' ? walletSol.toFixed(3) : '0.000'
-  const formattedUsd = typeof derivedUsd === 'number' ? derivedUsd.toFixed(2) : '—'
+  const formattedUsd = useMemo(() => {
+    if (typeof derivedUsd === 'number') {
+      try {
+        return new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }).format(derivedUsd)
+      } catch (error) {
+        return `$${derivedUsd.toFixed(2)}`
+      }
+    }
+    return '—'
+  }, [derivedUsd])
   const showWallet = Boolean(walletAddress)
 
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle')
@@ -184,6 +208,43 @@ export function NicknameScreen({
 
             <section className="lobby-panel lobby-panel-center">
               <h3 className="lobby-title">Ставка</h3>
+              {lastResult && (
+                <div className={`result-banner result-${lastResult.variant}`}>
+                  <div className="result-title">{lastResult.title}</div>
+                  <ul className="result-details">
+                    {lastResult.details.map((line, index) => (
+                      <li key={index}>{line}</li>
+                    ))}
+                  </ul>
+                  {lastResult.showRetryControls ? (
+                    <div className="result-retry">
+                      <div className="bet-control">
+                        <label htmlFor="retryBetInput">Ставка для повтора</label>
+                        <input
+                          id="retryBetInput"
+                          type="number"
+                          min={1}
+                          step={1}
+                          value={retryBetValue}
+                          onChange={(event) => onRetryBetChange(event.target.value)}
+                          onBlur={onRetryBetBlur}
+                        />
+                        <div className="bet-hint">
+                          Доступно: <span>{lastResult.retryBalance}</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="primary retry-button"
+                        onClick={onRetry}
+                        disabled={retryDisabled}
+                      >
+                        Играть снова
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              )}
               <div className="bet-control">
                 <label htmlFor="betInput">Ставка перед стартом</label>
                 <input
@@ -250,15 +311,7 @@ export function NicknameScreen({
                   <div className="wallet-actions">
                     <button
                       type="button"
-                      className="wallet-button"
-                      onClick={onTopUp}
-                      disabled={walletLoading}
-                    >
-                      {walletLoading ? 'Обработка...' : 'Пополнить'}
-                    </button>
-                    <button
-                      type="button"
-                      className="wallet-button secondary"
+                      className="wallet-refresh-button"
                       onClick={onRefreshWallet}
                       disabled={walletLoading}
                     >

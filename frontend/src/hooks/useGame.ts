@@ -44,6 +44,7 @@ export interface LeaderboardEntry {
   id?: string
   name: string
   length: number
+  bet?: number
   alive?: boolean
 }
 
@@ -73,6 +74,7 @@ export interface SnakeState {
   skin: string
   segments: SnakePoint[]
   renderPath: SnakePoint[]
+  bet?: number
 }
 
 export interface FoodState {
@@ -134,6 +136,14 @@ export interface CashoutScreenState {
   summary: string
 }
 
+export interface LastResultState {
+  title: string
+  details: string[]
+  showRetryControls: boolean
+  retryBalance: string
+  variant: 'death' | 'cashout'
+}
+
 interface GameUIState {
   score: number
   scoreMeta: string
@@ -141,6 +151,7 @@ interface GameUIState {
   boost: BoostState
   death: DeathScreenState
   cashoutScreen: CashoutScreenState
+  lastResult: LastResultState | null
   nicknameVisible: boolean
   nickname: string
   nicknameLocked: boolean
@@ -221,6 +232,7 @@ const initialUI: GameUIState = {
     visible: false,
     summary: ''
   },
+  lastResult: null,
   nicknameVisible: true,
   nickname: '',
   nicknameLocked: false,
@@ -614,8 +626,10 @@ export class GameController {
     const score = typeof payload?.yourScore === 'number' ? payload.yourScore : 0
     const balance = Math.max(0, this.state.account.balance || 0)
     const betValue = balance > 0 ? this.sanitizeBet(this.state.ui.retryBetValue || balance, balance) : 0
+    const details: string[] = [`Счёт: ${formatNumber(score)}`]
+    details.push(balance > 0 ? `На счету осталось ${formatNumber(balance)} очков` : 'Баланс обнулён')
     this.state.ui.death = {
-      visible: true,
+      visible: false,
       summary: `Вас победил ${killerName}`,
       score: `Счёт: ${formatNumber(score)}`,
       balance: balance > 0 ? `На счету осталось ${formatNumber(balance)} очков` : 'Баланс обнулён',
@@ -624,8 +638,17 @@ export class GameController {
       betBalance: formatNumber(balance),
       canRetry: balance > 0
     }
+    this.state.ui.retryBetValue = balance > 0 ? String(betValue) : ''
+    this.state.ui.lastResult = {
+      title: `Вас победил ${killerName}`,
+      details,
+      showRetryControls: balance > 0,
+      retryBalance: formatNumber(balance),
+      variant: 'death'
+    }
     this.updateScoreHUD(0)
     this.refreshCashoutState({ label: 'Вывод', pending: false, holding: false })
+    this.setNicknameVisible(true)
     this.notify()
   }
 
@@ -644,11 +667,20 @@ export class GameController {
       pending: false
     }
     this.state.ui.cashoutScreen = {
-      visible: true,
-      summary: `Ваш балланс теперь ${formatNumber(safeBalance)} .`
+      visible: false,
+      summary: `Ваш баланс теперь ${formatNumber(safeBalance)}.`
     }
     this.state.ui.death.visible = false
+    this.state.ui.retryBetValue = ''
+    this.state.ui.lastResult = {
+      title: 'Баланс выведен',
+      details: [`Ваш баланс теперь ${formatNumber(safeBalance)} очков.`],
+      showRetryControls: false,
+      retryBalance: formatNumber(safeBalance),
+      variant: 'cashout'
+    }
     this.updateScoreHUD(0)
+    this.setNicknameVisible(true)
     this.notify()
   }
 
@@ -659,6 +691,11 @@ export class GameController {
 
   hideCashoutScreen() {
     this.state.ui.cashoutScreen.visible = false
+    this.notify()
+  }
+
+  clearLastResult() {
+    this.state.ui.lastResult = null
     this.notify()
   }
 
@@ -737,7 +774,8 @@ export class GameController {
           targetY: payload.y || existing?.targetY || 0,
           skin: payload.skin || existing?.skin || 'default',
           segments: segments.length ? segments : [{ x: payload.x || 0, y: payload.y || 0 }],
-          renderPath: segments.length ? segments.slice() : [{ x: payload.x || 0, y: payload.y || 0 }]
+          renderPath: segments.length ? segments.slice() : [{ x: payload.x || 0, y: payload.y || 0 }],
+          bet: typeof payload.bet === 'number' ? payload.bet : existing?.bet
         }
     snake.name = payload.name || snake.name
     snake.alive = payload.alive !== undefined ? payload.alive : true
@@ -753,6 +791,9 @@ export class GameController {
     snake.targetY = payload.y ?? snake.targetY
     snake.targetDir = typeof payload.angle === 'number' ? payload.angle : snake.targetDir
     snake.speed = typeof payload.speed === 'number' ? payload.speed : snake.speed
+    if (typeof payload.bet === 'number') {
+      snake.bet = payload.bet
+    }
     if (segments.length) {
       snake.segments = segments
       this.smoothAssignPath(snake, segments)
@@ -1041,6 +1082,7 @@ export function useGame() {
     boost: ui.boost,
     deathScreen: ui.death,
     cashoutScreen: ui.cashoutScreen,
+    lastResult: ui.lastResult,
     transfer: ui.transfer,
     nicknameScreenVisible: ui.nicknameVisible,
     nickname: ui.nickname,
@@ -1054,6 +1096,7 @@ export function useGame() {
     setSelectedSkin: (skin: string) => controller.setSelectedSkin(skin),
     setBetValue: (value: string) => controller.setBetValue(value),
     setRetryBetValue: (value: string) => controller.setRetryBetValue(value),
-    setNicknameVisible: (visible: boolean) => controller.setNicknameVisible(visible)
+    setNicknameVisible: (visible: boolean) => controller.setNicknameVisible(visible),
+    clearLastResult: () => controller.clearLastResult()
   }
 }

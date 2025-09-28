@@ -1,4 +1,4 @@
-import { shadeColor, withAlpha } from './helpers'
+import { formatNumber, shadeColor, withAlpha } from './helpers'
 
 type SnakePoint = { x: number; y: number }
 
@@ -283,7 +283,11 @@ export function drawSnakes({
       ctx.font = '600 13px "Inter", sans-serif'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'bottom'
-      ctx.fillText(snake.name, head.x, head.y - headRadius - 10)
+      const labelParts = [snake.name]
+      if (typeof snake.bet === 'number' && snake.bet > 0) {
+        labelParts.push(`ставка ${formatNumber(Math.floor(snake.bet))}`)
+      }
+      ctx.fillText(labelParts.join(' · '), head.x, head.y - headRadius - 10)
     }
   }
   ctx.shadowBlur = 0
