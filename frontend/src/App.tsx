@@ -234,18 +234,7 @@ function GameView() {
         onClose={() => setAuthModalOpen(false)}
       />
       <canvas id="canvas" ref={canvasRef} />
-      <ScorePanel
-        score={game.score}
-        scoreMeta={game.scoreMeta}
-        account={game.account}
-        walletAddress={wallet.profile?.walletAddress || auth.user?.walletAddress || null}
-        walletSol={wallet.profile?.sol}
-        walletUsd={wallet.profile?.usd ?? null}
-        usdRate={wallet.profile?.usdRate ?? null}
-        walletLoading={wallet.loading}
-        onRefreshWallet={handleWalletRefresh}
-        onTopUp={handleWalletTopUp}
-      />
+      <ScorePanel score={game.score} scoreMeta={game.scoreMeta} />
       <Leaderboard entries={game.leaderboard} meName={game.controller.state.meName} />
       <Minimap ref={minimapRef} />
       <TouchControls
@@ -268,10 +257,18 @@ function GameView() {
         onBetChange={handleBetChange}
         onBetBlur={handleBetBlur}
         balance={game.account.balance}
+        currentBet={game.account.currentBet}
         onStart={handlePrimaryAction}
         startDisabled={startDisabled}
         startLabel={startLabel}
         startDisabledHint={startHint}
+        walletAddress={wallet.profile?.walletAddress || auth.user?.walletAddress || null}
+        walletSol={wallet.profile?.sol}
+        walletUsd={wallet.profile?.usd ?? null}
+        usdRate={wallet.profile?.usdRate ?? null}
+        walletLoading={wallet.loading}
+        onRefreshWallet={handleWalletRefresh}
+        onTopUp={handleWalletTopUp}
       />
       <DeathScreen
         state={game.deathScreen}
