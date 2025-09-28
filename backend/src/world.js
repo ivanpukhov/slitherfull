@@ -665,7 +665,8 @@ class World {
                     skin: o.skin,
                     path: o.path,
                     dir: o.dir || o.angle,
-                    speed: o.speed || this.cfg.baseSpeed
+                    speed: o.speed || this.cfg.baseSpeed,
+                    bet: Math.max(0, Math.floor(o.currentBet || 0))
                 })
             }
         }

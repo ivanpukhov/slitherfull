@@ -13,8 +13,6 @@ import { Minimap } from './components/Minimap'
 import { TouchControls } from './components/TouchControls'
 import { CashoutControl } from './components/CashoutControl'
 import { NicknameScreen } from './components/NicknameScreen'
-import { DeathScreen } from './components/DeathScreen'
-import { CashoutScreen } from './components/CashoutScreen'
 import { AuthModal } from './components/AuthModal'
 import { AdminDashboard } from './components/AdminDashboard'
 
@@ -38,7 +36,7 @@ function GameView() {
     onBalanceUpdate: auth.syncBalance
   })
   const controller = game.controller
-  const { setNickname, setBetValue, setRetryBetValue } = game
+  const { setNickname, setBetValue, setRetryBetValue, setNicknameVisible, clearLastResult } = game
   const accountStateSyncedRef = useRef(false)
 
   useCanvas({ canvasRef, minimapRef, controller: game.controller })
@@ -184,8 +182,9 @@ function GameView() {
     } else {
       game.setBetValue('')
     }
+    clearLastResult()
     connection.startGame(name, game.selectedSkin, betAmount > 0 ? betAmount : null)
-  }, [auth.status, auth.user, connection, game])
+  }, [auth.status, auth.user, clearLastResult, connection, game])
 
   const handleRetry = useCallback(() => {
     const balance = game.account.balance
@@ -197,20 +196,12 @@ function GameView() {
     if (betAmount <= 0) return
     connection.requestRespawn(betAmount)
     game.controller.setPendingBet(null)
-    game.controller.hideDeath()
-  }, [connection, game])
-
-  const handleCashoutClose = useCallback(() => {
-    connection.closeConnection()
-    window.location.reload()
-  }, [connection])
+    clearLastResult()
+    setNicknameVisible(false)
+  }, [clearLastResult, connection, game, setNicknameVisible])
 
   const handleWalletRefresh = useCallback(() => {
     wallet.refresh()
-  }, [wallet])
-
-  const handleWalletTopUp = useCallback(() => {
-    wallet.requestAirdrop(1)
   }, [wallet])
 
   const isAuthenticated = auth.status === 'authenticated' && Boolean(auth.user)
@@ -268,15 +259,13 @@ function GameView() {
         usdRate={wallet.profile?.usdRate ?? null}
         walletLoading={wallet.loading}
         onRefreshWallet={handleWalletRefresh}
-        onTopUp={handleWalletTopUp}
-      />
-      <DeathScreen
-        state={game.deathScreen}
-        onBetChange={handleRetryBetChange}
-        onBetBlur={handleRetryBetBlur}
+        lastResult={game.lastResult}
+        retryBetValue={game.retryBetValue}
+        onRetryBetChange={handleRetryBetChange}
+        onRetryBetBlur={handleRetryBetBlur}
         onRetry={handleRetry}
+        retryDisabled={!game.lastResult?.showRetryControls || game.account.balance <= 0}
       />
-      <CashoutScreen state={game.cashoutScreen} onClose={handleCashoutClose} />
       {game.transfer.pending && (
         <div className="transfer-overlay">
           <div className="transfer-modal">

@@ -269,7 +269,11 @@ setInterval(() => {
         .filter(p => p.alive)
         .sort((a, b) => b.length - a.length)
         .slice(0, 10)
-        .map(p => ({ name: p.name, length: Math.floor(p.length) }))
+        .map(p => ({
+            name: p.name,
+            length: Math.floor(p.length),
+            bet: Math.max(0, Math.floor(p.currentBet || 0))
+        }))
 
     for (const p of world.players.values()) {
         const aoi = world.aoiFor(p)
