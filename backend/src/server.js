@@ -49,13 +49,13 @@ const cfg = {
     // змея
     headRadius: 8,
     bodyRadius: 6,
-    baseLength: 20,
+    baseLength: 100,
     minLength: 10,
     baseSpeed: 160,
     speedMinFactor: 0.42,
     speedLengthSoftCap: 500,
     speedLengthExponent: 0.65,
-    boostMultiplier: 1.7,
+    boostMultiplier: 2.4,
     boostLengthDrain: 3,
     boostDropIntervalMs: 120,
 
@@ -179,6 +179,7 @@ wss.on('connection', (ws) => {
                 )
                 sockets.set(ws, { playerId: player.id, userId: userRecord.id })
                 activeUsers.set(userRecord.id, ws)
+                const priceUsd = await world.ensureUsdPrice()
                 send(ws, {
                     type: MSG_WELCOME,
                     id: player.id,
@@ -189,7 +190,10 @@ wss.on('connection', (ws) => {
                     minLength: cfg.minLength,
                     baseLength: cfg.baseLength,
                     balance: Math.max(0, Math.floor(player.balance || 0)),
-                    currentBet: Math.max(0, Math.floor(player.currentBet || 0))
+                    currentBet: Math.max(0, Math.floor(player.currentBet || 0)),
+                    balanceUsdCents: world.unitsToUsdCents(player.balance),
+                    currentBetUsdCents: Math.max(0, Math.floor(player.currentBetUsdCents || 0)),
+                    priceUsd: Number.isFinite(priceUsd) ? priceUsd : null
                 })
                 return
             }
@@ -274,11 +278,16 @@ setInterval(() => {
         .map(p => ({
             name: p.name,
             length: Math.floor(p.length),
-            bet: Math.max(0, Math.floor(p.currentBet || 0))
+            bet: Math.max(0, Math.floor(p.currentBet || 0)),
+            betUsdCents: Math.max(0, Math.floor(p.currentBetUsdCents || 0))
         }))
 
     for (const p of world.players.values()) {
         const aoi = world.aoiFor(p)
+        const priceUsd = world.cachedUsdPrice
+        const balanceUsdCents = world.unitsToUsdCents(p.balance)
+        const currentBetUsdCents = Math.max(0, Math.floor(p.currentBetUsdCents || 0))
+        const totalUsdCents = balanceUsdCents !== null ? balanceUsdCents + currentBetUsdCents : null
         send(p.ws, {
             type: MSG_SNAPSHOT,
             tick: world.tickId,
@@ -291,7 +300,11 @@ setInterval(() => {
                 alive: p.alive,
                 balance: Math.max(0, Math.floor(p.balance || 0)),
                 currentBet: Math.max(0, Math.floor(p.currentBet || 0)),
-                totalBalance: Math.max(0, Math.floor((p.balance || 0) + (p.currentBet || 0)))
+                totalBalance: Math.max(0, Math.floor((p.balance || 0) + (p.currentBet || 0))),
+                balanceUsdCents,
+                currentBetUsdCents,
+                totalUsdCents,
+                priceUsd
             },
             players: aoi.players,
             foods: aoi.foods,

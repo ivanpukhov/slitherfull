@@ -4,7 +4,7 @@ import { useCanvas } from './hooks/useCanvas'
 import { useConnection } from './hooks/useConnection'
 import { useJoystick } from './hooks/useJoystick'
 import { usePointerControls } from './hooks/usePointerControls'
-import { sanitizeBetValue } from './utils/helpers'
+import { sanitizeBetValue, BET_OPTIONS_USD } from './utils/helpers'
 import { useAuth } from './hooks/useAuth'
 import { useWallet } from './hooks/useWallet'
 import { useWinningsLeaderboard, type LeaderboardRange } from './hooks/useWinningsLeaderboard'
@@ -59,16 +59,6 @@ function GameView() {
   usePointerControls({ controller: game.controller, canvasRef })
   useJoystick({ controller: game.controller, cashoutButtonRef })
 
-  const normalizeBetInput = useCallback((value: string, maxBalanceValue: number) => {
-    if (value === '') return ''
-    const max = Math.max(0, Math.floor(maxBalanceValue || 0))
-    if (max <= 0) return ''
-    const parsed = Math.floor(Number(value))
-    if (!Number.isFinite(parsed)) return ''
-    if (parsed <= 0) return '0'
-    return String(Math.min(parsed, max))
-  }, [])
-
   const handleWithdraw = useCallback(
     async (destination: string) => {
       if (typeof wallet.withdrawAll !== 'function') {
@@ -108,24 +98,20 @@ function GameView() {
         })
         accountStateSyncedRef.current = true
       }
-      const available = Math.max(0, Math.floor(auth.user.balance))
       if (game.nickname !== auth.user.nickname) {
         setNickname(auth.user.nickname)
       }
-      if (available <= 0) {
-        if (game.betValue !== '') setBetValue('')
-        if (game.retryBetValue !== '') setRetryBetValue('')
-      } else {
-        const normalizedBet = normalizeBetInput(game.betValue, available)
-        if (!game.betValue && !wasSynced) {
-          setBetValue(String(Math.min(available, 1)))
-        } else if (normalizedBet !== game.betValue) {
-          setBetValue(normalizedBet)
-        }
-        const normalizedRetryBet = normalizeBetInput(game.retryBetValue, available)
-        if (normalizedRetryBet !== game.retryBetValue) {
-          setRetryBetValue(normalizedRetryBet)
-        }
+      const resolvedBet = sanitizeBetValue(game.betValue)
+      if (!resolvedBet) {
+        setBetValue(String(BET_OPTIONS_USD[0]))
+      } else if (String(resolvedBet) !== game.betValue) {
+        setBetValue(String(resolvedBet))
+      }
+      const resolvedRetryBet = sanitizeBetValue(game.retryBetValue)
+      if (!resolvedRetryBet) {
+        setRetryBetValue(String(BET_OPTIONS_USD[0]))
+      } else if (String(resolvedRetryBet) !== game.retryBetValue) {
+        setRetryBetValue(String(resolvedRetryBet))
       }
       setAuthModalOpen(false)
     } else if (auth.status === 'unauthenticated') {
@@ -149,7 +135,6 @@ function GameView() {
     game.betValue,
     game.nickname,
     game.retryBetValue,
-    normalizeBetInput,
     setNickname,
     setBetValue,
     setRetryBetValue
@@ -171,65 +156,46 @@ function GameView() {
     game.setNickname(value)
   }, [game])
 
-  const handleBetChange = useCallback((value: string) => {
-    const normalized = normalizeBetInput(value, game.account.balance)
-    game.setBetValue(normalized)
-  }, [game, normalizeBetInput])
+  const handleBetSelect = useCallback(
+    (value: number) => {
+      const normalized = sanitizeBetValue(value)
+      if (normalized > 0) {
+        game.setBetValue(String(normalized))
+      }
+    },
+    [game]
+  )
 
-  const handleBetBlur = useCallback(() => {
-    const sanitized = sanitizeBetValue(game.betValue, game.account.balance)
-    if (sanitized > 0) {
-      game.setBetValue(String(sanitized))
-    } else if (game.account.balance > 0) {
-      game.setBetValue('1')
-    } else {
-      game.setBetValue('')
-    }
-  }, [game])
-
-  const handleRetryBetChange = useCallback((value: string) => {
-    const normalized = normalizeBetInput(value, game.account.balance)
-    setRetryBetValue(normalized)
-  }, [game, normalizeBetInput, setRetryBetValue])
-
-  const handleRetryBetBlur = useCallback(() => {
-    const sanitized = sanitizeBetValue(game.retryBetValue, game.account.balance)
-    if (sanitized > 0) {
-      setRetryBetValue(String(sanitized))
-    } else if (game.account.balance > 0) {
-      setRetryBetValue('1')
-    } else {
-      setRetryBetValue('')
-    }
-  }, [game, setRetryBetValue])
+  const handleRetryBetSelect = useCallback(
+    (value: number) => {
+      const normalized = sanitizeBetValue(value)
+      if (normalized > 0) {
+        setRetryBetValue(String(normalized))
+      }
+    },
+    [setRetryBetValue]
+  )
 
   const handleStart = useCallback(() => {
     if (auth.status !== 'authenticated' || !auth.user) {
       return
     }
     const name = game.nickname.trim() || auth.user.nickname
-    const balance = game.account.balance
-    const betAmount = sanitizeBetValue(game.betValue, balance)
-    if (betAmount > 0) {
-      game.setBetValue(String(betAmount))
-    } else if (balance > 0) {
-      game.setBetValue('1')
-    } else {
-      game.setBetValue('')
-    }
+    const betAmount = sanitizeBetValue(game.betValue)
+    const finalBet = betAmount > 0 ? betAmount : BET_OPTIONS_USD[0]
+    game.setBetValue(String(finalBet))
     clearLastResult()
-    connection.startGame(name, game.selectedSkin, betAmount > 0 ? betAmount : null)
+    connection.startGame(name, game.selectedSkin, finalBet)
   }, [auth.status, auth.user, clearLastResult, connection, game])
 
   const handleRetry = useCallback(() => {
-    const balance = game.account.balance
-    if (balance <= 0) {
+    if (game.account.balanceUsdCents <= 0) {
       window.location.reload()
       return
     }
-    const betAmount = sanitizeBetValue(game.retryBetValue || balance, balance)
-    if (betAmount <= 0) return
-    connection.requestRespawn(betAmount)
+    const betAmount = sanitizeBetValue(game.retryBetValue)
+    const finalBet = betAmount > 0 ? betAmount : BET_OPTIONS_USD[0]
+    connection.requestRespawn(finalBet)
     game.controller.setPendingBet(null)
     clearLastResult()
     setNicknameVisible(false)
@@ -290,11 +256,11 @@ function GameView() {
         selectedSkin={game.selectedSkin}
         onSelectSkin={game.setSelectedSkin}
         skinName={game.skinName}
+        betOptions={BET_OPTIONS_USD}
         betValue={game.betValue}
-        onBetChange={handleBetChange}
-        onBetBlur={handleBetBlur}
-        balance={game.account.balance}
-        currentBet={game.account.currentBet}
+        onBetSelect={handleBetSelect}
+        balanceUsdCents={game.account.balanceUsdCents}
+        currentBetUsdCents={game.account.currentBetUsdCents}
         onStart={handlePrimaryAction}
         startDisabled={startDisabled}
         startLabel={startLabel}
@@ -307,10 +273,9 @@ function GameView() {
         onRefreshWallet={handleWalletRefresh}
         lastResult={game.lastResult}
         retryBetValue={game.retryBetValue}
-        onRetryBetChange={handleRetryBetChange}
-        onRetryBetBlur={handleRetryBetBlur}
+        onRetryBetSelect={handleRetryBetSelect}
         onRetry={handleRetry}
-        retryDisabled={!game.lastResult?.showRetryControls || game.account.balance <= 0}
+        retryDisabled={!game.lastResult?.showRetryControls || game.account.balanceUsdCents <= 0}
         cashoutPending={game.cashout.pending}
         transferPending={game.transfer.pending}
         transferMessage={game.transfer.message}

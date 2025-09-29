@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { formatNumber, sanitizeBetValue, lerp, lerpAngle } from '../utils/helpers'
+import { formatNumber, sanitizeBetValue, lerp, lerpAngle, formatUsdCents, BET_OPTIONS_USD } from '../utils/helpers'
 import { drawBackground, drawFoods, drawSnakes, drawMinimap as renderMinimap } from '../utils/drawing'
 
 export const SKINS: Record<string, string[]> = {
@@ -39,13 +39,16 @@ export interface AccountState {
   currentBet: number
   total: number
   cashedOut: boolean
+  balanceUsdCents: number
+  currentBetUsdCents: number
+  totalUsdCents: number
 }
 
 export interface LeaderboardEntry {
   id?: string
   name: string
   length: number
-  bet?: number
+  betUsdCents?: number
 }
 
 export interface SnakePoint {
@@ -75,6 +78,7 @@ export interface SnakeState {
   segments: SnakePoint[]
   renderPath: SnakePoint[]
   bet?: number
+  betUsdCents?: number
 }
 
 export interface FoodState {
@@ -182,6 +186,7 @@ interface InternalState {
   lastSnapshotAt: number
   account: AccountState
   pendingBet: number | null
+  usdPrice: number | null
   cashoutHold: {
     start: number | null
     frame: number | null
@@ -195,7 +200,10 @@ const initialAccount: AccountState = {
   balance: 0,
   currentBet: 0,
   total: 0,
-  cashedOut: false
+  cashedOut: false,
+  balanceUsdCents: 0,
+  currentBetUsdCents: 0,
+  totalUsdCents: 0
 }
 
 const initialCamera: CameraState = {
@@ -237,7 +245,7 @@ const initialUI: GameUIState = {
   nickname: '',
   nicknameLocked: false,
   selectedSkin: 'default',
-  betValue: '10',
+  betValue: String(BET_OPTIONS_USD[0]),
   retryBetValue: '',
   touchControlsEnabled: false,
   transfer: {
@@ -270,6 +278,7 @@ export class GameController {
       lastSnapshotAt: 0,
       account: { ...initialAccount },
       pendingBet: null,
+      usdPrice: null,
       cashoutHold: { start: null, frame: null, triggered: false, source: null },
       ui: { ...initialUI }
     }
@@ -305,6 +314,12 @@ export class GameController {
 
   setSelectedSkin(skin: string) {
     this.state.ui.selectedSkin = skin
+    this.notify()
+  }
+
+  setUsdPrice(value: number | null) {
+    const normalized = Number.isFinite(value) && value && value > 0 ? Number(value) : null
+    this.state.usdPrice = normalized
     this.notify()
   }
 
@@ -344,6 +359,17 @@ export class GameController {
     } else {
       next.total = Math.max(0, next.balance + next.currentBet)
     }
+    if (typeof payload.balanceUsdCents === 'number') {
+      next.balanceUsdCents = Math.max(0, Math.floor(payload.balanceUsdCents))
+    }
+    if (typeof payload.currentBetUsdCents === 'number') {
+      next.currentBetUsdCents = Math.max(0, Math.floor(payload.currentBetUsdCents))
+    }
+    if (typeof payload.totalUsdCents === 'number') {
+      next.totalUsdCents = Math.max(0, Math.floor(payload.totalUsdCents))
+    } else {
+      next.totalUsdCents = Math.max(0, next.balanceUsdCents + next.currentBetUsdCents)
+    }
     if (typeof payload.cashedOut === 'boolean') {
       next.cashedOut = payload.cashedOut
       if (payload.cashedOut) {
@@ -367,14 +393,25 @@ export class GameController {
     } else {
       next.total = Math.max(0, next.balance + next.currentBet)
     }
+    if (typeof payload.balanceUsdCents === 'number') {
+      next.balanceUsdCents = Math.max(0, Math.floor(payload.balanceUsdCents))
+    }
+    if (typeof payload.currentBetUsdCents === 'number') {
+      next.currentBetUsdCents = Math.max(0, Math.floor(payload.currentBetUsdCents))
+    }
+    if (typeof payload.totalUsdCents === 'number') {
+      next.totalUsdCents = Math.max(0, Math.floor(payload.totalUsdCents))
+    } else {
+      next.totalUsdCents = Math.max(0, next.balanceUsdCents + next.currentBetUsdCents)
+    }
     if (typeof payload.cashedOut === 'boolean') next.cashedOut = payload.cashedOut
     this.state.account = next
     this.refreshCashoutState()
     this.notify()
   }
 
-  sanitizeBet(value: string | number, max?: number) {
-    return sanitizeBetValue(value, max ?? this.state.account.balance)
+  sanitizeBet(value: string | number) {
+    return sanitizeBetValue(value)
   }
 
   private refreshCashoutState(options?: Partial<CashoutControlState>) {
@@ -450,6 +487,7 @@ export class GameController {
   triggerCashout() {
     if (!this.canRequestCashout()) return
     const pendingBalance = Math.max(0, this.state.account.total)
+    const pendingBalanceUsd = Math.max(0, this.state.account.totalUsdCents)
     this.state.alive = false
     this.state.ui.nicknameVisible = true
     this.state.ui.cashout = {
@@ -470,7 +508,7 @@ export class GameController {
         'Мы зафиксировали ваш баланс и завершим перевод автоматически.'
       ],
       showRetryControls: false,
-      retryBalance: formatNumber(pendingBalance),
+      retryBalance: formatUsdCents(pendingBalanceUsd),
       variant: 'cashout'
     }
     this.state.cashoutHold = { start: null, frame: null, triggered: true, source: null }
@@ -637,25 +675,26 @@ export class GameController {
     const killerName = payload?.killerName ? payload.killerName : 'неизвестный'
     const score = typeof payload?.yourScore === 'number' ? payload.yourScore : 0
     const balance = Math.max(0, this.state.account.balance || 0)
-    const betValue = balance > 0 ? this.sanitizeBet(this.state.ui.retryBetValue || balance, balance) : 0
+    const balanceUsd = Math.max(0, this.state.account.balanceUsdCents || 0)
+    const betValue = balanceUsd > 0 ? this.sanitizeBet(this.state.ui.retryBetValue || this.state.ui.betValue || BET_OPTIONS_USD[0]) : 0
     const details: string[] = [`Счёт: ${formatNumber(score)}`]
-    details.push(balance > 0 ? `На счету осталось ${formatNumber(balance)} очков` : 'Баланс обнулён')
+    details.push(balanceUsd > 0 ? `На счету осталось ${formatUsdCents(balanceUsd)}` : 'Баланс обнулён')
     this.state.ui.death = {
       visible: false,
       summary: `Вас победил ${killerName}`,
       score: `Счёт: ${formatNumber(score)}`,
-      balance: balance > 0 ? `На счету осталось ${formatNumber(balance)} очков` : 'Баланс обнулён',
-      showBetControl: balance > 0,
-      betValue: balance > 0 ? String(betValue) : '',
-      betBalance: formatNumber(balance),
-      canRetry: balance > 0
+      balance: balanceUsd > 0 ? `На счету осталось ${formatUsdCents(balanceUsd)}` : 'Баланс обнулён',
+      showBetControl: balanceUsd > 0,
+      betValue: balanceUsd > 0 ? String(betValue || BET_OPTIONS_USD[0]) : '',
+      betBalance: formatUsdCents(balanceUsd),
+      canRetry: balanceUsd > 0
     }
-    this.state.ui.retryBetValue = balance > 0 ? String(betValue) : ''
+    this.state.ui.retryBetValue = balanceUsd > 0 ? String(betValue || BET_OPTIONS_USD[0]) : ''
     this.state.ui.lastResult = {
       title: `Вас победил ${killerName}`,
       details,
-      showRetryControls: balance > 0,
-      retryBalance: formatNumber(balance),
+      showRetryControls: balanceUsd > 0,
+      retryBalance: formatUsdCents(balanceUsd),
       variant: 'death'
     }
     this.updateScoreHUD(0)
@@ -678,17 +717,18 @@ export class GameController {
       holding: false,
       pending: false
     }
+    const safeBalanceUsd = Math.max(0, Math.floor(this.state.account.balanceUsdCents || 0))
     this.state.ui.cashoutScreen = {
       visible: false,
-      summary: `Ваш баланс теперь ${formatNumber(safeBalance)}.`
+      summary: `Ваш баланс теперь ${formatUsdCents(safeBalanceUsd)}.`
     }
     this.state.ui.death.visible = false
     this.state.ui.retryBetValue = ''
     this.state.ui.lastResult = {
       title: 'Баланс выведен',
-      details: [`Ваш баланс теперь ${formatNumber(safeBalance)} очков.`],
+      details: [`Ваш баланс теперь ${formatUsdCents(safeBalanceUsd)}.`],
       showRetryControls: false,
-      retryBalance: formatNumber(safeBalance),
+      retryBalance: formatUsdCents(safeBalanceUsd),
       variant: 'cashout'
     }
     this.updateScoreHUD(0)
@@ -758,12 +798,12 @@ export class GameController {
         const name = typeof entry.name === 'string' ? entry.name : null
         const length = typeof entry.length === 'number' ? Math.max(0, Math.floor(entry.length)) : null
         if (!name || length === null) return
-        const bet = typeof entry.bet === 'number' ? Math.max(0, Math.floor(entry.bet)) : undefined
+        const betUsdCents = typeof entry.betUsdCents === 'number' ? Math.max(0, Math.floor(entry.betUsdCents)) : undefined
         entries.push({
           id: entry.id ? String(entry.id) : `${name}-${idx}`,
           name,
           length,
-          bet
+          betUsdCents
         })
       })
       this.state.leaderboard = entries
@@ -805,7 +845,9 @@ export class GameController {
           skin: payload.skin || existing?.skin || 'default',
           segments: segments.length ? segments : [{ x: payload.x || 0, y: payload.y || 0 }],
           renderPath: segments.length ? segments.slice() : [{ x: payload.x || 0, y: payload.y || 0 }],
-          bet: typeof payload.bet === 'number' ? payload.bet : existing?.bet
+          bet: typeof payload.bet === 'number' ? payload.bet : existing?.bet,
+          betUsdCents:
+            typeof payload.betUsdCents === 'number' ? Math.max(0, Math.floor(payload.betUsdCents)) : existing?.betUsdCents
         }
     snake.name = payload.name || snake.name
     snake.alive = payload.alive !== undefined ? payload.alive : true
@@ -823,6 +865,9 @@ export class GameController {
     snake.speed = typeof payload.speed === 'number' ? payload.speed : snake.speed
     if (typeof payload.bet === 'number') {
       snake.bet = payload.bet
+    }
+    if (typeof payload.betUsdCents === 'number') {
+      snake.betUsdCents = Math.max(0, Math.floor(payload.betUsdCents))
     }
     if (segments.length) {
       snake.segments = segments

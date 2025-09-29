@@ -1,13 +1,17 @@
+import { BET_OPTIONS_USD, formatUsdCents } from '../utils/helpers'
 import type { DeathScreenState } from '../hooks/useGame'
 
 interface DeathScreenProps {
   state: DeathScreenState
-  onBetChange: (value: string) => void
-  onBetBlur: () => void
+  betOptions?: readonly number[]
+  onBetSelect: (value: number) => void
   onRetry: () => void
 }
 
-export function DeathScreen({ state, onBetChange, onBetBlur, onRetry }: DeathScreenProps) {
+export function DeathScreen({ state, betOptions, onBetSelect, onRetry }: DeathScreenProps) {
+  const options = betOptions && betOptions.length ? betOptions : BET_OPTIONS_USD
+  const selectedBet = options.includes(Number(state.betValue)) ? Number(state.betValue) : options[0]
+
   return (
     <div id="deathScreen" className={state.visible ? 'overlay' : 'overlay hidden'}>
       <div className="card">
@@ -23,15 +27,18 @@ export function DeathScreen({ state, onBetChange, onBetBlur, onRetry }: DeathScr
         {state.showBetControl ? (
           <div className="bet-control" id="deathBetControl">
             <label htmlFor="retryBetInput">Новая ставка</label>
-            <input
-              id="retryBetInput"
-              type="number"
-              min={1}
-              step={1}
-              value={state.betValue}
-              onChange={(event) => onBetChange(event.target.value)}
-              onBlur={onBetBlur}
-            />
+            <div className="bet-options" role="group" aria-labelledby="retryBetInput">
+              {options.map((option) => (
+                <button
+                  type="button"
+                  key={`death-${option}`}
+                  className={`bet-option${selectedBet === option ? ' selected' : ''}`}
+                  onClick={() => onBetSelect(option)}
+                >
+                  {formatUsdCents(option * 100)}
+                </button>
+              ))}
+            </div>
             <div className="bet-hint">
               Доступно: <span id="deathBetBalance">{state.betBalance}</span>
             </div>
