@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { formatNumber } from '../utils/helpers'
+import { useTranslation } from '../hooks/useTranslation'
 import { SKINS, SKIN_LABELS, type LastResultState } from '../hooks/useGame'
 import type { PlayerStatsData } from '../hooks/usePlayerStats'
 import type { LeaderboardRange, WinningsLeaderboardEntry } from '../hooks/useWinningsLeaderboard'
@@ -131,6 +132,7 @@ export function NicknameScreen({
     return '—'
   }, [derivedUsd])
   const showWallet = Boolean(walletAddress)
+  const { t } = useTranslation()
 
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle')
   const copyResetTimer = useRef<number | null>(null)
@@ -273,24 +275,28 @@ export function NicknameScreen({
             <aside className="lobby-column lobby-column-left">
               <div className="balance-widget glass-card">
                 <div className="balance-widget-header">
-                  <div className="balance-widget-title">Баланс</div>
+                  <div className="balance-widget-title">{t('balanceTitle')}</div>
                   <button
                     type="button"
                     className="icon-button"
                     onClick={() => (isAuthenticated ? setWalletModalOpen(true) : onStart())}
-                    aria-label="Кошелек"
+                    aria-label={t('walletButtonAriaLabel')}
                     disabled={!isAuthenticated}
                   >
                     <span className="icon-wallet" aria-hidden="true" />
+                    <span className="icon-button__text">
+                      <span className="icon-button__label">{t('walletButtonTitle')}</span>
+                      <span className="icon-button__caption">{t('walletButtonCaption')}</span>
+                    </span>
                   </button>
                 </div>
                 <div className="balance-widget-value">{formatNumber(balance)}</div>
                 <div className="balance-widget-meta">
-                  <span>Текущая ставка</span>
+                  <span>{t('currentBetLabel')}</span>
                   <strong>{formatNumber(currentBet)}</strong>
                 </div>
                 <div className="balance-widget-meta">
-                  <span>Скин</span>
+                  <span>{t('skinLabel')}</span>
                   <strong>{skinName}</strong>
                 </div>
                 {showWallet ? (
@@ -301,7 +307,7 @@ export function NicknameScreen({
                 ) : null}
                 {!isAuthenticated ? (
                   <button type="button" className="auth-link" onClick={onStart}>
-                    Авторизоваться
+                    {t('authPrompt')}
                   </button>
                 ) : null}
               </div>
