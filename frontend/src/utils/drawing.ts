@@ -1,4 +1,4 @@
-import { formatNumber, shadeColor, withAlpha } from './helpers'
+import { formatNumber, formatUsdCents, shadeColor, withAlpha } from './helpers'
 
 type SnakePoint = { x: number; y: number }
 
@@ -17,6 +17,7 @@ type SnakeState = {
   targetDir?: number
   alive?: boolean
   speed?: number
+  betUsdCents?: number
 }
 
 type FoodState = {
@@ -284,8 +285,8 @@ export function drawSnakes({
       ctx.textAlign = 'center'
       ctx.textBaseline = 'bottom'
       const labelParts = [snake.name]
-      if (typeof snake.bet === 'number' && snake.bet > 0) {
-        labelParts.push(`ставка ${formatNumber(Math.floor(snake.bet))}`)
+      if (typeof snake.betUsdCents === 'number' && snake.betUsdCents > 0) {
+        labelParts.push(`ставка ${formatUsdCents(Math.floor(snake.betUsdCents))}`)
       }
       ctx.fillText(labelParts.join(' · '), head.x, head.y - headRadius - 10)
     }

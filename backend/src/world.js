@@ -2,12 +2,17 @@
 const { SpatialHash } = require('./spatial')
 const { v4: randomUUID } = require('uuid')
 const walletService = require('./services/walletService')
+const solanaService = require('./services/solanaService')
 
 const {
     MSG_BALANCE,
     MSG_CASHOUT_CONFIRMED,
     encode
 } = require('./protocol')
+
+const BET_ALLOWED_USD_CENTS = [100, 500, 2000]
+const BET_CHUNK_USD_CENTS = 20
+const PRICE_CACHE_TTL = 60_000
 
 const SKIN_PRESETS = {
     default: ['#38bdf8'],
@@ -147,6 +152,8 @@ class World {
         this.maxTurnRate = typeof cfg.maxTurnRate === 'number'
             ? cfg.maxTurnRate
             : cfg.maxTurn * cfg.tickRate
+        this.cachedUsdPrice = null
+        this.cachedUsdPriceAt = 0
 
         for (let i = 0; i < cfg.initialFood; i++) this.spawnFood()
     }
@@ -160,16 +167,49 @@ class World {
         }
     }
 
+    async ensureUsdPrice(force = false) {
+        const now = Date.now()
+        if (!force && this.cachedUsdPrice && now - this.cachedUsdPriceAt < PRICE_CACHE_TTL) {
+            return this.cachedUsdPrice
+        }
+        try {
+            const price = await solanaService.fetchSolPriceUsd()
+            if (Number.isFinite(price) && price > 0) {
+                this.cachedUsdPrice = price
+                this.cachedUsdPriceAt = now
+                return price
+            }
+        } catch (err) {
+            // ignore fetch errors but keep previous cache if exists
+        }
+        return this.cachedUsdPrice
+    }
+
+    unitsToUsdCents(units) {
+        const price = this.cachedUsdPrice
+        if (!price || !Number.isFinite(price)) return null
+        const lamports = Math.max(0, Math.floor(units || 0)) * walletService.LAMPORTS_PER_UNIT
+        const usd = (lamports / solanaService.LAMPORTS_PER_SOL) * price
+        if (!Number.isFinite(usd)) return null
+        return Math.round(usd * 100)
+    }
+
     notifyBalance(p) {
         if (!p || !p.ws) return
         const balance = Math.max(0, Math.floor(p.balance || 0))
         const currentBet = Math.max(0, Math.floor(p.currentBet || 0))
         const total = balance + currentBet
+        const currentBetUsdCents = Math.max(0, Math.floor(p.currentBetUsdCents || 0))
+        const balanceUsdCents = this.unitsToUsdCents(balance)
+        const totalUsdCents = balanceUsdCents !== null ? balanceUsdCents + currentBetUsdCents : null
         this.send(p.ws, {
             type: MSG_BALANCE,
             balance,
             currentBet,
-            total
+            total,
+            balanceUsdCents,
+            currentBetUsdCents,
+            totalUsdCents
         })
     }
 
@@ -185,7 +225,20 @@ class World {
         const big = Boolean(options.big)
         const createdAt = Date.now()
         const pulse = typeof options.pulse === 'number' ? options.pulse : Math.random() * Math.PI * 2
-        const f = { id, x: pos.x, y: pos.y, v: value, color, big, pulse, createdAt }
+        const wagerUnits = Math.max(0, Math.floor(options.wagerUnits || 0))
+        const wagerUsdCents = Math.max(0, Math.floor(options.wagerUsdCents || 0))
+        const f = {
+            id,
+            x: pos.x,
+            y: pos.y,
+            v: value,
+            color,
+            big,
+            pulse,
+            createdAt,
+            wagerUnits: wagerUnits > 0 ? wagerUnits : 0,
+            wagerUsdCents: wagerUsdCents > 0 ? wagerUsdCents : 0
+        }
         this.foods.set(id, f)
         const key = this.foodSpatial.add(id, f.x, f.y)
         this.foodCells.set(id, key)
@@ -226,6 +279,7 @@ class World {
             r: this.cfg.headRadius,
             balance,
             currentBet: 0,
+            currentBetUsdCents: 0,
             cashedOut: false,
             userId: context.userId || null
         }
@@ -403,6 +457,13 @@ class World {
                     this.foodCells.delete(id)
                     this.foods.delete(id)
                     p.length += f.v
+                    if (f.wagerUnits > 0) {
+                        const rewardUnits = Math.max(0, Math.floor(f.wagerUnits))
+                        const rewardUsdCents = Math.max(0, Math.floor(f.wagerUsdCents || 0))
+                        p.currentBet = Math.max(0, Math.floor(p.currentBet || 0)) + rewardUnits
+                        p.currentBetUsdCents = Math.max(0, Math.floor(p.currentBetUsdCents || 0)) + rewardUsdCents
+                        this.notifyBalance(p)
+                    }
                     if (this.foods.size < this.cfg.targetFood) this.spawnFood()
                 }
             }
@@ -448,18 +509,15 @@ class World {
         victim.pathLen = 0
         victim.pathCarry = 0
 
-        const bounty = Math.max(0, Math.floor(victim.currentBet || 0))
+        const bountyUnits = Math.max(0, Math.floor(victim.currentBet || 0))
+        const bountyUsdCents = Math.max(0, Math.floor(victim.currentBetUsdCents || 0))
         victim.currentBet = 0
+        victim.currentBetUsdCents = 0
 
         const cellKey = this.playerCells.get(victim.id)
         this.playerSpatial.removeKey(victim.id, cellKey)
         this.playerCells.delete(victim.id)
 
-        if (killer && bounty > 0) {
-            const killerBet = Math.max(0, Math.floor(killer.currentBet || 0))
-            killer.currentBet = killerBet + bounty
-            this.notifyBalance(killer)
-        }
         this.notifyBalance(victim)
 
         const totalValue = Math.max(1, Math.floor(victim.length))
@@ -494,6 +552,10 @@ class World {
             index = (index - 1 + points.length) % points.length
         }
 
+        if (bountyUnits > 0 && bountyUsdCents > 0) {
+            this.scatterWagerFoods(points, bountyUnits, bountyUsdCents, palette)
+        }
+
         this.killLogger.log({
             killer: killer ? killer.id : null,
             victim: victim.id,
@@ -503,7 +565,8 @@ class World {
             victimLength: Math.floor(victim.length),
             killerLength: killer ? Math.floor(killer.length) : 0,
             reason: 'head_vs_body',
-            bounty
+            bounty: bountyUnits,
+            bountyUsdCents
         })
 
         if (victim.ws && victim.ws.readyState === 1) {
@@ -515,6 +578,47 @@ class World {
         }
     }
 
+    scatterWagerFoods(points, totalUnits, totalUsdCents, palette) {
+        const safeUnits = Math.max(0, Math.floor(totalUnits || 0))
+        const safeUsd = Math.max(0, Math.floor(totalUsdCents || 0))
+        if (safeUnits <= 0 || safeUsd <= 0) return
+        const anchors = Array.isArray(points) && points.length
+            ? points
+            : [{ x: this.centerX, y: this.centerY }]
+        const chunkCount = Math.max(1, Math.floor(safeUsd / BET_CHUNK_USD_CENTS))
+        const sampled = anchors.length ? resamplePath(anchors, Math.max(6, this.cfg.segmentSpacing)) : anchors
+        const distributionPoints = sampled.length ? sampled : anchors
+        if (!distributionPoints.length) return
+        const stride = Math.max(1, Math.floor(distributionPoints.length / chunkCount))
+        const baseUnits = Math.floor(safeUnits / chunkCount)
+        let remainderUnits = safeUnits - baseUnits * chunkCount
+        let remainingUnits = safeUnits
+        let remainingUsd = safeUsd
+        let index = distributionPoints.length - 1
+        for (let i = 0; i < chunkCount; i++) {
+            const target = distributionPoints[index]
+            const clamped = projectToCircle(this.centerX, this.centerY, this.radius, target.x, target.y)
+            let unitsForPiece = baseUnits + (remainderUnits > 0 ? 1 : 0)
+            if (remainderUnits > 0) remainderUnits--
+            if (unitsForPiece <= 0) unitsForPiece = 1
+            if (unitsForPiece > remainingUnits) unitsForPiece = remainingUnits
+            const usdForPiece = i === chunkCount - 1
+                ? remainingUsd
+                : Math.min(BET_CHUNK_USD_CENTS, remainingUsd)
+            remainingUsd = Math.max(0, remainingUsd - usdForPiece)
+            const value = Math.max(4, Math.round(unitsForPiece * 1.5))
+            this.spawnFoodAt(clamped.x, clamped.y, value, {
+                palette,
+                color: '#ffd700',
+                big: true,
+                wagerUnits: unitsForPiece,
+                wagerUsdCents: usdForPiece
+            })
+            remainingUnits -= unitsForPiece
+            index = (index - stride + distributionPoints.length) % distributionPoints.length
+        }
+    }
+
     async placeBet(p, amount) {
         if (!p || p.cashedOut) {
             return { ok: false, error: 'cashout' }
@@ -523,15 +627,25 @@ class World {
         if (!Number.isFinite(raw)) {
             return { ok: false, error: 'invalid_amount' }
         }
-        const bet = Math.floor(raw)
-        if (bet <= 0) {
+        const usdCents = Math.round(raw * 100)
+        if (!BET_ALLOWED_USD_CENTS.includes(usdCents)) {
             return { ok: false, error: 'invalid_amount' }
         }
         if (p.currentBet > 0) {
             return { ok: false, error: 'bet_exists' }
         }
+        const price = await this.ensureUsdPrice()
+        if (!price || !Number.isFinite(price) || price <= 0) {
+            return { ok: false, error: 'price_unavailable' }
+        }
+        const solAmount = (usdCents / 100) / price
+        const lamports = Math.max(1, Math.round(solanaService.LAMPORTS_PER_SOL * solAmount))
+        const piecesRequired = Math.max(1, Math.round(usdCents / BET_CHUNK_USD_CENTS))
+        const normalizedUsdCents = piecesRequired * BET_CHUNK_USD_CENTS
+        const desiredUnitsRaw = Math.ceil(lamports / walletService.LAMPORTS_PER_UNIT)
+        const desiredUnits = Math.max(piecesRequired, desiredUnitsRaw)
         const balance = Math.max(0, Math.floor(p.balance || 0))
-        const finalBet = Math.min(bet, balance)
+        const finalBet = Math.min(desiredUnits, balance)
         if (finalBet <= 0) {
             return { ok: false, error: 'insufficient_balance' }
         }
@@ -550,6 +664,7 @@ class World {
             return { ok: false, error: err.message === 'insufficient_funds' ? 'insufficient_balance' : 'transfer_failed' }
         }
         p.currentBet = finalBet
+        p.currentBetUsdCents = normalizedUsdCents
         try {
             if (this.accountStore && p.userId) {
                 await this.accountStore.updateBalance(p.userId, Math.max(0, Math.floor(p.balance)))
@@ -566,12 +681,15 @@ class World {
             p.currentBet = 0
             return { ok: false, error: 'balance_persist_failed' }
         }
+        await this.ensureUsdPrice(true)
         this.notifyBalance(p)
         return {
             ok: true,
             balance: Math.max(0, Math.floor(p.balance)),
             currentBet: Math.max(0, Math.floor(p.currentBet)),
-            total: Math.max(0, Math.floor(p.balance + p.currentBet))
+            total: Math.max(0, Math.floor(p.balance + p.currentBet)),
+            balanceUsdCents: this.unitsToUsdCents(p.balance),
+            currentBetUsdCents: Math.max(0, Math.floor(p.currentBetUsdCents || 0))
         }
     }
 
@@ -580,6 +698,7 @@ class World {
             return { ok: false, error: 'cashout' }
         }
         const refund = Math.max(0, Math.floor(p.currentBet || 0))
+        const refundUsdCents = Math.max(0, Math.floor(p.currentBetUsdCents || 0))
         const prevBalance = Math.max(0, Math.floor(p.balance || 0))
         let finalBalance = refund > 0 ? prevBalance + refund : prevBalance
         try {
@@ -604,6 +723,7 @@ class World {
             return { ok: false, error: 'balance_persist_failed' }
         }
         p.currentBet = 0
+        p.currentBetUsdCents = 0
         p.cashedOut = true
         p.alive = false
         p.boost = false
@@ -614,14 +734,22 @@ class World {
         this.playerSpatial.removeKey(p.id, cellKey)
         this.playerCells.delete(p.id)
         this.players.delete(p.id)
+        await this.ensureUsdPrice(true)
         this.notifyBalance(p)
         if (p.ws) {
             this.send(p.ws, {
                 type: MSG_CASHOUT_CONFIRMED,
-                balance: finalBalance
+                balance: finalBalance,
+                balanceUsdCents: this.unitsToUsdCents(finalBalance),
+                refundedUsdCents: refundUsdCents
             })
         }
-        return { ok: true, balance: finalBalance }
+        return {
+            ok: true,
+            balance: finalBalance,
+            balanceUsdCents: this.unitsToUsdCents(finalBalance),
+            refundedUsdCents: refundUsdCents
+        }
     }
 
     tick(dt) {
@@ -657,7 +785,8 @@ class World {
                     path: o.path,
                     dir: o.dir || o.angle,
                     speed: o.speed || this.cfg.baseSpeed,
-                    bet: Math.max(0, Math.floor(o.currentBet || 0))
+                    bet: Math.max(0, Math.floor(o.currentBet || 0)),
+                    betUsdCents: Math.max(0, Math.floor(o.currentBetUsdCents || 0))
                 })
             }
         }

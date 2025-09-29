@@ -3,12 +3,24 @@ export function formatNumber(value: number | null | undefined): string {
   return safe.toLocaleString('ru-RU')
 }
 
-export function sanitizeBetValue(value: number | string | null | undefined, maxBalance: number): number {
-  const max = Math.max(0, Math.floor(maxBalance || 0))
-  if (max <= 0) return 0
-  const raw = Math.floor(Number(value) || 0)
-  if (raw < 1) return 1
-  return Math.min(raw, max)
+export const BET_OPTIONS_USD = [1, 5, 20] as const
+
+export function sanitizeBetValue(value: number | string | null | undefined): number {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return 0
+  return BET_OPTIONS_USD.includes(parsed as (typeof BET_OPTIONS_USD)[number]) ? parsed : 0
+}
+
+const usdFormatter = new Intl.NumberFormat('ru-RU', {
+  style: 'currency',
+  currency: 'USD',
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2
+})
+
+export function formatUsdCents(value: number | null | undefined): string {
+  const cents = Math.max(0, Math.floor(Number(value) || 0))
+  return usdFormatter.format(cents / 100)
 }
 
 export function lerp(a: number, b: number, t: number): number {

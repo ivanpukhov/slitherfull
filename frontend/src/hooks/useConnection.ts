@@ -88,10 +88,24 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
               balance: nextBalance,
               currentBet: nextBet,
               total: nextBalance + nextBet,
+              balanceUsdCents: typeof message.balanceUsdCents === 'number' ? message.balanceUsdCents : undefined,
+              currentBetUsdCents:
+                typeof message.currentBetUsdCents === 'number' ? message.currentBetUsdCents : undefined,
+              totalUsdCents:
+                typeof message.balanceUsdCents === 'number' && typeof message.currentBetUsdCents === 'number'
+                  ? message.balanceUsdCents + message.currentBetUsdCents
+                  : undefined,
               cashedOut: false
             })
             if (typeof message.balance === 'number') {
               onBalanceUpdate?.(nextBalance)
+            }
+            if (typeof message.priceUsd === 'number' || message.priceUsd === null) {
+              controller.setUsdPrice(
+                typeof message.priceUsd === 'number' && Number.isFinite(message.priceUsd)
+                  ? message.priceUsd
+                  : null
+              )
             }
             if (typeof message.width === 'number' && typeof message.height === 'number') {
               const radius = typeof message.radius === 'number' ? message.radius : Math.min(message.width, message.height) / 2
@@ -112,7 +126,7 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
             controller.refreshBoostState(true)
             const pendingBet = controller.getPendingBet()
             if (pendingBet !== null && ws.readyState === WebSocket.OPEN) {
-              const desired = sanitizeBetValue(pendingBet, controller.getAccount().balance)
+              const desired = sanitizeBetValue(pendingBet)
               if (desired > 0) {
                 controller.setTransferState(true, 'Перевод средств…')
                 ws.send(JSON.stringify({ type: 'set_bet', amount: desired }))
@@ -126,11 +140,20 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
               controller.applyBalanceUpdate({
                 balance: message.you.balance,
                 currentBet: message.you.currentBet,
-                total: message.you.totalBalance
+                total: message.you.totalBalance,
+                balanceUsdCents: message.you.balanceUsdCents,
+                currentBetUsdCents: message.you.currentBetUsdCents,
+                totalUsdCents: message.you.totalUsdCents
               })
               if (typeof message.you.balance === 'number') {
                 onBalanceUpdate?.(Math.max(0, Math.floor(message.you.balance)))
               }
+            }
+            if (typeof message.you?.priceUsd === 'number' || message.you?.priceUsd === null) {
+              const priceValue = message.you?.priceUsd
+              controller.setUsdPrice(
+                typeof priceValue === 'number' && Number.isFinite(priceValue) ? priceValue : null
+              )
             }
             if (controller.getUI().transfer.pending) {
               controller.setTransferState(false)
@@ -151,6 +174,16 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
             controller.showCashout(message.balance)
             if (typeof message.balance === 'number') {
               onBalanceUpdate?.(Math.max(0, Math.floor(message.balance)))
+            }
+            if (typeof message.balanceUsdCents === 'number') {
+              controller.applyBalanceUpdate({
+                balanceUsdCents: message.balanceUsdCents,
+                currentBetUsdCents: 0,
+                totalUsdCents: message.balanceUsdCents,
+                balance: typeof message.balance === 'number' ? message.balance : undefined,
+                currentBet: 0,
+                total: typeof message.balance === 'number' ? message.balance : undefined
+              })
             }
             controller.setTransferState(false)
           }
@@ -182,6 +215,9 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
             controller.setTransferState(false)
           }
           if (message.type === 'error' && message.code === 'transfer_failed') {
+            controller.setTransferState(false)
+          }
+          if (message.type === 'error' && message.code === 'price_unavailable') {
             controller.setTransferState(false)
           }
         }

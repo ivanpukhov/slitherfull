@@ -36,6 +36,33 @@ export function usePointerControls({ controller, canvasRef }: UsePointerControls
     const canvas = canvasRef.current
     if (!canvas) return
 
+    let lastTapTime = 0
+    let tapBoostTimeout: number | null = null
+    let tapBoostActive = false
+    const DOUBLE_TAP_THRESHOLD = 300
+    const TAP_BOOST_DURATION = 500
+
+    const clearTapBoost = () => {
+      if (tapBoostTimeout) {
+        window.clearTimeout(tapBoostTimeout)
+        tapBoostTimeout = null
+      }
+      tapBoostActive = false
+      controller.resetBoostIntent()
+    }
+
+    const triggerTapBoost = () => {
+      tapBoostActive = true
+      controller.setBoostIntent(true)
+      if (tapBoostTimeout) {
+        window.clearTimeout(tapBoostTimeout)
+      }
+      tapBoostTimeout = window.setTimeout(() => {
+        tapBoostActive = false
+        controller.resetBoostIntent()
+      }, TAP_BOOST_DURATION)
+    }
+
     const onMouseMove = (event: MouseEvent) => {
       updatePointerAngle(controller, canvas, event.clientX, event.clientY)
     }
@@ -60,8 +87,18 @@ export function usePointerControls({ controller, canvasRef }: UsePointerControls
     const onTouchStart = (event: TouchEvent) => {
       if (controller.getUI().touchControlsEnabled) return
       if (!event.touches || !event.touches.length) return
+      const now = performance.now()
+      const isDoubleTap = event.touches.length === 1 && now - lastTapTime <= DOUBLE_TAP_THRESHOLD
+      lastTapTime = now
       updatePointerFromTouch(controller, canvas, event.touches[0])
-      controller.setBoostIntent(event.touches.length > 1)
+      if (event.touches.length > 1) {
+        clearTapBoost()
+        controller.setBoostIntent(true)
+      } else if (isDoubleTap) {
+        triggerTapBoost()
+      } else if (!tapBoostActive) {
+        controller.setBoostIntent(false)
+      }
       event.preventDefault()
     }
 
@@ -69,22 +106,30 @@ export function usePointerControls({ controller, canvasRef }: UsePointerControls
       if (controller.getUI().touchControlsEnabled) return
       if (!event.touches || !event.touches.length) return
       updatePointerFromTouch(controller, canvas, event.touches[0])
-      controller.setBoostIntent(event.touches.length > 1)
+      if (event.touches.length > 1) {
+        clearTapBoost()
+        controller.setBoostIntent(true)
+      } else if (!tapBoostActive) {
+        controller.setBoostIntent(false)
+      }
       event.preventDefault()
     }
 
     const onTouchEnd = (event: TouchEvent) => {
       if (controller.getUI().touchControlsEnabled) return
       if (!event.touches || event.touches.length === 0) {
+        clearTapBoost()
+      } else if (event.touches.length > 1) {
+        clearTapBoost()
+        controller.setBoostIntent(true)
+      } else if (!tapBoostActive) {
         controller.resetBoostIntent()
-      } else {
-        controller.setBoostIntent(event.touches.length > 1)
       }
     }
 
     const onTouchCancel = () => {
       if (controller.getUI().touchControlsEnabled) return
-      controller.resetBoostIntent()
+      clearTapBoost()
     }
 
     document.addEventListener('mousemove', onMouseMove)
@@ -105,6 +150,9 @@ export function usePointerControls({ controller, canvasRef }: UsePointerControls
       canvas.removeEventListener('touchmove', onTouchMove)
       canvas.removeEventListener('touchend', onTouchEnd)
       canvas.removeEventListener('touchcancel', onTouchCancel)
+      if (tapBoostTimeout) {
+        window.clearTimeout(tapBoostTimeout)
+      }
     }
   }, [controller, canvasRef])
 }
