@@ -44,9 +44,9 @@ export interface AccountState {
 export interface LeaderboardEntry {
   id?: string
   name: string
-  length: number
-  bet?: number
-  alive?: boolean
+  amountUsd: number
+  amountSol?: number
+  payoutCount?: number
 }
 
 export interface SnakePoint {

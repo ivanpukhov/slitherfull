@@ -1,6 +1,8 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { formatNumber } from '../utils/helpers'
 import { SKINS, SKIN_LABELS, type LastResultState } from '../hooks/useGame'
+import type { PlayerStatsData } from '../hooks/usePlayerStats'
+import { PlayerStatsChart } from './PlayerStatsChart'
 
 interface NicknameScreenProps {
   visible: boolean
@@ -34,6 +36,12 @@ interface NicknameScreenProps {
   cashoutPending?: boolean
   transferPending?: boolean
   transferMessage?: string
+  onWithdraw?: (destination: string) => Promise<void> | void
+  withdrawPending?: boolean
+  withdrawStatus?: { type: 'success' | 'error'; message: string } | null
+  playerStats?: PlayerStatsData | null
+  playerStatsLoading?: boolean
+  isAuthenticated?: boolean
 }
 
 export function NicknameScreen({
@@ -67,7 +75,13 @@ export function NicknameScreen({
   retryDisabled,
   cashoutPending,
   transferPending,
-  transferMessage
+  transferMessage,
+  onWithdraw,
+  withdrawPending,
+  withdrawStatus,
+  playerStats,
+  playerStatsLoading,
+  isAuthenticated
 }: NicknameScreenProps) {
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -105,6 +119,8 @@ export function NicknameScreen({
 
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle')
   const copyResetTimer = useRef<number | null>(null)
+  const [withdrawAddress, setWithdrawAddress] = useState('')
+  const [withdrawError, setWithdrawError] = useState<string | null>(null)
 
   useEffect(() => {
     return () => {
@@ -113,6 +129,13 @@ export function NicknameScreen({
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (withdrawStatus?.type === 'success') {
+      setWithdrawAddress('')
+      setWithdrawError(null)
+    }
+  }, [withdrawStatus])
 
   const resetCopyStatus = () => {
     if (copyResetTimer.current) {
@@ -150,6 +173,21 @@ export function NicknameScreen({
       setCopyStatus('error')
     } finally {
       resetCopyStatus()
+    }
+  }
+
+  const handleWithdraw = async () => {
+    if (!onWithdraw) return
+    const target = withdrawAddress.trim()
+    if (!target) {
+      setWithdrawError('Введите адрес кошелька')
+      return
+    }
+    setWithdrawError(null)
+    try {
+      await onWithdraw(target)
+    } catch (error) {
+      // Ошибка уже отображается через withdrawStatus
     }
   }
 
@@ -364,6 +402,55 @@ export function NicknameScreen({
                       {walletLoading ? 'Обновление...' : 'Обновить'}
                     </button>
                   </div>
+                  <div className="wallet-withdraw">
+                    <label htmlFor="withdrawAddress">Вывод баланса</label>
+                    <div className="wallet-withdraw-controls">
+                      <input
+                        id="withdrawAddress"
+                        type="text"
+                        placeholder="Адрес кошелька Solana"
+                        value={withdrawAddress}
+                        onChange={(event) => {
+                          setWithdrawAddress(event.target.value)
+                          if (withdrawError) setWithdrawError(null)
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault()
+                            handleWithdraw()
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="wallet-withdraw-button"
+                        onClick={handleWithdraw}
+                        disabled={withdrawPending || !onWithdraw}
+                      >
+                        {withdrawPending ? 'Вывод...' : 'Вывести'}
+                      </button>
+                    </div>
+                    {withdrawError ? (
+                      <p className="wallet-withdraw-status error">{withdrawError}</p>
+                    ) : withdrawStatus ? (
+                      <p className={`wallet-withdraw-status ${withdrawStatus.type}`}>
+                        {withdrawStatus.message}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              )}
+              {isAuthenticated ? (
+                <PlayerStatsChart
+                  series={playerStats?.series ?? []}
+                  loading={playerStatsLoading}
+                  totalUsd={playerStats?.totals?.usd ?? 0}
+                  totalSol={playerStats?.totals?.sol ?? 0}
+                />
+              ) : (
+                <div className="stats-card stats-card-locked">
+                  <div className="stats-card-title">Статистика выигрышей</div>
+                  <div className="stats-card-body placeholder">Авторизуйтесь, чтобы увидеть статистику</div>
                 </div>
               )}
             </section>

@@ -1,5 +1,6 @@
 const { Op } = require('sequelize')
 const { GameWallet } = require('../models/GameWallet')
+const { GamePayout } = require('../models/GamePayout')
 const { User } = require('../models/User')
 const solana = require('./solanaService')
 
@@ -85,16 +86,67 @@ async function transferUserToGame(userId, amountUnits) {
   return { units }
 }
 
-async function transferGameToUser(userId, amountUnits) {
+async function recordPayout({ userId, lamports, amountUnits, signature, metadata }) {
+  try {
+    const solAmount = lamports / solana.LAMPORTS_PER_SOL
+    const priceUsd = await solana.fetchSolPriceUsd().catch(() => null)
+    const usdAmount = priceUsd ? solAmount * priceUsd : null
+    await GamePayout.create({
+      userId,
+      amountUnits: amountUnits,
+      amountLamports: lamports,
+      amountSol: solAmount,
+      amountUsd: usdAmount,
+      priceUsd: priceUsd ?? null,
+      txSignature: signature || null,
+      metadata: metadata || null
+    })
+  } catch (err) {
+    console.error('Failed to record payout', err)
+  }
+}
+
+async function transferGameToUser(userId, amountUnits, options = {}) {
   if (!userId) throw new Error('missing_user_id')
   const user = await User.findByPk(userId)
   if (!user) throw new Error('user_not_found')
   const wallet = await getGameWallet()
   const lamports = unitsToLamports(amountUnits)
   if (lamports <= 0) throw new Error('invalid_amount')
-  await solana.transferLamports(wallet.secretKey, user.walletPublicKey, lamports)
+  const signature = await solana.transferLamports(wallet.secretKey, user.walletPublicKey, lamports)
   const { units } = await refreshUserBalance(user)
-  return { units }
+  if (options.recordPayout) {
+    await recordPayout({
+      userId: user.id,
+      lamports,
+      amountUnits: Math.max(0, Math.floor(amountUnits)),
+      signature,
+      metadata: options.metadata || null
+    })
+  }
+  return { units, signature }
+}
+
+async function transferUserToAddress(userId, destinationAddress, amountUnits = null) {
+  if (!userId) throw new Error('missing_user_id')
+  const user = await User.findByPk(userId)
+  if (!user) throw new Error('user_not_found')
+  if (!solana.isValidPublicKey(destinationAddress)) {
+    throw new Error('invalid_destination')
+  }
+  const currentLamports = await solana.getBalance(user.walletPublicKey)
+  if (!Number.isFinite(currentLamports) || currentLamports <= 0) {
+    throw new Error('insufficient_funds')
+  }
+  const desiredLamports = amountUnits !== null ? unitsToLamports(amountUnits) : currentLamports
+  const lamports = Math.min(currentLamports, desiredLamports)
+  if (!Number.isFinite(lamports) || lamports <= 0) {
+    throw new Error('insufficient_funds')
+  }
+  const signature = await solana.transferLamports(user.walletSecretKey, destinationAddress, lamports)
+  const { units } = await refreshUserBalance(user)
+  const sol = lamports / solana.LAMPORTS_PER_SOL
+  return { lamports, sol, units, signature }
 }
 
 async function transferUserToUser(fromUserId, toUserId, amountUnits) {
@@ -200,6 +252,7 @@ module.exports = {
   requestInitialAirdrop,
   transferUserToGame,
   transferGameToUser,
+  transferUserToAddress,
   transferUserToUser,
   getWalletProfile,
   requestUserAirdrop,

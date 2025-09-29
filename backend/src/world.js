@@ -596,7 +596,10 @@ class World {
         let finalBalance = refund > 0 ? prevBalance + refund : prevBalance
         try {
             if (p.userId && refund > 0) {
-                const refreshed = await walletService.transferGameToUser(p.userId, refund)
+                const refreshed = await walletService.transferGameToUser(p.userId, refund, {
+                    recordPayout: true,
+                    metadata: { type: 'cashout', playerId: p.id }
+                })
                 if (refreshed && typeof refreshed.units === 'number') {
                     finalBalance = Math.max(0, Math.floor(refreshed.units))
                 }
