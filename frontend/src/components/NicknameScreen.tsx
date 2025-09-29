@@ -196,34 +196,47 @@ export function NicknameScreen({
       <div className="card lobby-card">
         <div className="lobby-hero">
           <div className="lobby-hero-copy">
-            <span className="lobby-badge">Real-time bet arena</span>
-            <h2>Slither X — арена мгновенных ставок</h2>
-            <p>
-              Управляйте своим змеем, удерживайте зону и фиксируйте прибыль. Плавная камера, мягкая анимация хвоста и
-              киберпанковая атмосфера создают профессиональный опыт для хардкорных игроков.
-            </p>
+            <div className="lobby-logo" aria-label="Slither X">
+              <span className="lobby-logo-main">Slither</span>
+              <span className="lobby-logo-accent">X</span>
+            </div>
+            <p className="lobby-tagline">Неоновая арена мгновенных ставок.</p>
+            <div className="lobby-hero-status">
+              <span className="status-chip">
+                <span className="status-dot" /> online
+              </span>
+              <span className="status-divider" />
+              <span className="status-text">Залетай и забирай банк.</span>
+            </div>
             <div className="lobby-hero-metrics">
-              <div className="metric">
+              <div className="metric metric--balance">
+                <span className="metric-label">Баланс</span>
                 <span className="metric-value">{formatNumber(balance)}</span>
-                <span className="metric-label">Ваш баланс</span>
               </div>
-              <div className="metric">
+              <div className="metric metric--bet">
+                <span className="metric-label">Ставка</span>
                 <span className="metric-value">{formatNumber(currentBet)}</span>
-                <span className="metric-label">Активная ставка</span>
               </div>
-              <div className="metric">
+              <div className="metric metric--skin">
+                <span className="metric-label">Скин</span>
                 <span className="metric-value">{skinName}</span>
-                <span className="metric-label">Выбранный скин</span>
               </div>
             </div>
           </div>
           <div className="lobby-hero-visual" aria-hidden="true">
-            <div className="hero-orb hero-orb-primary" />
-            <div className="hero-orb hero-orb-secondary" />
-            <div className="hero-grid">
-              <span>Плавный геймплей</span>
-              <span>Solana-ready</span>
-              <span>Прозрачные ставки</span>
+            <div className="lobby-hero-arena">
+              <div className="arena-glow" />
+              <div className="arena-ring" />
+              <div className="arena-ring arena-ring--secondary" />
+              <div className="arena-snake">
+                <span className="arena-snake-head" />
+              </div>
+              <div className="arena-scanline" />
+              <div className="arena-scanline arena-scanline--alt" />
+            </div>
+            <div className="hero-indicator">
+              <span className="indicator-label">Ставки активны</span>
+              <span className="indicator-value">{formatNumber(currentBet)}</span>
             </div>
           </div>
         </div>
