@@ -122,9 +122,6 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
           }
           if (message.type === 'snapshot') {
             controller.state.lastSnapshotAt = performance.now()
-            if (Array.isArray(message.leaderboard)) {
-              controller.updateLeaderboard(message.leaderboard)
-            }
             if (message.you && (typeof message.you.balance === 'number' || typeof message.you.currentBet === 'number')) {
               controller.applyBalanceUpdate({
                 balance: message.you.balance,

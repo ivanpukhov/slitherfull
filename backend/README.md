@@ -28,7 +28,18 @@ The backend is a Node.js WebSocket server that manages the slither arena simulat
 
 The WebSocket handshake requires a valid JWT (`token` field in the `join` message). When the balance is insufficient the server returns an `insufficient_balance` error and terminates the socket.
 
+## Wallet, payouts and statistics
+- **Game wallet** – the server provisions a Solana hot wallet (`GameWallet` model) used to escrow in-game bets. Player wallets are generated during registration and stored in the `users` table.
+- **Transfers** –
+  - `POST /api/wallet/withdraw` – moves the entire balance from a player's in-game wallet to any destination Solana address supplied by the user.
+  - `POST /api/wallet/refresh` – refreshes the cached on-chain balance and persists it on the user record.
+  - `POST /api/wallet/airdrop` – devnet helper that requests SOL airdrops for the authenticated player.
+- **Payout logging** – every cashout is recorded in the `game_payouts` table (`GamePayout` model) together with SOL/USD amounts and transaction metadata.
+- **Statistics** –
+  - `GET /api/stats/leaderboard` – aggregates winnings for the last 24 hours, 7 days and 30 days (top 10 players per window) and normalises the result in USD using the latest price feed.
+  - `GET /api/stats/me` – returns the authenticated user's payout history as a day-by-day time series for charting.
+
 ## Development tips
 - Use the account service in `src/services/accountService.js` when persisting balance changes; it centralises all Sequelize access.
 - The server logs fatal errors on startup – check the console output if Express or the WebSocket server fail to bind.
-- Game-specific logging (kills, payouts, etc.) remains in `kills.log`.
+- Game-specific logging (kills, payouts, etc.) remains in `kills.log`, while cashout payouts are stored in SQLite for analytics.

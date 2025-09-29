@@ -53,6 +53,17 @@ async function requestAirdrop(publicKey, solAmount) {
   return signature
 }
 
+function isValidPublicKey(value) {
+  try {
+    if (!value) return false
+    // eslint-disable-next-line no-new
+    new PublicKey(value)
+    return true
+  } catch (err) {
+    return false
+  }
+}
+
 async function transferLamports(secretKey, toPublicKey, lamports) {
   if (!secretKey) throw new Error('missing_secret_key')
   if (!toPublicKey) throw new Error('missing_destination')
@@ -100,6 +111,7 @@ module.exports = {
   createKeypair,
   getBalance,
   requestAirdrop,
+  isValidPublicKey,
   transferLamports,
   fetchSolPriceUsd,
   LAMPORTS_PER_SOL

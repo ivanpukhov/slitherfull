@@ -7,6 +7,8 @@ import { usePointerControls } from './hooks/usePointerControls'
 import { sanitizeBetValue } from './utils/helpers'
 import { useAuth } from './hooks/useAuth'
 import { useWallet } from './hooks/useWallet'
+import { useWinningsLeaderboard, type LeaderboardRange } from './hooks/useWinningsLeaderboard'
+import { usePlayerStats } from './hooks/usePlayerStats'
 import { ScorePanel } from './components/ScorePanel'
 import { Leaderboard } from './components/Leaderboard'
 import { Minimap } from './components/Minimap'
@@ -28,6 +30,12 @@ function GameView() {
   const game = useGame()
   const auth = useAuth()
   const wallet = useWallet({ token: auth.token })
+  const winningsLeaderboard = useWinningsLeaderboard()
+  const [leaderboardRange, setLeaderboardRange] = useState<LeaderboardRange>('24h')
+  const playerStats = usePlayerStats({ token: auth.token, days: 30 })
+  const refreshPlayerStats = playerStats.refresh
+  const [withdrawPending, setWithdrawPending] = useState(false)
+  const [withdrawStatus, setWithdrawStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const connection = useConnection({
     controller: game.controller,
@@ -37,6 +45,21 @@ function GameView() {
   })
   const controller = game.controller
   const { setNickname, setBetValue, setRetryBetValue, setNicknameVisible, clearLastResult } = game
+  const leaderboardData = winningsLeaderboard.data?.leaderboards ?? null
+  const leaderboardEntries = useMemo(() => {
+    const rangeData = winningsLeaderboard.data?.leaderboards?.[leaderboardRange] ?? []
+    return rangeData.map((entry) => ({
+      id: String(entry.userId),
+      name: entry.nickname,
+      amountUsd: entry.totalUsd,
+      amountSol: entry.totalSol,
+      payoutCount: entry.payoutCount
+    }))
+  }, [leaderboardRange, winningsLeaderboard.data])
+
+  useEffect(() => {
+    controller.updateLeaderboard(leaderboardEntries)
+  }, [controller, leaderboardEntries])
   const accountStateSyncedRef = useRef(false)
 
   useCanvas({ canvasRef, minimapRef, controller: game.controller })
@@ -59,6 +82,32 @@ function GameView() {
     if (parsed <= 0) return '0'
     return String(Math.min(parsed, max))
   }, [])
+
+  const handleWithdraw = useCallback(
+    async (destination: string) => {
+      if (typeof wallet.withdrawAll !== 'function') {
+        throw new Error('Функция вывода недоступна')
+      }
+      setWithdrawPending(true)
+      setWithdrawStatus(null)
+      try {
+        const result = await wallet.withdrawAll(destination)
+        setWithdrawStatus({
+          type: 'success',
+          message: result?.message ?? 'Баланс отправлен на указанный адрес.'
+        })
+        await wallet.refresh()
+        refreshPlayerStats()
+      } catch (error) {
+        const message = (error as Error)?.message || 'Не удалось выполнить вывод'
+        setWithdrawStatus({ type: 'error', message })
+        throw error
+      } finally {
+        setWithdrawPending(false)
+      }
+    },
+    [refreshPlayerStats, wallet]
+  )
 
   useEffect(() => {
     if (auth.status === 'authenticated' && auth.user) {
@@ -205,6 +254,12 @@ function GameView() {
   }, [wallet])
 
   const isAuthenticated = auth.status === 'authenticated' && Boolean(auth.user)
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setWithdrawStatus(null)
+      setWithdrawPending(false)
+    }
+  }, [isAuthenticated])
   const startLabel = useMemo(() => {
     if (game.cashout.pending) return 'Ожидание вывода'
     if (game.transfer.pending) return 'Обработка...'
@@ -237,7 +292,15 @@ function GameView() {
       />
       <canvas id="canvas" ref={canvasRef} />
       <ScorePanel score={game.score} scoreMeta={game.scoreMeta} />
-      <Leaderboard entries={game.leaderboard} meName={game.controller.state.meName} />
+      <Leaderboard
+        entries={leaderboardData}
+        selectedRange={leaderboardRange}
+        onSelectRange={setLeaderboardRange}
+        loading={winningsLeaderboard.loading}
+        meName={game.controller.state.meName}
+        priceUsd={winningsLeaderboard.data?.priceUsd ?? null}
+        error={winningsLeaderboard.error}
+      />
       <Minimap ref={minimapRef} />
       <TouchControls
         enabled={game.touchControlsEnabled}
@@ -279,6 +342,12 @@ function GameView() {
         cashoutPending={game.cashout.pending}
         transferPending={game.transfer.pending}
         transferMessage={game.transfer.message}
+        onWithdraw={handleWithdraw}
+        withdrawPending={withdrawPending}
+        withdrawStatus={withdrawStatus}
+        playerStats={playerStats.data ?? null}
+        playerStatsLoading={playerStats.loading}
+        isAuthenticated={isAuthenticated}
       />
       {game.transfer.pending && (
         <div className="transfer-overlay">

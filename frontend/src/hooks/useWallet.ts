@@ -15,6 +15,7 @@ interface UseWalletOptions {
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const LAMPORTS_PER_SOL = 1_000_000_000
 
 export function useWallet({ token }: UseWalletOptions) {
   const [profile, setProfile] = useState<WalletProfile | null>(null)
@@ -134,12 +135,76 @@ export function useWallet({ token }: UseWalletOptions) {
     [profile, token]
   )
 
+  const withdrawAll = useCallback(
+    async (destination: string) => {
+      if (!token) {
+        throw new Error('Требуется авторизация')
+      }
+      const normalized = typeof destination === 'string' ? destination.trim() : ''
+      if (!normalized) {
+        throw new Error('Введите адрес кошелька')
+      }
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/wallet/withdraw`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ destination: normalized })
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          const code = data?.error || 'withdraw_failed'
+          const messages: Record<string, string> = {
+            invalid_destination: 'Неверный адрес кошелька',
+            insufficient_funds: 'Недостаточно средств на кошельке',
+            unauthorized: 'Требуется авторизация',
+            withdraw_failed: 'Не удалось выполнить вывод'
+          }
+          throw new Error(messages[code] || code)
+        }
+        const balance = data.balance ?? {}
+        const next: WalletProfile = {
+          walletAddress: balance.walletAddress ?? profile?.walletAddress ?? '',
+          lamports: balance.lamports ?? profile?.lamports ?? 0,
+          sol: balance.sol ?? profile?.sol ?? 0,
+          usd: balance.usd ?? profile?.usd ?? null,
+          usdRate: balance.usdRate ?? profile?.usdRate ?? null,
+          units: balance.units ?? profile?.units ?? 0,
+          inGameBalance: balance.inGameBalance ?? profile?.inGameBalance ?? 0
+        }
+        setProfile(next)
+        const lamports = data.result?.lamports ?? 0
+        const solAmount = data.result?.sol ?? (lamports ? lamports / LAMPORTS_PER_SOL : 0)
+        return {
+          lamports,
+          sol: solAmount,
+          signature: data.result?.signature ?? null,
+          message:
+            data.result?.message ||
+            (solAmount > 0 ? `Отправлено ${solAmount.toFixed(4)} SOL` : 'Вывод выполнен успешно')
+        }
+      } catch (err) {
+        const message = (err as Error).message || 'withdraw_failed'
+        setError(message)
+        throw err
+      } finally {
+        setLoading(false)
+      }
+    },
+    [profile, token]
+  )
+
   return {
     profile,
     loading,
     error,
     refresh,
     requestAirdrop,
-    fetchProfile
+    fetchProfile,
+    withdrawAll
   }
 }

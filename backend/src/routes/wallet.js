@@ -61,4 +61,30 @@ router.post('/refresh', async (req, res) => {
   }
 })
 
+router.post('/withdraw', async (req, res) => {
+  try {
+    const destination = typeof req.body?.destination === 'string' ? req.body.destination.trim() : ''
+    if (!destination) {
+      return res.status(400).json({ error: 'invalid_destination' })
+    }
+    const result = await walletService.transferUserToAddress(req.user.id, destination)
+    const profile = await walletService.getWalletProfile(req.user.id)
+    const solAmount = result?.sol ? Number(result.sol) : 0
+    const message = Number.isFinite(solAmount) && solAmount > 0
+      ? `Отправлено ${solAmount.toFixed(4)} SOL`
+      : 'Вывод выполнен успешно'
+    res.json({ status: 'ok', result: { ...result, message }, balance: profile })
+  } catch (err) {
+    const message = err?.message || 'withdraw_failed'
+    const badRequestErrors = new Set(['invalid_destination', 'insufficient_funds'])
+    const notFoundErrors = new Set(['user_not_found'])
+    const status = badRequestErrors.has(message)
+      ? 400
+      : notFoundErrors.has(message)
+        ? 404
+        : 500
+    res.status(status).json({ error: message === 'missing_user_id' ? 'unauthorized' : message || 'withdraw_failed' })
+  }
+})
+
 module.exports = router
