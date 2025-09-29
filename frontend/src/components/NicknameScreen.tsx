@@ -138,6 +138,7 @@ export function NicknameScreen({
   const [withdrawError, setWithdrawError] = useState<string | null>(null)
   const [walletModalOpen, setWalletModalOpen] = useState(false)
   const [statsModalOpen, setStatsModalOpen] = useState(false)
+  const [winningsModalOpen, setWinningsModalOpen] = useState(false)
 
   useEffect(() => {
     return () => {
@@ -208,6 +209,8 @@ export function NicknameScreen({
     }
   }
 
+  const topWinner = useMemo(() => winningsEntries[0] ?? null, [winningsEntries])
+
   return (
     <div id="nicknameScreen" className={visible ? 'overlay overlay--lobby' : 'overlay overlay--lobby hidden'}>
       <div className="card lobby-card">
@@ -225,52 +228,61 @@ export function NicknameScreen({
               <span className="status-divider" />
               <span className="status-text">Залетай и забирай банк.</span>
             </div>
-          <div className="lobby-hero-metrics">
-            <div className="metric metric--balance">
-              <span className="metric-label">Баланс</span>
-              <span className="metric-value">{formatNumber(balance)}</span>
+            <div className="lobby-hero-metrics">
+              <div className="metric metric--balance">
+                <span className="metric-label">Баланс</span>
+                <span className="metric-value">{formatNumber(balance)}</span>
+              </div>
+              <div className="metric metric--bet">
+                <span className="metric-label">Ставка</span>
+                <span className="metric-value">{formatNumber(currentBet)}</span>
+              </div>
+              <div className="metric metric--skin">
+                <span className="metric-label">Скин</span>
+                <span className="metric-value">{skinName}</span>
+              </div>
             </div>
-            <div className="metric metric--bet">
-              <span className="metric-label">Ставка</span>
-              <span className="metric-value">{formatNumber(currentBet)}</span>
+            <div className="lobby-actions">
+              <button type="button" className="lobby-action" onClick={() => setWalletModalOpen(true)}>
+                <span className="lobby-action-label">Кошелек</span>
+                <span className="lobby-action-value">{showWallet ? `${formattedSol} SOL` : 'Нет данных'}</span>
+                {showWallet && formattedUsd !== '—' ? (
+                  <span className="lobby-action-subvalue">{formattedUsd}</span>
+                ) : null}
+              </button>
+              <button
+                type="button"
+                className="lobby-action"
+                onClick={() => setStatsModalOpen(true)}
+                disabled={!isAuthenticated}
+              >
+                <span className="lobby-action-label">Статистика</span>
+                <span className="lobby-action-value">
+                  {isAuthenticated ? 'История игр' : 'Доступна после входа'}
+                </span>
+              </button>
+              <button type="button" className="lobby-action" onClick={() => setWinningsModalOpen(true)}>
+                <span className="lobby-action-label">Лидеры</span>
+                <span className="lobby-action-value">Лучшие выигрыши</span>
+                {topWinner ? (
+                  <span className="lobby-action-subvalue">
+                    {topWinner.nickname}: {topWinner.totalSol.toFixed(2)} SOL
+                  </span>
+                ) : null}
+              </button>
             </div>
-            <div className="metric metric--skin">
-              <span className="metric-label">Скин</span>
-              <span className="metric-value">{skinName}</span>
-            </div>
+            {topWinner ? (
+              <div className="winnings-preview" role="status">
+                <span className="winnings-preview-label">Топ недели</span>
+                <span className="winnings-preview-value">
+                  {topWinner.nickname} · {topWinner.totalUsd.toFixed(0)}$
+                </span>
+              </div>
+            ) : null}
           </div>
-          <div className="lobby-actions">
-            <button type="button" className="lobby-action" onClick={() => setWalletModalOpen(true)}>
-              <span className="lobby-action-label">Кошелек</span>
-              <span className="lobby-action-value">{showWallet ? `${formattedSol} SOL` : 'Нет данных'}</span>
-              {showWallet && formattedUsd !== '—' ? (
-                <span className="lobby-action-subvalue">{formattedUsd}</span>
-              ) : null}
-            </button>
-            <button
-              type="button"
-              className="lobby-action"
-              onClick={() => setStatsModalOpen(true)}
-              disabled={!isAuthenticated}
-            >
-              <span className="lobby-action-label">Статистика</span>
-              <span className="lobby-action-value">
-                {isAuthenticated ? 'История игр' : 'Доступна после входа'}
-              </span>
-            </button>
-          </div>
-          <WinningsLeaderboardCard
-            entries={winningsEntries}
-            loading={winningsLoading}
-            error={winningsError ?? null}
-            range={winningsRange}
-            onRangeChange={onWinningsRangeChange}
-            priceHint={winningsPriceHint}
-          />
-        </div>
-        <div className="lobby-hero-visual" aria-hidden="true">
-          <div className="lobby-hero-arena">
-            <div className="arena-glow" />
+          <div className="lobby-hero-visual" aria-hidden="true">
+            <div className="lobby-hero-arena">
+              <div className="arena-glow" />
               <div className="arena-ring" />
               <div className="arena-ring arena-ring--secondary" />
               <div className="arena-snake">
@@ -520,6 +532,21 @@ export function NicknameScreen({
             <div className="stats-card-body placeholder">Войдите в аккаунт, чтобы посмотреть историю игр</div>
           </div>
         )}
+      </Modal>
+      <Modal
+        open={winningsModalOpen}
+        title="Лидеры по выигрышу"
+        onClose={() => setWinningsModalOpen(false)}
+        width="520px"
+      >
+        <WinningsLeaderboardCard
+          entries={winningsEntries}
+          loading={winningsLoading}
+          error={winningsError ?? null}
+          range={winningsRange}
+          onRangeChange={onWinningsRangeChange}
+          priceHint={winningsPriceHint}
+        />
       </Modal>
     </div>
   )
