@@ -118,6 +118,7 @@ export function useCanvas({ canvasRef, minimapRef, controller }: UseCanvasOption
     const minimapCtx = minimap ? minimap.getContext('2d') : null
     let animationFrame: number | null = null
     let dpr = getDpr()
+    let accumulator = 0
 
     const setCanvasSize = () => {
       const width = window.innerWidth
@@ -154,9 +155,22 @@ export function useCanvas({ canvasRef, minimapRef, controller }: UseCanvasOption
     let lastTime = performance.now()
 
     const loop = (now: number) => {
-      const dt = Math.min(1 / 30, Math.max(0, (now - lastTime) / 1000))
+      const frameSeconds = Math.max(0, Math.min(0.08, (now - lastTime) / 1000))
       lastTime = now
-      controller.update(dt)
+      accumulator += frameSeconds
+      const maxStep = 1 / 60
+      const minStep = 1 / 180
+
+      while (accumulator >= minStep) {
+        const step = Math.min(maxStep, accumulator)
+        controller.update(step)
+        accumulator -= step
+      }
+
+      if (accumulator > 0) {
+        controller.update(accumulator)
+        accumulator = 0
+      }
       controller.draw(canvas, ctx, now / 1000, dpr)
       if (minimap && minimapCtx) {
         controller.drawMinimap(minimap, minimapCtx, dpr)
