@@ -28,6 +28,8 @@ export const POSITION_SMOOTH = 14.5
 export const ANGLE_SMOOTH = 11.5
 export const CAMERA_ZOOM = 1.2
 export const MAX_PREDICTION_SECONDS = 0.28
+export const PREDICTION_CORRECTION = 6.8
+export const PREDICTION_SNAP_DISTANCE = 320
 export const SEGMENT_SPACING = 4.6
 export const LENGTH_EPS = 1e-3
 export const MINIMAP_SIZE = 188
@@ -67,6 +69,8 @@ export interface SnakeState {
   velocityX?: number
   velocityY?: number
   lastServerAt?: number
+  predictedX?: number
+  predictedY?: number
   targetX: number
   targetY: number
   displayX?: number
@@ -840,8 +844,16 @@ export class GameController {
           alive: Boolean(payload.alive ?? existing?.alive ?? true),
           length: payload.length || existing?.length || 20,
           displayLength: existing?.displayLength || payload.length || 20,
-          targetX: payload.x || existing?.targetX || 0,
-          targetY: payload.y || existing?.targetY || 0,
+          targetX: typeof payload.x === 'number' ? payload.x : existing?.targetX || 0,
+          targetY: typeof payload.y === 'number' ? payload.y : existing?.targetY || 0,
+          predictedX:
+            typeof payload.x === 'number'
+              ? payload.x
+              : existing?.predictedX ?? existing?.targetX ?? existing?.serverX ?? 0,
+          predictedY:
+            typeof payload.y === 'number'
+              ? payload.y
+              : existing?.predictedY ?? existing?.targetY ?? existing?.serverY ?? 0,
           skin: payload.skin || existing?.skin || 'default',
           segments: segments.length ? segments : [{ x: payload.x || 0, y: payload.y || 0 }],
           renderPath: segments.length ? segments.slice() : [{ x: payload.x || 0, y: payload.y || 0 }],
@@ -859,6 +871,12 @@ export class GameController {
     snake.velocityX = payload.vx ?? payload.velocityX ?? snake.velocityX ?? 0
     snake.velocityY = payload.vy ?? payload.velocityY ?? snake.velocityY ?? 0
     snake.lastServerAt = performance.now()
+    if (typeof payload.x === 'number') {
+      snake.predictedX = payload.x
+    }
+    if (typeof payload.y === 'number') {
+      snake.predictedY = payload.y
+    }
     snake.targetX = payload.x ?? snake.targetX
     snake.targetY = payload.y ?? snake.targetY
     snake.targetDir = typeof payload.angle === 'number' ? payload.angle : snake.targetDir
@@ -954,6 +972,46 @@ export class GameController {
     }
     snake.renderPath = smoothed
     this.fitPathLength(snake.renderPath, Math.max(SEGMENT_SPACING * 2, snake.length || 0), SEGMENT_SPACING)
+  }
+
+  updateRenderHeadPosition(snake: SnakeState) {
+    const path = snake.renderPath
+    if (!Array.isArray(path) || path.length === 0) return
+    const targetX = typeof snake.targetX === 'number' ? snake.targetX : path[path.length - 1]?.x
+    const targetY = typeof snake.targetY === 'number' ? snake.targetY : path[path.length - 1]?.y
+    if (typeof targetX !== 'number' || typeof targetY !== 'number') return
+    const lastPoint = path[path.length - 1]
+    if (!lastPoint) return
+    const startX = lastPoint.x
+    const startY = lastPoint.y
+    const dx = targetX - startX
+    const dy = targetY - startY
+    const dist = Math.hypot(dx, dy)
+    if (dist <= LENGTH_EPS) {
+      lastPoint.x = targetX
+      lastPoint.y = targetY
+      this.fitPathLength(path, Math.max(SEGMENT_SPACING * 2, snake.length || 0), SEGMENT_SPACING)
+      return
+    }
+    const maxSegments = 6
+    const baseSpacing = Math.max(SEGMENT_SPACING * 0.7, LENGTH_EPS)
+    const steps = Math.max(1, Math.min(maxSegments, Math.round(dist / baseSpacing)))
+    if (dist <= baseSpacing) {
+      lastPoint.x = targetX
+      lastPoint.y = targetY
+    } else {
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps
+        path.push({
+          x: startX + dx * t,
+          y: startY + dy * t
+        })
+      }
+      const head = path[path.length - 1]
+      head.x = targetX
+      head.y = targetY
+    }
+    this.fitPathLength(path, Math.max(SEGMENT_SPACING * 2, snake.length || 0), SEGMENT_SPACING)
   }
 
   resamplePath(points: SnakePoint[], spacing: number) {
@@ -1059,14 +1117,45 @@ export class GameController {
     const smoothAngle = Math.min(1, dt * ANGLE_SMOOTH)
     const now = performance.now()
     for (const snake of this.state.snakes.values()) {
+      const vx = snake.velocityX || 0
+      const vy = snake.velocityY || 0
+      const dtSeconds = Math.max(0, dt)
+      if (!Number.isFinite(snake.predictedX)) {
+        snake.predictedX =
+          (typeof snake.targetX === 'number' && Number.isFinite(snake.targetX))
+            ? snake.targetX
+            : typeof snake.serverX === 'number'
+              ? snake.serverX
+              : snake.displayX ?? 0
+      }
+      if (!Number.isFinite(snake.predictedY)) {
+        snake.predictedY =
+          (typeof snake.targetY === 'number' && Number.isFinite(snake.targetY))
+            ? snake.targetY
+            : typeof snake.serverY === 'number'
+              ? snake.serverY
+              : snake.displayY ?? 0
+      }
+      if (dtSeconds > 0 && (vx || vy)) {
+        snake.predictedX += vx * dtSeconds
+        snake.predictedY += vy * dtSeconds
+      }
       if (typeof snake.serverX === 'number' && typeof snake.serverY === 'number') {
-        const elapsed = Math.max(0, Math.min(MAX_PREDICTION_SECONDS, (now - (snake.lastServerAt || now)) / 1000))
-        const vx = snake.velocityX || 0
-        const vy = snake.velocityY || 0
-        const predictedX = snake.serverX + vx * elapsed
-        const predictedY = snake.serverY + vy * elapsed
-        snake.targetX = predictedX
-        snake.targetY = predictedY
+        const elapsed = Math.max(0, (now - (snake.lastServerAt || now)) / 1000)
+        const projectionTime = Math.min(MAX_PREDICTION_SECONDS, elapsed)
+        const projectedX = snake.serverX + vx * projectionTime
+        const projectedY = snake.serverY + vy * projectionTime
+        const drift = Math.hypot(projectedX - (snake.predictedX ?? 0), projectedY - (snake.predictedY ?? 0))
+        if (drift > PREDICTION_SNAP_DISTANCE) {
+          snake.predictedX = projectedX
+          snake.predictedY = projectedY
+        } else {
+          const correctionStrength = 1 - Math.exp(-dtSeconds * PREDICTION_CORRECTION)
+          if (correctionStrength > 0) {
+            snake.predictedX = lerp(snake.predictedX ?? 0, projectedX, correctionStrength)
+            snake.predictedY = lerp(snake.predictedY ?? 0, projectedY, correctionStrength)
+          }
+        }
         if (vx || vy) {
           const heading = Math.atan2(vy, vx)
           if (Number.isFinite(heading)) {
@@ -1074,6 +1163,8 @@ export class GameController {
           }
         }
       }
+      snake.targetX = snake.predictedX ?? snake.targetX
+      snake.targetY = snake.predictedY ?? snake.targetY
       if (typeof snake.targetX === 'number' && typeof snake.targetY === 'number') {
         snake.displayX = typeof snake.displayX === 'number' ? lerp(snake.displayX, snake.targetX, smoothPos) : snake.targetX
         snake.displayY = typeof snake.displayY === 'number' ? lerp(snake.displayY, snake.targetY, smoothPos) : snake.targetY
@@ -1088,6 +1179,7 @@ export class GameController {
         const resampled = this.resamplePath(snake.segments, SEGMENT_SPACING)
         this.smoothAssignPath(snake, resampled)
       }
+      this.updateRenderHeadPosition(snake)
     }
     for (const food of this.state.foods.values()) {
       food.displayX = typeof food.displayX === 'number' ? lerp(food.displayX, food.targetX, smoothPos) : food.targetX
