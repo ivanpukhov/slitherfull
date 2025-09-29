@@ -4,8 +4,8 @@ import type { GameController } from './useGame'
 
 interface UseCanvasOptions {
   canvasRef: React.RefObject<HTMLCanvasElement>
+  minimapRef: React.RefObject<HTMLCanvasElement>
   controller: GameController
-  minimapRef?: React.RefObject<HTMLCanvasElement>
 }
 
 const DPR_LIMIT = 2.5
@@ -111,7 +111,7 @@ function buildHexPattern(ctx: CanvasRenderingContext2D) {
 export function useCanvas({ canvasRef, minimapRef, controller }: UseCanvasOptions) {
   useEffect(() => {
     const canvas = canvasRef.current
-    const minimap = minimapRef?.current ?? null
+    const minimap = minimapRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return

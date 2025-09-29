@@ -11,6 +11,8 @@ import { useWinningsLeaderboard, type LeaderboardRange } from './hooks/useWinnin
 import { usePlayerStats } from './hooks/usePlayerStats'
 import { ScorePanel } from './components/ScorePanel'
 import { GameLeaderboard } from './components/Leaderboard'
+import { Minimap } from './components/Minimap'
+import { TouchControls } from './components/TouchControls'
 import { CashoutControl } from './components/CashoutControl'
 import { NicknameScreen } from './components/NicknameScreen'
 import { AuthModal } from './components/AuthModal'
@@ -18,7 +20,12 @@ import { AdminDashboard } from './components/AdminDashboard'
 
 function GameView() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const minimapRef = useRef<HTMLCanvasElement>(null)
+  const joystickRef = useRef<HTMLDivElement>(null)
+  const joystickHandleRef = useRef<HTMLDivElement>(null)
+  const boostButtonRef = useRef<HTMLButtonElement>(null)
   const cashoutButtonRef = useRef<HTMLButtonElement>(null)
+  const touchControlsRef = useRef<HTMLDivElement>(null)
 
   const game = useGame()
   const auth = useAuth()
@@ -55,9 +62,16 @@ function GameView() {
   }, [winningsLeaderboard.data?.priceUsd])
   const accountStateSyncedRef = useRef(false)
 
-  useCanvas({ canvasRef, controller: game.controller })
+  useCanvas({ canvasRef, minimapRef, controller: game.controller })
   usePointerControls({ controller: game.controller, canvasRef })
-  useJoystick({ controller: game.controller, cashoutButtonRef })
+  useJoystick({
+    controller: game.controller,
+    joystickRef,
+    joystickHandleRef,
+    boostButtonRef,
+    cashoutButtonRef,
+    touchControlsRef
+  })
 
   const normalizeBetInput = useCallback((value: string, maxBalanceValue: number) => {
     if (value === '') return ''
@@ -281,6 +295,14 @@ function GameView() {
       {!game.nicknameScreenVisible ? (
         <GameLeaderboard entries={game.leaderboard} meName={game.controller.state.meName} />
       ) : null}
+      <Minimap ref={minimapRef} />
+      <TouchControls
+        enabled={game.touchControlsEnabled}
+        joystickRef={joystickRef}
+        joystickHandleRef={joystickHandleRef}
+        boostButtonRef={boostButtonRef}
+        ref={touchControlsRef}
+      />
       <CashoutControl state={game.cashout} buttonRef={cashoutButtonRef} />
       <NicknameScreen
         visible={game.nicknameScreenVisible}
