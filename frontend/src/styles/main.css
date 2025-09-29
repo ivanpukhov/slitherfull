@@ -854,7 +854,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: clamp(20px, 6vw, 60px);
+            padding: clamp(16px, 4vw, 48px);
             background: rgba(2, 6, 23, 0.78);
             backdrop-filter: blur(38px);
             z-index: 10;
@@ -880,8 +880,8 @@
         .overlay--lobby {
             background: linear-gradient(150deg, rgba(2, 6, 23, 0.88), rgba(9, 13, 35, 0.92));
             justify-content: center;
-            align-items: flex-start;
-            padding: clamp(64px, 12vh, 96px) clamp(24px, 6vw, 64px) clamp(56px, 10vh, 88px);
+            align-items: center;
+            padding: clamp(32px, 6vh, 64px) clamp(24px, 5vw, 56px);
         }
 
         .overlay--lobby::before {
@@ -942,17 +942,24 @@
         .lobby-card {
             position: relative;
             width: 100%;
+            max-width: min(1140px, 100%);
             margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: clamp(28px, 4vw, 44px);
+            display: grid;
+            gap: clamp(20px, 3vw, 32px);
             background: linear-gradient(165deg, rgba(2, 10, 25, 0.6), rgba(12, 27, 52, 0.75));
-            border-radius: 36px;
-            padding: clamp(28px, 4vw, 42px);
+            border-radius: 32px;
+            padding: clamp(24px, 3.5vw, 36px);
             border: 1px solid rgba(37, 99, 235, 0.22);
             box-shadow:
                 0 30px 80px rgba(15, 23, 42, 0.55),
                 inset 0 0 0 1px rgba(148, 163, 184, 0.08);
+        }
+
+        @media (min-width: 1080px) {
+            .lobby-card {
+                grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+                align-items: stretch;
+            }
         }
 
         .lobby-card::before {
@@ -970,13 +977,14 @@
         .lobby-form {
             display: flex;
             flex-direction: column;
-            gap: clamp(22px, 3vw, 32px);
+            gap: clamp(18px, 2.4vw, 26px);
+            height: 100%;
         }
 
         .lobby-grid {
             display: grid;
-            gap: clamp(18px, 2.6vw, 26px);
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: clamp(16px, 2.2vw, 24px);
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         }
 
         @media (min-width: 1024px) {
@@ -989,15 +997,22 @@
         .lobby-hero {
             position: relative;
             display: grid;
-            gap: clamp(22px, 3.5vw, 38px);
-            padding: clamp(24px, 3.6vw, 36px);
-            border-radius: 30px;
+            gap: clamp(18px, 2.6vw, 28px);
+            padding: clamp(20px, 3vw, 28px);
+            border-radius: 26px;
             background:
                 radial-gradient(circle at 10% 20%, rgba(34, 197, 94, 0.16), transparent 55%),
                 radial-gradient(circle at 82% 18%, rgba(56, 189, 248, 0.18), transparent 60%),
                 linear-gradient(160deg, rgba(8, 16, 32, 0.88), rgba(11, 23, 52, 0.96));
             border: 1px solid rgba(74, 222, 128, 0.14);
             overflow: hidden;
+        }
+
+        @media (min-width: 960px) {
+            .lobby-hero {
+                grid-template-columns: minmax(0, 1fr) minmax(0, 0.7fr);
+                align-items: stretch;
+            }
         }
 
         .lobby-hero::before {
@@ -1133,13 +1148,13 @@
 
         .lobby-hero-metrics {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
         }
 
         .metric {
             position: relative;
-            padding: 18px 20px;
+            padding: 16px 18px;
             border-radius: 20px;
             border: 1px solid rgba(59, 130, 246, 0.28);
             background:
@@ -1199,7 +1214,7 @@
         .lobby-actions {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
+            gap: 12px;
         }
 
         .lobby-action {
@@ -1207,7 +1222,7 @@
             flex-direction: column;
             align-items: flex-start;
             gap: 6px;
-            padding: 16px 20px;
+            padding: 14px 18px;
             border-radius: 20px;
             border: 1px solid rgba(59, 130, 246, 0.28);
             background:
@@ -1256,13 +1271,40 @@
         }
 
         .winnings-card {
-            margin-top: 18px;
+            margin-top: 0;
             padding: 18px 20px;
             border-radius: 24px;
             border: 1px solid rgba(37, 99, 235, 0.18);
             background:
                 linear-gradient(150deg, rgba(10, 16, 32, 0.92), rgba(15, 23, 42, 0.88)),
                 radial-gradient(circle at 20% 0%, rgba(59, 130, 246, 0.18), transparent 70%);
+        }
+
+        .winnings-preview {
+            margin-top: 12px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            border: 1px solid rgba(37, 99, 235, 0.28);
+            background: linear-gradient(150deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.85));
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            color: #e2e8f0;
+        }
+
+        .winnings-preview-label {
+            font-size: 12px;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: rgba(148, 197, 255, 0.7);
+        }
+
+        .winnings-preview-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #f8fafc;
+            white-space: nowrap;
         }
 
         .winnings-card-header {
