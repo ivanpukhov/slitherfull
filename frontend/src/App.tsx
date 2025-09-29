@@ -10,7 +10,7 @@ import { useWallet } from './hooks/useWallet'
 import { useWinningsLeaderboard, type LeaderboardRange } from './hooks/useWinningsLeaderboard'
 import { usePlayerStats } from './hooks/usePlayerStats'
 import { ScorePanel } from './components/ScorePanel'
-import { Leaderboard } from './components/Leaderboard'
+import { GameLeaderboard } from './components/Leaderboard'
 import { Minimap } from './components/Minimap'
 import { TouchControls } from './components/TouchControls'
 import { CashoutControl } from './components/CashoutControl'
@@ -45,21 +45,21 @@ function GameView() {
   })
   const controller = game.controller
   const { setNickname, setBetValue, setRetryBetValue, setNicknameVisible, clearLastResult } = game
-  const leaderboardData = winningsLeaderboard.data?.leaderboards ?? null
-  const leaderboardEntries = useMemo(() => {
-    const rangeData = winningsLeaderboard.data?.leaderboards?.[leaderboardRange] ?? []
-    return rangeData.map((entry) => ({
-      id: String(entry.userId),
-      name: entry.nickname,
-      amountUsd: entry.totalUsd,
-      amountSol: entry.totalSol,
-      payoutCount: entry.payoutCount
-    }))
-  }, [leaderboardRange, winningsLeaderboard.data])
-
-  useEffect(() => {
-    controller.updateLeaderboard(leaderboardEntries)
-  }, [controller, leaderboardEntries])
+  const winningsRangeEntries = useMemo(
+    () => winningsLeaderboard.data?.leaderboards?.[leaderboardRange] ?? [],
+    [leaderboardRange, winningsLeaderboard.data]
+  )
+  const topWinningsEntries = useMemo(() => winningsRangeEntries.slice(0, 5), [winningsRangeEntries])
+  const winningsPriceHint = useMemo(() => {
+    const priceUsd = winningsLeaderboard.data?.priceUsd ?? null
+    if (!Number.isFinite(priceUsd || NaN)) return null
+    return `1 SOL ≈ ${new Intl.NumberFormat('ru-RU', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 2
+    }).format((priceUsd as number) || 0)}`
+  }, [winningsLeaderboard.data?.priceUsd])
   const accountStateSyncedRef = useRef(false)
 
   useCanvas({ canvasRef, minimapRef, controller: game.controller })
@@ -292,15 +292,9 @@ function GameView() {
       />
       <canvas id="canvas" ref={canvasRef} />
       <ScorePanel score={game.score} scoreMeta={game.scoreMeta} />
-      <Leaderboard
-        entries={leaderboardData}
-        selectedRange={leaderboardRange}
-        onSelectRange={setLeaderboardRange}
-        loading={winningsLeaderboard.loading}
-        meName={game.controller.state.meName}
-        priceUsd={winningsLeaderboard.data?.priceUsd ?? null}
-        error={winningsLeaderboard.error}
-      />
+      {!game.nicknameScreenVisible ? (
+        <GameLeaderboard entries={game.leaderboard} meName={game.controller.state.meName} />
+      ) : null}
       <Minimap ref={minimapRef} />
       <TouchControls
         enabled={game.touchControlsEnabled}
@@ -348,6 +342,12 @@ function GameView() {
         playerStats={playerStats.data ?? null}
         playerStatsLoading={playerStats.loading}
         isAuthenticated={isAuthenticated}
+        winningsEntries={topWinningsEntries}
+        winningsLoading={winningsLeaderboard.loading}
+        winningsError={winningsLeaderboard.error}
+        winningsRange={leaderboardRange}
+        onWinningsRangeChange={setLeaderboardRange}
+        winningsPriceHint={winningsPriceHint}
       />
       {game.transfer.pending && (
         <div className="transfer-overlay">

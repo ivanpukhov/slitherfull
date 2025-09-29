@@ -370,21 +370,9 @@ class World {
                 p.pathLen = computePathLength(p.path)
             }
 
-            // буст — отнимаем длину и дропаем еду
-            if (p.boost) {
-                p.length -= this.cfg.boostLengthDrain * dt
-                if (p.length < this.cfg.minLength) p.length = this.cfg.minLength
-
-                if (Date.now() - p.lastDrop > this.cfg.boostDropIntervalMs) {
-                    p.lastDrop = Date.now()
-                    const tx = p.path.length > 3 ? p.path[0].x : p.x
-                    const ty = p.path.length > 3 ? p.path[0].y : p.y
-                    this.spawnFoodAt(tx, ty, 1, { palette: this.skinPalette(p.skin) })
-                }
-
-                if (p.length <= this.cfg.minLength + 1e-3) {
-                    p.boost = false
-                }
+            // буст — только ускоряет змею, без потери длины и выброса еды
+            if (p.boost && p.length <= this.cfg.minLength + 1e-3) {
+                p.boost = false
             }
 
             // радиус головы

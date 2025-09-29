@@ -352,6 +352,78 @@
             box-shadow: 0 24px 48px rgba(15, 23, 42, 0.45);
         }
 
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.72);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            z-index: 24;
+        }
+
+        .modal-window {
+            width: min(90vw, 640px);
+            border-radius: 28px;
+            border: 1px solid rgba(37, 99, 235, 0.22);
+            background:
+                linear-gradient(150deg, rgba(6, 12, 24, 0.96), rgba(12, 24, 46, 0.9)),
+                radial-gradient(circle at 20% 0%, rgba(59, 130, 246, 0.18), transparent 70%);
+            box-shadow:
+                0 30px 60px rgba(2, 6, 23, 0.55),
+                0 0 0 1px rgba(59, 130, 246, 0.18);
+            max-height: 90vh;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 22px 28px 0;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+
+        .modal-close {
+            border: none;
+            background: rgba(15, 23, 42, 0.6);
+            color: rgba(226, 232, 240, 0.8);
+            border-radius: 999px;
+            width: 32px;
+            height: 32px;
+            font-size: 20px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .modal-close:hover {
+            transform: translateY(-1px);
+            background: rgba(59, 130, 246, 0.32);
+        }
+
+        .modal-body {
+            padding: 18px 28px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .modal-placeholder {
+            text-align: center;
+            padding: 24px;
+        }
+
         .transfer-spinner {
             width: 48px;
             height: 48px;
@@ -640,8 +712,8 @@
         #leaderboard .leaderboard-header {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 12px;
+            justify-content: center;
+            gap: 8px;
             margin-bottom: 10px;
         }
 
@@ -651,39 +723,6 @@
             letter-spacing: 0.26em;
             text-transform: uppercase;
             color: rgba(191, 219, 254, 0.78);
-        }
-
-        .leaderboard-tabs {
-            display: flex;
-            gap: 6px;
-        }
-
-        .leaderboard-tab {
-            font-size: 11px;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: rgba(191, 219, 254, 0.7);
-            background: rgba(15, 23, 42, 0.4);
-            border: 1px solid rgba(96, 165, 250, 0.25);
-            border-radius: 999px;
-            padding: 4px 10px;
-            cursor: pointer;
-            transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-        }
-
-        .leaderboard-tab.active,
-        .leaderboard-tab:hover {
-            color: #f8fafc;
-            background: rgba(59, 130, 246, 0.35);
-            border-color: rgba(96, 165, 250, 0.6);
-        }
-
-        .leaderboard-price {
-            font-size: 11px;
-            color: rgba(191, 219, 254, 0.72);
-            margin-bottom: 8px;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
         }
 
         #leaderboardList {
@@ -703,13 +742,13 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 14px;
+            font-size: 13px;
             color: #e2e8f0;
             background: linear-gradient(120deg, rgba(12, 19, 31, 0.75), rgba(37, 99, 235, 0.18));
             padding: 8px 12px;
-            border-radius: 14px;
+            border-radius: 16px;
             border: 1px solid rgba(96, 165, 250, 0.22);
-            box-shadow: inset 0 0 22px rgba(37, 99, 235, 0.2);
+            box-shadow: inset 0 0 18px rgba(37, 99, 235, 0.18);
         }
 
         #leaderboardList li.me {
@@ -723,11 +762,11 @@
             display: flex;
             flex-direction: column;
             gap: 2px;
-            max-width: 140px;
+            max-width: 160px;
         }
 
         #leaderboardList li .name {
-            max-width: 140px;
+            max-width: 160px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -748,16 +787,17 @@
             font-variant-numeric: tabular-nums;
         }
 
-        #leaderboardList li .amount-usd {
+        #leaderboardList li .amount-length {
             color: rgba(224, 231, 255, 0.96);
-            text-shadow: 0 0 12px rgba(96, 165, 250, 0.45);
-            font-weight: 600;
+            text-shadow: 0 0 12px rgba(96, 165, 250, 0.35);
+            font-weight: 700;
+            font-size: 16px;
         }
 
-        #leaderboardList li .amount-sol {
-            font-size: 11px;
-            color: rgba(191, 219, 254, 0.75);
-            letter-spacing: 0.04em;
+        #leaderboardList li .amount-label {
+            font-size: 10px;
+            color: rgba(191, 219, 254, 0.7);
+            letter-spacing: 0.16em;
             text-transform: uppercase;
         }
 
@@ -893,7 +933,7 @@
 
         .lobby-card {
             position: relative;
-            width: min(1100px, 96vw);
+            width: min(960px, 94vw);
             display: flex;
             flex-direction: column;
             gap: clamp(28px, 4vw, 44px);
@@ -927,17 +967,12 @@
         .lobby-grid {
             display: grid;
             gap: clamp(18px, 2.6vw, 26px);
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         }
 
-        @media (min-width: 768px) {
+        @media (min-width: 1024px) {
             .lobby-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-
-        @media (min-width: 1180px) {
-            .lobby-grid {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
             }
         }
 
@@ -1137,6 +1172,195 @@
             box-shadow:
                 inset 0 0 32px rgba(236, 72, 153, 0.2),
                 0 18px 28px rgba(236, 72, 153, 0.16);
+        }
+
+        .lobby-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+        }
+
+        .lobby-action {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+            padding: 16px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(59, 130, 246, 0.28);
+            background:
+                linear-gradient(150deg, rgba(12, 20, 36, 0.92), rgba(8, 36, 61, 0.78)),
+                radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.25), transparent 65%);
+            color: #e2e8f0;
+            font: inherit;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .lobby-action:hover:not(:disabled),
+        .lobby-action:focus-visible:not(:disabled) {
+            transform: translateY(-2px);
+            border-color: rgba(96, 165, 250, 0.6);
+            box-shadow: 0 18px 32px rgba(59, 130, 246, 0.18);
+        }
+
+        .lobby-action:focus-visible {
+            outline: 2px solid rgba(96, 165, 250, 0.4);
+            outline-offset: 2px;
+        }
+
+        .lobby-action:disabled {
+            cursor: default;
+            opacity: 0.6;
+            box-shadow: none;
+        }
+
+        .lobby-action-label {
+            font-size: 12px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: rgba(148, 197, 255, 0.7);
+        }
+
+        .lobby-action-value {
+            font-size: clamp(18px, 3vw, 22px);
+            font-weight: 600;
+            color: #f8fafc;
+        }
+
+        .lobby-action-subvalue {
+            font-size: 13px;
+            color: rgba(148, 163, 184, 0.85);
+        }
+
+        .winnings-card {
+            margin-top: 18px;
+            padding: 18px 20px;
+            border-radius: 24px;
+            border: 1px solid rgba(37, 99, 235, 0.18);
+            background:
+                linear-gradient(150deg, rgba(10, 16, 32, 0.92), rgba(15, 23, 42, 0.88)),
+                radial-gradient(circle at 20% 0%, rgba(59, 130, 246, 0.18), transparent 70%);
+        }
+
+        .winnings-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .winnings-card-titles {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .winnings-card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+
+        .winnings-card-subtitle {
+            font-size: 12px;
+            color: rgba(148, 197, 255, 0.75);
+        }
+
+        .winnings-card-range {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 12px;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: rgba(148, 163, 184, 0.8);
+        }
+
+        .winnings-card-range select {
+            padding: 8px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            background: rgba(15, 23, 42, 0.8);
+            color: #e2e8f0;
+            font: inherit;
+        }
+
+        .winnings-card-list {
+            list-style: none;
+            margin: 18px 0 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .winnings-card-list li {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            background: rgba(15, 23, 42, 0.72);
+            border: 1px solid rgba(59, 130, 246, 0.18);
+        }
+
+        .winnings-card-list li.placeholder {
+            justify-content: center;
+            color: rgba(148, 163, 184, 0.8);
+            font-size: 14px;
+        }
+
+        .winnings-card-list.loading li {
+            opacity: 0.7;
+        }
+
+        .winnings-item-rank {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.35), rgba(59, 130, 246, 0.6));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .winnings-item-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .winnings-item-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+
+        .winnings-item-meta {
+            font-size: 12px;
+            color: rgba(148, 163, 184, 0.85);
+        }
+
+        .winnings-item-amount {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .winnings-item-usd {
+            font-weight: 600;
+            color: #fde68a;
+        }
+
+        .winnings-item-sol {
+            font-size: 12px;
+            color: rgba(148, 197, 255, 0.75);
         }
 
         .lobby-hero-visual {
@@ -1463,17 +1687,17 @@
             text-align: left;
         }
 
-        .lobby-panel-right .wallet-section {
+        .wallet-section {
             display: flex;
             flex-direction: column;
             gap: 14px;
         }
 
-        .lobby-panel-right .wallet-row {
+        .wallet-row {
             font-size: 14px;
         }
 
-        .lobby-panel-right .wallet-address {
+        .wallet-address {
             display: flex;
             align-items: center;
             gap: 12px;
@@ -1617,6 +1841,17 @@
 
         .wallet-withdraw-status.success {
             color: #bbf7d0;
+        }
+
+        .wallet-modal-section {
+            max-height: min(70vh, 520px);
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .wallet-placeholder {
+            margin: 12px 0 0;
+            color: rgba(148, 163, 184, 0.85);
         }
 
         .wallet-refresh-button {
