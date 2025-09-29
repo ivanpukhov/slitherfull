@@ -44,9 +44,8 @@ export interface AccountState {
 export interface LeaderboardEntry {
   id?: string
   name: string
-  amountUsd: number
-  amountSol?: number
-  payoutCount?: number
+  length: number
+  bet?: number
 }
 
 export interface SnakePoint {
@@ -630,11 +629,6 @@ export class GameController {
     return (index + 1).toString()
   }
 
-  updateLeaderboard(list: LeaderboardEntry[]) {
-    this.state.leaderboard = list
-    this.notify()
-  }
-
   showDeath(payload: any) {
     this.state.alive = false
     this.state.ui.cashout.pending = false
@@ -755,6 +749,24 @@ export class GameController {
         })
       })
       this.state.foods = newFoods
+    }
+
+    if (Array.isArray(snapshot.leaderboard)) {
+      const entries: LeaderboardEntry[] = []
+      snapshot.leaderboard.forEach((entry: any, idx: number) => {
+        if (!entry) return
+        const name = typeof entry.name === 'string' ? entry.name : null
+        const length = typeof entry.length === 'number' ? Math.max(0, Math.floor(entry.length)) : null
+        if (!name || length === null) return
+        const bet = typeof entry.bet === 'number' ? Math.max(0, Math.floor(entry.bet)) : undefined
+        entries.push({
+          id: entry.id ? String(entry.id) : `${name}-${idx}`,
+          name,
+          length,
+          bet
+        })
+      })
+      this.state.leaderboard = entries
     }
 
     if (snapshot.you && typeof snapshot.you.length === 'number') {

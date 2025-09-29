@@ -38,8 +38,8 @@ const cfg = {
     sectorSize: 128,
 
     // еда
-    initialFood: 900,
-    targetFood: 1400,
+    initialFood: 450,
+    targetFood: 700,
     foodSpawnChance: 0.55,
     foodPickupRadius: 26,
     deathScatterRadius: 140,

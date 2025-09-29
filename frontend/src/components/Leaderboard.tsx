@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import type { LeaderboardEntry } from '../hooks/useGame'
 import type { LeaderboardRange, WinningsLeaderboardEntry } from '../hooks/useWinningsLeaderboard'
 import { formatNumber } from '../utils/helpers'
@@ -16,91 +15,98 @@ const currencyFormatter = new Intl.NumberFormat('ru-RU', {
   minimumFractionDigits: 2
 })
 
-interface LeaderboardProps {
-  entries: Record<LeaderboardRange, WinningsLeaderboardEntry[]> | null
-  selectedRange: LeaderboardRange
-  onSelectRange: (range: LeaderboardRange) => void
-  loading?: boolean
+interface GameLeaderboardProps {
+  entries: LeaderboardEntry[]
   meName: string | null
-  priceUsd?: number | null
-  error?: string | null
 }
 
-function formatUsd(value: number) {
-  if (!Number.isFinite(value)) return '$0.00'
-  return currencyFormatter.format(value)
-}
-
-function mapToGameEntries(list: WinningsLeaderboardEntry[]): LeaderboardEntry[] {
-  return list.map((entry) => ({
-    id: String(entry.userId),
-    name: entry.nickname,
-    amountUsd: entry.totalUsd,
-    amountSol: entry.totalSol,
-    payoutCount: entry.payoutCount
-  }))
-}
-
-export function Leaderboard({
-  entries,
-  selectedRange,
-  onSelectRange,
-  loading,
-  meName,
-  priceUsd,
-  error
-}: LeaderboardProps) {
-  const currentEntries = entries?.[selectedRange] ?? []
-  const mappedEntries = useMemo(() => mapToGameEntries(currentEntries), [currentEntries])
-
-  const priceHint = useMemo(() => {
-    if (!Number.isFinite(priceUsd || NaN)) return null
-    return `1 SOL ≈ ${formatUsd((priceUsd as number) || 0)}`
-  }, [priceUsd])
+export function GameLeaderboard({ entries, meName }: GameLeaderboardProps) {
+  const visible = entries.slice(0, 8)
+  const hasData = visible.length > 0
 
   return (
-    <div id="leaderboard" className="panel">
+    <div id="leaderboard" className="panel game-leaderboard" role="complementary" aria-live="polite">
       <div className="leaderboard-header">
-        <div className="title">Лидеры</div>
-        <div className="leaderboard-tabs" role="tablist" aria-label="Диапазон рейтинга">
-          {(Object.keys(RANGE_LABELS) as LeaderboardRange[]).map((range) => (
-            <button
-              key={range}
-              type="button"
-              role="tab"
-              className={`leaderboard-tab${selectedRange === range ? ' active' : ''}`}
-              aria-selected={selectedRange === range}
-              onClick={() => onSelectRange(range)}
-            >
-              {RANGE_LABELS[range]}
-            </button>
-          ))}
-        </div>
+        <div className="title">Лидеры арены</div>
       </div>
-      {priceHint ? <div className="leaderboard-price">{priceHint}</div> : null}
-      <ol id="leaderboardList" className={loading ? 'loading' : undefined}>
-        {loading && currentEntries.length === 0 ? (
-          <li className="placeholder">Загрузка…</li>
-        ) : null}
-        {!loading && error && currentEntries.length === 0 ? (
-          <li className="placeholder">Не удалось загрузить данные</li>
-        ) : null}
-        {!loading && !error && currentEntries.length === 0 ? (
-          <li className="placeholder">Нет данных</li>
-        ) : null}
-        {mappedEntries.slice(0, 10).map((entry, idx) => (
+      <ol id="leaderboardList" className={!hasData ? 'empty' : undefined}>
+        {!hasData ? <li className="placeholder">Нет игроков на арене</li> : null}
+        {visible.map((entry, idx) => (
           <li key={entry.id ?? `${entry.name}-${idx}`} className={entry.name === meName ? 'me' : undefined}>
             <div className="info">
               <span className="name">
                 {idx + 1}. {entry.name}
               </span>
-              <span className="bet">Выигрышей: {formatNumber(entry.payoutCount ?? 0)}</span>
+              {typeof entry.bet === 'number' ? (
+                <span className="bet">Ставка: {formatNumber(entry.bet)}</span>
+              ) : null}
             </div>
             <div className="amounts">
-              <span className="amount-usd">{formatUsd(entry.amountUsd)}</span>
-              {typeof entry.amountSol === 'number' ? (
-                <span className="amount-sol">{entry.amountSol.toFixed(3)} SOL</span>
-              ) : null}
+              <span className="amount-length">{formatNumber(entry.length)}</span>
+              <span className="amount-label">длина</span>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
+interface WinningsLeaderboardCardProps {
+  entries: WinningsLeaderboardEntry[]
+  loading?: boolean
+  error?: string | null
+  range: LeaderboardRange
+  onRangeChange: (range: LeaderboardRange) => void
+  priceHint?: string | null
+}
+
+export function WinningsLeaderboardCard({
+  entries,
+  loading,
+  error,
+  range,
+  onRangeChange,
+  priceHint
+}: WinningsLeaderboardCardProps) {
+  const safeEntries = entries.slice(0, 5)
+
+  return (
+    <div className="winnings-card" role="complementary">
+      <div className="winnings-card-header">
+        <div className="winnings-card-titles">
+          <div className="winnings-card-title">Лидеры по выигрышу</div>
+          {priceHint ? <div className="winnings-card-subtitle">{priceHint}</div> : null}
+        </div>
+        <label className="winnings-card-range" htmlFor="winningsRange">
+          <span>Период</span>
+          <select
+            id="winningsRange"
+            value={range}
+            onChange={(event) => onRangeChange(event.target.value as LeaderboardRange)}
+          >
+            {(Object.keys(RANGE_LABELS) as LeaderboardRange[]).map((value) => (
+              <option key={value} value={value}>
+                {RANGE_LABELS[value]}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <ol className={`winnings-card-list${loading ? ' loading' : ''}`}>
+        {loading && safeEntries.length === 0 ? <li className="placeholder">Загрузка…</li> : null}
+        {!loading && error ? <li className="placeholder">Не удалось загрузить данные</li> : null}
+        {!loading && !error && safeEntries.length === 0 ? <li className="placeholder">Нет данных</li> : null}
+        {safeEntries.map((entry, index) => (
+          <li key={entry.userId}>
+            <div className="winnings-item-rank">{index + 1}</div>
+            <div className="winnings-item-body">
+              <div className="winnings-item-name">{entry.nickname}</div>
+              <div className="winnings-item-meta">Выигрышей: {formatNumber(entry.payoutCount ?? 0)}</div>
+            </div>
+            <div className="winnings-item-amount">
+              <span className="winnings-item-usd">{currencyFormatter.format(entry.totalUsd)}</span>
+              <span className="winnings-item-sol">{entry.totalSol.toFixed(3)} SOL</span>
             </div>
           </li>
         ))}

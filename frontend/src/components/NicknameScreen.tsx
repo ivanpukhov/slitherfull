@@ -2,7 +2,10 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { formatNumber } from '../utils/helpers'
 import { SKINS, SKIN_LABELS, type LastResultState } from '../hooks/useGame'
 import type { PlayerStatsData } from '../hooks/usePlayerStats'
+import type { LeaderboardRange, WinningsLeaderboardEntry } from '../hooks/useWinningsLeaderboard'
 import { PlayerStatsChart } from './PlayerStatsChart'
+import { WinningsLeaderboardCard } from './Leaderboard'
+import { Modal } from './Modal'
 
 interface NicknameScreenProps {
   visible: boolean
@@ -42,6 +45,12 @@ interface NicknameScreenProps {
   playerStats?: PlayerStatsData | null
   playerStatsLoading?: boolean
   isAuthenticated?: boolean
+  winningsEntries: WinningsLeaderboardEntry[]
+  winningsLoading?: boolean
+  winningsError?: string | null
+  winningsRange: LeaderboardRange
+  onWinningsRangeChange: (range: LeaderboardRange) => void
+  winningsPriceHint?: string | null
 }
 
 export function NicknameScreen({
@@ -81,7 +90,13 @@ export function NicknameScreen({
   withdrawStatus,
   playerStats,
   playerStatsLoading,
-  isAuthenticated
+  isAuthenticated,
+  winningsEntries,
+  winningsLoading,
+  winningsError,
+  winningsRange,
+  onWinningsRangeChange,
+  winningsPriceHint
 }: NicknameScreenProps) {
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -121,6 +136,8 @@ export function NicknameScreen({
   const copyResetTimer = useRef<number | null>(null)
   const [withdrawAddress, setWithdrawAddress] = useState('')
   const [withdrawError, setWithdrawError] = useState<string | null>(null)
+  const [walletModalOpen, setWalletModalOpen] = useState(false)
+  const [statsModalOpen, setStatsModalOpen] = useState(false)
 
   useEffect(() => {
     return () => {
@@ -208,24 +225,52 @@ export function NicknameScreen({
               <span className="status-divider" />
               <span className="status-text">Залетай и забирай банк.</span>
             </div>
-            <div className="lobby-hero-metrics">
-              <div className="metric metric--balance">
-                <span className="metric-label">Баланс</span>
-                <span className="metric-value">{formatNumber(balance)}</span>
-              </div>
-              <div className="metric metric--bet">
-                <span className="metric-label">Ставка</span>
-                <span className="metric-value">{formatNumber(currentBet)}</span>
-              </div>
-              <div className="metric metric--skin">
-                <span className="metric-label">Скин</span>
-                <span className="metric-value">{skinName}</span>
-              </div>
+          <div className="lobby-hero-metrics">
+            <div className="metric metric--balance">
+              <span className="metric-label">Баланс</span>
+              <span className="metric-value">{formatNumber(balance)}</span>
+            </div>
+            <div className="metric metric--bet">
+              <span className="metric-label">Ставка</span>
+              <span className="metric-value">{formatNumber(currentBet)}</span>
+            </div>
+            <div className="metric metric--skin">
+              <span className="metric-label">Скин</span>
+              <span className="metric-value">{skinName}</span>
             </div>
           </div>
-          <div className="lobby-hero-visual" aria-hidden="true">
-            <div className="lobby-hero-arena">
-              <div className="arena-glow" />
+          <div className="lobby-actions">
+            <button type="button" className="lobby-action" onClick={() => setWalletModalOpen(true)}>
+              <span className="lobby-action-label">Кошелек</span>
+              <span className="lobby-action-value">{showWallet ? `${formattedSol} SOL` : 'Нет данных'}</span>
+              {showWallet && formattedUsd !== '—' ? (
+                <span className="lobby-action-subvalue">{formattedUsd}</span>
+              ) : null}
+            </button>
+            <button
+              type="button"
+              className="lobby-action"
+              onClick={() => setStatsModalOpen(true)}
+              disabled={!isAuthenticated}
+            >
+              <span className="lobby-action-label">Статистика</span>
+              <span className="lobby-action-value">
+                {isAuthenticated ? 'История игр' : 'Доступна после входа'}
+              </span>
+            </button>
+          </div>
+          <WinningsLeaderboardCard
+            entries={winningsEntries}
+            loading={winningsLoading}
+            error={winningsError ?? null}
+            range={winningsRange}
+            onRangeChange={onWinningsRangeChange}
+            priceHint={winningsPriceHint}
+          />
+        </div>
+        <div className="lobby-hero-visual" aria-hidden="true">
+          <div className="lobby-hero-arena">
+            <div className="arena-glow" />
               <div className="arena-ring" />
               <div className="arena-ring arena-ring--secondary" />
               <div className="arena-snake">
@@ -371,105 +416,111 @@ export function NicknameScreen({
               )}
             </section>
 
-            <section className="lobby-panel lobby-panel-right">
-              <h3 className="lobby-title">Баланс</h3>
-              <div className="account">
-                <div className="account-row">
-                  <span className="account-label">Баланс</span>
-                  <span className="account-value" id="balanceValue">
-                    {formatNumber(balance)}
-                  </span>
-                </div>
-              </div>
-
-              {showWallet && (
-                <div className="wallet-section">
-                  <div className="wallet-row">
-                    <span className="wallet-label">SOL</span>
-                    <span className="wallet-value">{formattedSol}</span>
-                  </div>
-                  <div className="wallet-row">
-                    <span className="wallet-label">USD</span>
-                    <span className="wallet-value">{formattedUsd}</span>
-                  </div>
-                  <div className="wallet-address" title={walletAddress ?? ''}>
-                    <div className="wallet-address-text">
-                      <span className="wallet-label">Кошелек</span>
-                      <span className="wallet-hash">{walletAddress}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="wallet-copy-button"
-                      onClick={handleCopyWallet}
-                    >
-                      {copyStatus === 'copied' ? 'Скопировано' : copyStatus === 'error' ? 'Ошибка' : 'Скопировать'}
-                    </button>
-                  </div>
-                  <div className="wallet-actions">
-                    <button
-                      type="button"
-                      className="wallet-refresh-button"
-                      onClick={onRefreshWallet}
-                      disabled={walletLoading}
-                    >
-                      {walletLoading ? 'Обновление...' : 'Обновить'}
-                    </button>
-                  </div>
-                  <div className="wallet-withdraw">
-                    <label htmlFor="withdrawAddress">Вывод баланса</label>
-                    <div className="wallet-withdraw-controls">
-                      <input
-                        id="withdrawAddress"
-                        type="text"
-                        placeholder="Адрес кошелька Solana"
-                        value={withdrawAddress}
-                        onChange={(event) => {
-                          setWithdrawAddress(event.target.value)
-                          if (withdrawError) setWithdrawError(null)
-                        }}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') {
-                            event.preventDefault()
-                            handleWithdraw()
-                          }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="wallet-withdraw-button"
-                        onClick={handleWithdraw}
-                        disabled={withdrawPending || !onWithdraw}
-                      >
-                        {withdrawPending ? 'Вывод...' : 'Вывести'}
-                      </button>
-                    </div>
-                    {withdrawError ? (
-                      <p className="wallet-withdraw-status error">{withdrawError}</p>
-                    ) : withdrawStatus ? (
-                      <p className={`wallet-withdraw-status ${withdrawStatus.type}`}>
-                        {withdrawStatus.message}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              )}
-              {isAuthenticated ? (
-                <PlayerStatsChart
-                  series={playerStats?.series ?? []}
-                  loading={playerStatsLoading}
-                  totalUsd={playerStats?.totals?.usd ?? 0}
-                  totalSol={playerStats?.totals?.sol ?? 0}
-                />
-              ) : (
-                <div className="stats-card stats-card-locked">
-                  <div className="stats-card-title">Статистика выигрышей</div>
-                  <div className="stats-card-body placeholder">Авторизуйтесь, чтобы увидеть статистику</div>
-                </div>
-              )}
-            </section>
           </div>
         </form>
       </div>
+      <Modal
+        open={walletModalOpen}
+        title="Кошелек"
+        onClose={() => setWalletModalOpen(false)}
+        width="520px"
+      >
+        <div className="wallet-section wallet-modal-section">
+          <div className="wallet-row">
+            <span className="wallet-label">Игровой баланс</span>
+            <span className="wallet-value">{formatNumber(balance)}</span>
+          </div>
+          {showWallet ? (
+            <>
+              <div className="wallet-row">
+                <span className="wallet-label">SOL</span>
+                <span className="wallet-value">{formattedSol}</span>
+              </div>
+              <div className="wallet-row">
+                <span className="wallet-label">USD</span>
+                <span className="wallet-value">{formattedUsd}</span>
+              </div>
+              <div className="wallet-address" title={walletAddress ?? ''}>
+                <div className="wallet-address-text">
+                  <span className="wallet-label">Кошелек</span>
+                  <span className="wallet-hash">{walletAddress}</span>
+                </div>
+                <button type="button" className="wallet-copy-button" onClick={handleCopyWallet}>
+                  {copyStatus === 'copied' ? 'Скопировано' : copyStatus === 'error' ? 'Ошибка' : 'Скопировать'}
+                </button>
+              </div>
+              <div className="wallet-actions">
+                <button
+                  type="button"
+                  className="wallet-refresh-button"
+                  onClick={onRefreshWallet}
+                  disabled={walletLoading}
+                >
+                  {walletLoading ? 'Обновление...' : 'Обновить'}
+                </button>
+              </div>
+              <div className="wallet-withdraw">
+                <label htmlFor="withdrawAddress">Вывод баланса</label>
+                <div className="wallet-withdraw-controls">
+                  <input
+                    id="withdrawAddress"
+                    type="text"
+                    placeholder="Адрес кошелька Solana"
+                    value={withdrawAddress}
+                    onChange={(event) => {
+                      setWithdrawAddress(event.target.value)
+                      if (withdrawError) setWithdrawError(null)
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault()
+                        handleWithdraw()
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="wallet-withdraw-button"
+                    onClick={handleWithdraw}
+                    disabled={withdrawPending || !onWithdraw}
+                  >
+                    {withdrawPending ? 'Вывод...' : 'Вывести'}
+                  </button>
+                </div>
+                {withdrawError ? (
+                  <p className="wallet-withdraw-status error">{withdrawError}</p>
+                ) : withdrawStatus ? (
+                  <p className={`wallet-withdraw-status ${withdrawStatus.type}`}>
+                    {withdrawStatus.message}
+                  </p>
+                ) : null}
+              </div>
+            </>
+          ) : (
+            <p className="wallet-placeholder">Авторизуйтесь, чтобы увидеть детали кошелька.</p>
+          )}
+        </div>
+      </Modal>
+      <Modal
+        open={statsModalOpen}
+        title="Статистика выигрышей"
+        onClose={() => setStatsModalOpen(false)}
+        width="580px"
+      >
+        {isAuthenticated ? (
+          <PlayerStatsChart
+            series={playerStats?.series ?? []}
+            loading={playerStatsLoading}
+            totalUsd={playerStats?.totals?.usd ?? 0}
+            totalSol={playerStats?.totals?.sol ?? 0}
+          />
+        ) : (
+          <div className="stats-card stats-card-locked modal-placeholder">
+            <div className="stats-card-title">Статистика недоступна</div>
+            <div className="stats-card-body placeholder">Войдите в аккаунт, чтобы посмотреть историю игр</div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }
