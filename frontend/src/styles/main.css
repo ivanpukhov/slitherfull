@@ -1447,7 +1447,7 @@
         }
 
         .arena-start {
-            margin-top: clamp(18px, 2.6vw, 24px);
+            /*margin-top: clamp(18px, 2.6vw, 24px);*/
             padding: clamp(16px, 2.8vw, 20px) clamp(42px, 6vw, 60px);
             font-size: clamp(18px, 2.6vw, 22px);
             font-weight: 700;
@@ -1461,6 +1461,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            width: 100%;
         }
 
         .control-card input[type='text'],
@@ -1586,7 +1587,7 @@
 
         @media (min-width: 1200px) {
             .lobby-card {
-                display: grid;
+                /*display: grid;*/
                 grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
                 align-items: stretch;
             }
@@ -3088,4 +3089,4 @@
                 width: clamp(170px, 48vw, 220px);
             }
         }
-    
+

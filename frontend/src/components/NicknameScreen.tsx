@@ -319,68 +319,38 @@ export function NicknameScreen({
                   </div>
                   {!isAuthenticated ? <span className="utility-lock" aria-hidden="true" /> : null}
                 </button>
-                <button
-                  type="button"
-                  className="utility-card glass-card"
-                  onClick={() => setWinningsModalOpen(true)}
-                >
-                  <div className="utility-icon utility-icon--leaders" aria-hidden="true" />
-                  <div className="utility-content">
-                    <span className="utility-label">Лидеры</span>
-                    {topWinner ? (
-                      <span className="utility-value">{topWinner.nickname}</span>
-                    ) : (
-                      <span className="utility-value">Лучшие выигрыши</span>
-                    )}
-                  </div>
-                  {topWinner ? (
-                    <span className="utility-subvalue">{topWinner.totalSol.toFixed(2)} SOL</span>
-                  ) : null}
-                </button>
+
               </div>
             </aside>
 
             <section className="lobby-column lobby-column-center">
-              <div className="arena-card glass-card" style={arenaStyle}>
-                <div className="arena-backdrop" />
-                <div className="arena-halo" />
-                <div className="arena-character" style={avatarStyle}>
-                  <div className="arena-character-core" />
-                </div>
-                <div className="arena-waves" />
-              </div>
-              <button
-                id="startBtn"
-                className="primary arena-start"
-                type="submit"
-                disabled={startDisabled}
-                aria-disabled={startDisabled}
-              >
-                {startLabel ?? 'Играть'}
-              </button>
-              {startDisabled && startDisabledHint ? (
-                <p className="start-hint">{startDisabledHint}</p>
-              ) : null}
-            </section>
+              {/*<div className="arena-card glass-card" style={arenaStyle}>*/}
+              {/*  <div className="arena-backdrop" />*/}
+              {/*  <div className="arena-halo" />*/}
+              {/*  <div className="arena-character" style={avatarStyle}>*/}
+              {/*    <div className="arena-character-core" />*/}
+              {/*  </div>*/}
+              {/*  <div className="arena-waves" />*/}
+              {/*</div>*/}
 
-            <aside className="lobby-column lobby-column-right">
+
               <div className="control-card glass-card">
                 <label className="field-label" htmlFor="nicknameInput">
                   Никнейм
                 </label>
                 <input
-                  id="nicknameInput"
-                  type="text"
-                  maxLength={16}
-                  placeholder="Ваш ник"
-                  autoComplete="off"
-                  value={nickname}
-                  onChange={(event) => {
-                    if (!nicknameLocked) {
-                      onNicknameChange(event.target.value)
-                    }
-                  }}
-                  disabled={nicknameLocked}
+                    id="nicknameInput"
+                    type="text"
+                    maxLength={16}
+                    placeholder="Ваш ник"
+                    autoComplete="off"
+                    value={nickname}
+                    onChange={(event) => {
+                      if (!nicknameLocked) {
+                        onNicknameChange(event.target.value)
+                      }
+                    }}
+                    disabled={nicknameLocked}
                 />
                 {nicknameLocked ? <p className="nickname-note">Никнейм закреплён за аккаунтом.</p> : null}
               </div>
@@ -389,54 +359,72 @@ export function NicknameScreen({
                   Ставка перед стартом
                 </label>
                 <input
-                  id="betInput"
-                  type="number"
-                  min={1}
-                  step={1}
-                  value={betValue}
-                  onChange={(event) => onBetChange(event.target.value)}
-                  onBlur={onBetBlur}
+                    id="betInput"
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={betValue}
+                    onChange={(event) => onBetChange(event.target.value)}
+                    onBlur={onBetBlur}
                 />
                 <div className="bet-hint">
                   Доступно: <span id="betBalanceDisplay">{formatNumber(balance)}</span>
                 </div>
               </div>
+              <button
+                  id="startBtn"
+                  className="primary arena-start"
+                  type="submit"
+                  disabled={startDisabled}
+                  aria-disabled={startDisabled}
+              >
+                {startLabel ?? 'Играть'}
+              </button>
+              {startDisabled && startDisabledHint ? (
+                  <p className="start-hint">{startDisabledHint}</p>
+              ) : null}
+
+
+            </section>
+
+            <aside className="lobby-column lobby-column-right">
+
               {lastResult ? (
-                <div className={`control-card glass-card result-card result-${lastResult.variant}`}>
-                  <div className="result-title">{lastResult.title}</div>
-                  <ul className="result-details">
-                    {lastResult.details.map((line, index) => (
-                      <li key={index}>{line}</li>
-                    ))}
-                  </ul>
-                  {lastResult.showRetryControls ? (
-                    <div className="result-retry">
-                      <div className="bet-control">
-                        <label htmlFor="retryBetInput">Ставка для повтора</label>
-                        <input
-                          id="retryBetInput"
-                          type="number"
-                          min={1}
-                          step={1}
-                          value={retryBetValue}
-                          onChange={(event) => onRetryBetChange(event.target.value)}
-                          onBlur={onRetryBetBlur}
-                        />
-                        <div className="bet-hint">
-                          Доступно: <span>{lastResult.retryBalance}</span>
+                  <div className={`control-card glass-card result-card result-${lastResult.variant}`}>
+                    <div className="result-title">{lastResult.title}</div>
+                    <ul className="result-details">
+                      {lastResult.details.map((line, index) => (
+                          <li key={index}>{line}</li>
+                      ))}
+                    </ul>
+                    {lastResult.showRetryControls ? (
+                        <div className="result-retry">
+                          <div className="bet-control">
+                          <label htmlFor="retryBetInput">Ставка для повтора</label>
+                            <input
+                                id="retryBetInput"
+                                type="number"
+                                min={1}
+                                step={1}
+                                value={retryBetValue}
+                                onChange={(event) => onRetryBetChange(event.target.value)}
+                                onBlur={onRetryBetBlur}
+                            />
+                            <div className="bet-hint">
+                              Доступно: <span>{lastResult.retryBalance}</span>
+                            </div>
+                          </div>
+                          <button
+                              type="button"
+                              className="primary retry-button"
+                              onClick={onRetry}
+                              disabled={retryDisabled}
+                          >
+                            Играть снова
+                          </button>
                         </div>
-                      </div>
-                      <button
-                        type="button"
-                        className="primary retry-button"
-                        onClick={onRetry}
-                        disabled={retryDisabled}
-                      >
-                        Играть снова
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
+                    ) : null}
+                  </div>
               ) : null}
               <div className="control-card glass-card">
                 <div className="skin-picker">
@@ -446,35 +434,56 @@ export function NicknameScreen({
                   </div>
                   <div id="skinList" className="skin-grid">
                     {Object.entries(SKINS).map(([skin, colors]) => (
-                      <button
-                        type="button"
-                        key={skin}
-                        className={`skin-token${skin === selectedSkin ? ' selected' : ''}`}
-                        data-skin={skin}
-                        data-name={SKIN_LABELS[skin] || skin}
-                        style={{
-                          background: `radial-gradient(circle at 30% 30%, ${colors[0] ?? '#38bdf8'}, ${
-                            colors[1] ?? colors[0] ?? '#8b5cf6'
-                          })`
-                        }}
-                        onClick={() => onSelectSkin(skin)}
-                        aria-label={SKIN_LABELS[skin] || skin}
-                      >
-                        <span className="skin-token-ring" />
-                      </button>
+                        <button
+                            type="button"
+                            key={skin}
+                            className={`skin-token${skin === selectedSkin ? ' selected' : ''}`}
+                            data-skin={skin}
+                            data-name={SKIN_LABELS[skin] || skin}
+                            style={{
+                              background: `radial-gradient(circle at 30% 30%, ${colors[0] ?? '#38bdf8'}, ${
+                                  colors[1] ?? colors[0] ?? '#8b5cf6'
+                              })`
+                            }}
+                            onClick={() => onSelectSkin(skin)}
+                            aria-label={SKIN_LABELS[skin] || skin}
+                        >
+                          <span className="skin-token-ring"/>
+                        </button>
                     ))}
                   </div>
+
                 </div>
+
+
               </div>
+              <button
+                  type="button"
+                  className="utility-card glass-card"
+                  onClick={() => setWinningsModalOpen(true)}
+              >
+                <div className="utility-icon utility-icon--leaders" aria-hidden="true"/>
+                <div className="utility-content">
+                  <span className="utility-label">Лидеры</span>
+                  {topWinner ? (
+                      <span className="utility-value">{topWinner.nickname}</span>
+                  ) : (
+                      <span className="utility-value">Лучшие выигрыши</span>
+                  )}
+                </div>
+                {topWinner ? (
+                    <span className="utility-subvalue">{topWinner.totalSol.toFixed(2)} SOL</span>
+                ) : null}
+              </button>
             </aside>
           </div>
         </form>
       </div>
       <Modal
-        open={walletModalOpen}
-        title="Кошелек"
-        onClose={() => setWalletModalOpen(false)}
-        width="520px"
+          open={walletModalOpen}
+          title="Кошелек"
+          onClose={() => setWalletModalOpen(false)}
+          width="520px"
       >
         <div className="wallet-section wallet-modal-section">
           <div className="wallet-row">
@@ -482,14 +491,14 @@ export function NicknameScreen({
             <span className="wallet-value">{formatNumber(balance)}</span>
           </div>
           {showWallet ? (
-            <>
-              <div className="wallet-row">
-                <span className="wallet-label">SOL</span>
-                <span className="wallet-value">{formattedSol}</span>
-              </div>
-              <div className="wallet-row">
-                <span className="wallet-label">USD</span>
-                <span className="wallet-value">{formattedUsd}</span>
+              <>
+                <div className="wallet-row">
+                  <span className="wallet-label">SOL</span>
+                  <span className="wallet-value">{formattedSol}</span>
+                </div>
+                <div className="wallet-row">
+                  <span className="wallet-label">USD</span>
+                  <span className="wallet-value">{formattedUsd}</span>
               </div>
               <div className="wallet-address" title={walletAddress ?? ''}>
                 <div className="wallet-address-text">
