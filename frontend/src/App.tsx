@@ -282,7 +282,7 @@ function GameView() {
   const handlePrimaryAction = isAuthenticated ? handleStart : () => setAuthModalOpen(true)
 
   return (
-    <div>
+    <div className="game-root">
       <AuthModal
         open={authModalOpen}
         status={auth.status}
