@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { formatNumber } from '../utils/helpers'
 import { SKINS, SKIN_LABELS, type LastResultState } from '../hooks/useGame'
 import type { PlayerStatsData } from '../hooks/usePlayerStats'
@@ -210,90 +210,46 @@ export function NicknameScreen({
   }
 
   const topWinner = useMemo(() => winningsEntries[0] ?? null, [winningsEntries])
+  const skinColors = useMemo(() => SKINS[selectedSkin] ?? [], [selectedSkin])
+  const primaryColor = skinColors[0] ?? '#38bdf8'
+  const secondaryColor = skinColors[1] ?? skinColors[0] ?? '#8b5cf6'
+  const arenaStyle = useMemo(
+    () =>
+      ({
+        '--arena-primary': primaryColor,
+        '--arena-secondary': secondaryColor
+      }) as CSSProperties,
+    [primaryColor, secondaryColor]
+  )
+  const avatarStyle = useMemo(
+    () =>
+      ({
+        background: `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`
+      }) as CSSProperties,
+    [primaryColor, secondaryColor]
+  )
+  const sanitizedNickname = nickname?.trim() || ''
+  const profileName = sanitizedNickname || (isAuthenticated ? 'Игрок' : 'Новый игрок')
+  const profileInitial = profileName.trim().charAt(0).toUpperCase() || 'S'
 
   return (
     <div id="nicknameScreen" className={visible ? 'overlay overlay--lobby' : 'overlay overlay--lobby hidden'}>
       <div className="card lobby-card">
-        <div className="lobby-hero">
-          <div className="lobby-hero-copy">
+        <div className="lobby-header">
+          <div className="lobby-header-brand">
             <div className="lobby-logo" aria-label="Slither X">
               <span className="lobby-logo-main">Slither</span>
               <span className="lobby-logo-accent">X</span>
             </div>
             <p className="lobby-tagline">Неоновая арена мгновенных ставок.</p>
-            <div className="lobby-hero-status">
-              <span className="status-chip">
-                <span className="status-dot" /> online
-              </span>
-              <span className="status-divider" />
-              <span className="status-text">Залетай и забирай банк.</span>
-            </div>
-            <div className="lobby-hero-metrics">
-              <div className="metric metric--balance">
-                <span className="metric-label">Баланс</span>
-                <span className="metric-value">{formatNumber(balance)}</span>
-              </div>
-              <div className="metric metric--bet">
-                <span className="metric-label">Ставка</span>
-                <span className="metric-value">{formatNumber(currentBet)}</span>
-              </div>
-              <div className="metric metric--skin">
-                <span className="metric-label">Скин</span>
-                <span className="metric-value">{skinName}</span>
-              </div>
-            </div>
-            <div className="lobby-actions">
-              <button type="button" className="lobby-action" onClick={() => setWalletModalOpen(true)}>
-                <span className="lobby-action-label">Кошелек</span>
-                <span className="lobby-action-value">{showWallet ? `${formattedSol} SOL` : 'Нет данных'}</span>
-                {showWallet && formattedUsd !== '—' ? (
-                  <span className="lobby-action-subvalue">{formattedUsd}</span>
-                ) : null}
-              </button>
-              <button
-                type="button"
-                className="lobby-action"
-                onClick={() => setStatsModalOpen(true)}
-                disabled={!isAuthenticated}
-              >
-                <span className="lobby-action-label">Статистика</span>
-                <span className="lobby-action-value">
-                  {isAuthenticated ? 'История игр' : 'Доступна после входа'}
-                </span>
-              </button>
-              <button type="button" className="lobby-action" onClick={() => setWinningsModalOpen(true)}>
-                <span className="lobby-action-label">Лидеры</span>
-                <span className="lobby-action-value">Лучшие выигрыши</span>
-                {topWinner ? (
-                  <span className="lobby-action-subvalue">
-                    {topWinner.nickname}: {topWinner.totalSol.toFixed(2)} SOL
-                  </span>
-                ) : null}
-              </button>
-            </div>
-            {topWinner ? (
-              <div className="winnings-preview" role="status">
-                <span className="winnings-preview-label">Топ недели</span>
-                <span className="winnings-preview-value">
-                  {topWinner.nickname} · {topWinner.totalUsd.toFixed(0)}$
-                </span>
-              </div>
-            ) : null}
           </div>
-          <div className="lobby-hero-visual" aria-hidden="true">
-            <div className="lobby-hero-arena">
-              <div className="arena-glow" />
-              <div className="arena-ring" />
-              <div className="arena-ring arena-ring--secondary" />
-              <div className="arena-snake">
-                <span className="arena-snake-head" />
-              </div>
-              <div className="arena-scanline" />
-              <div className="arena-scanline arena-scanline--alt" />
+          <div className="lobby-header-profile">
+            <div className="profile-avatar" style={avatarStyle} aria-hidden="true">
+              <span>{profileInitial}</span>
             </div>
-            <div className="hero-indicator">
-              <span className="indicator-label">Ставки активны</span>
-              <span className="indicator-value">{formatNumber(currentBet)}</span>
+            <div className="profile-details">
+              <span className="profile-label">{isAuthenticated ? 'Игрок' : 'Гость'}</span>
+              <span className="profile-name">{profileName}</span>
             </div>
           </div>
         </div>
@@ -313,57 +269,140 @@ export function NicknameScreen({
             </div>
           )}
 
-          <div className="lobby-grid">
-            <section className="lobby-panel lobby-panel-left">
-              <h3 className="lobby-title">Профиль</h3>
-              <label className="field-label" htmlFor="nicknameInput">
-                Никнейм
-              </label>
-              <input
-                id="nicknameInput"
-                type="text"
-                maxLength={16}
-                placeholder="Ваш ник"
-                autoComplete="off"
-                value={nickname}
-                onChange={(event) => {
-                  if (!nicknameLocked) {
-                    onNicknameChange(event.target.value)
-                  }
-                }}
-                disabled={nicknameLocked}
-              />
-              {nicknameLocked && (
-                <p className="nickname-note">Никнейм закреплён за аккаунтом.</p>
-              )}
-
-              <div className="skin-picker">
-                <div className="caption">
-                  <span>Скины</span>
-                  <span id="skinName">{skinName}</span>
+          <div className="lobby-layout">
+            <aside className="lobby-column lobby-column-left">
+              <div className="balance-widget glass-card">
+                <div className="balance-widget-header">
+                  <div className="balance-widget-title">Баланс</div>
+                  <button
+                    type="button"
+                    className="icon-button"
+                    onClick={() => (isAuthenticated ? setWalletModalOpen(true) : onStart())}
+                    aria-label="Кошелек"
+                    disabled={!isAuthenticated}
+                  >
+                    <span className="icon-wallet" aria-hidden="true" />
+                  </button>
                 </div>
-                <div id="skinList" className="skin-list">
-                  {Object.entries(SKINS).map(([skin, colors]) => (
-                    <button
-                      type="button"
-                      key={skin}
-                      className={`skin-option${skin === selectedSkin ? ' selected' : ''}`}
-                      data-skin={skin}
-                      data-name={SKIN_LABELS[skin] || skin}
-                      style={{ background: colors[0] ?? '#94a3b8', backgroundImage: 'none' }}
-                      onClick={() => onSelectSkin(skin)}
-                      aria-label={SKIN_LABELS[skin] || skin}
-                    >
-                    </button>
-                  ))}
+                <div className="balance-widget-value">{formatNumber(balance)}</div>
+                <div className="balance-widget-meta">
+                  <span>Текущая ставка</span>
+                  <strong>{formatNumber(currentBet)}</strong>
                 </div>
+                <div className="balance-widget-meta">
+                  <span>Скин</span>
+                  <strong>{skinName}</strong>
+                </div>
+                {showWallet ? (
+                  <div className="balance-wallet">
+                    <div className="wallet-amount">{formattedSol} SOL</div>
+                    {formattedUsd !== '—' ? <div className="wallet-amount usd">{formattedUsd}</div> : null}
+                  </div>
+                ) : null}
+                {!isAuthenticated ? (
+                  <button type="button" className="auth-link" onClick={onStart}>
+                    Авторизоваться
+                  </button>
+                ) : null}
               </div>
+              <div className="utility-grid">
+                <button
+                  type="button"
+                  className="utility-card glass-card"
+                  onClick={() => (isAuthenticated ? setStatsModalOpen(true) : onStart())}
+                  disabled={!isAuthenticated && startDisabled}
+                >
+                  <div className="utility-icon utility-icon--stats" aria-hidden="true" />
+                  <div className="utility-content">
+                    <span className="utility-label">Статистика</span>
+                    <span className="utility-value">История игр</span>
+                  </div>
+                  {!isAuthenticated ? <span className="utility-lock" aria-hidden="true" /> : null}
+                </button>
+                <button
+                  type="button"
+                  className="utility-card glass-card"
+                  onClick={() => setWinningsModalOpen(true)}
+                >
+                  <div className="utility-icon utility-icon--leaders" aria-hidden="true" />
+                  <div className="utility-content">
+                    <span className="utility-label">Лидеры</span>
+                    {topWinner ? (
+                      <span className="utility-value">{topWinner.nickname}</span>
+                    ) : (
+                      <span className="utility-value">Лучшие выигрыши</span>
+                    )}
+                  </div>
+                  {topWinner ? (
+                    <span className="utility-subvalue">{topWinner.totalSol.toFixed(2)} SOL</span>
+                  ) : null}
+                </button>
+              </div>
+            </aside>
+
+            <section className="lobby-column lobby-column-center">
+              <div className="arena-card glass-card" style={arenaStyle}>
+                <div className="arena-backdrop" />
+                <div className="arena-halo" />
+                <div className="arena-character" style={avatarStyle}>
+                  <div className="arena-character-core" />
+                </div>
+                <div className="arena-waves" />
+              </div>
+              <button
+                id="startBtn"
+                className="primary arena-start"
+                type="submit"
+                disabled={startDisabled}
+                aria-disabled={startDisabled}
+              >
+                {startLabel ?? 'Играть'}
+              </button>
+              {startDisabled && startDisabledHint ? (
+                <p className="start-hint">{startDisabledHint}</p>
+              ) : null}
             </section>
 
-            <section className="lobby-panel lobby-panel-center">
-              <h3 className="lobby-title">Ставка</h3>
-              {lastResult && (
-                <div className={`result-banner result-${lastResult.variant}`}>
+            <aside className="lobby-column lobby-column-right">
+              <div className="control-card glass-card">
+                <label className="field-label" htmlFor="nicknameInput">
+                  Никнейм
+                </label>
+                <input
+                  id="nicknameInput"
+                  type="text"
+                  maxLength={16}
+                  placeholder="Ваш ник"
+                  autoComplete="off"
+                  value={nickname}
+                  onChange={(event) => {
+                    if (!nicknameLocked) {
+                      onNicknameChange(event.target.value)
+                    }
+                  }}
+                  disabled={nicknameLocked}
+                />
+                {nicknameLocked ? <p className="nickname-note">Никнейм закреплён за аккаунтом.</p> : null}
+              </div>
+              <div className="control-card glass-card">
+                <label className="field-label" htmlFor="betInput">
+                  Ставка перед стартом
+                </label>
+                <input
+                  id="betInput"
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={betValue}
+                  onChange={(event) => onBetChange(event.target.value)}
+                  onBlur={onBetBlur}
+                />
+                <div className="bet-hint">
+                  Доступно: <span id="betBalanceDisplay">{formatNumber(balance)}</span>
+                </div>
+              </div>
+              {lastResult ? (
+                <div className={`control-card glass-card result-card result-${lastResult.variant}`}>
                   <div className="result-title">{lastResult.title}</div>
                   <ul className="result-details">
                     {lastResult.details.map((line, index) => (
@@ -398,36 +437,36 @@ export function NicknameScreen({
                     </div>
                   ) : null}
                 </div>
-              )}
-              <div className="bet-control">
-                <label htmlFor="betInput">Ставка перед стартом</label>
-                <input
-                  id="betInput"
-                  type="number"
-                  min={1}
-                  step={1}
-                  value={betValue}
-                  onChange={(event) => onBetChange(event.target.value)}
-                  onBlur={onBetBlur}
-                />
-                <div className="bet-hint">
-                  Доступно: <span id="betBalanceDisplay">{formatNumber(balance)}</span>
+              ) : null}
+              <div className="control-card glass-card">
+                <div className="skin-picker">
+                  <div className="caption">
+                    <span>Скины</span>
+                    <span id="skinName">{skinName}</span>
+                  </div>
+                  <div id="skinList" className="skin-grid">
+                    {Object.entries(SKINS).map(([skin, colors]) => (
+                      <button
+                        type="button"
+                        key={skin}
+                        className={`skin-token${skin === selectedSkin ? ' selected' : ''}`}
+                        data-skin={skin}
+                        data-name={SKIN_LABELS[skin] || skin}
+                        style={{
+                          background: `radial-gradient(circle at 30% 30%, ${colors[0] ?? '#38bdf8'}, ${
+                            colors[1] ?? colors[0] ?? '#8b5cf6'
+                          })`
+                        }}
+                        onClick={() => onSelectSkin(skin)}
+                        aria-label={SKIN_LABELS[skin] || skin}
+                      >
+                        <span className="skin-token-ring" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-
-              <div className="account-row bet-summary">
-                <span className="account-label">Текущая ставка</span>
-                <span className="account-value">{formatNumber(currentBet)}</span>
-              </div>
-
-              <button id="startBtn" className="primary" type="submit" disabled={startDisabled} aria-disabled={startDisabled}>
-                {startLabel ?? 'Играть'}
-              </button>
-              {startDisabled && startDisabledHint && (
-                <p className="start-hint">{startDisabledHint}</p>
-              )}
-            </section>
-
+            </aside>
           </div>
         </form>
       </div>
