@@ -22,17 +22,17 @@ export const SKIN_LABELS: Record<string, string> = {
   mint: 'Mint'
 }
 
-export const FOOD_PULSE_SPEED = 4.2
-export const CAMERA_SMOOTH = 4.2
-export const POSITION_SMOOTH = 9.5
-export const ANGLE_SMOOTH = 8.5
-export const CAMERA_ZOOM = 1.18
-export const MAX_PREDICTION_SECONDS = 0.32
-export const SEGMENT_SPACING = 5
+export const FOOD_PULSE_SPEED = 4.4
+export const CAMERA_SMOOTH = 5.2
+export const POSITION_SMOOTH = 14.5
+export const ANGLE_SMOOTH = 11.5
+export const CAMERA_ZOOM = 1.2
+export const MAX_PREDICTION_SECONDS = 0.28
+export const SEGMENT_SPACING = 4.6
 export const LENGTH_EPS = 1e-3
 export const MINIMAP_SIZE = 188
 export const CASHOUT_HOLD_MS = 2000
-export const RENDER_PATH_BLEND = 0.18
+export const RENDER_PATH_BLEND = 0.26
 
 export interface AccountState {
   balance: number
@@ -864,8 +864,9 @@ export class GameController {
     for (let i = 0; i < limit; i++) {
       const point = prev[i]
       const target = targetPath[i]
-      const mix = limit > 1 ? i / (limit - 1) : 1
-      const dynamicBlend = Math.min(0.45, baseBlend + mix * 0.12)
+      const mix = limit > 1 ? i / (limit - 1) : 0
+      const headBias = 1 - mix
+      const dynamicBlend = Math.min(0.65, baseBlend + headBias * 0.32 + mix * 0.08)
       blended.push({
         x: lerp(point.x, target.x, dynamicBlend),
         y: lerp(point.y, target.y, dynamicBlend)
@@ -885,6 +886,15 @@ export class GameController {
         y: (prevPoint.y + point.y * 2 + nextPoint.y) / 4
       }
     })
+    if (targetPath.length && smoothed.length) {
+      smoothed[smoothed.length - 1] = {
+        x: targetPath[targetPath.length - 1].x,
+        y: targetPath[targetPath.length - 1].y
+      }
+    } else if (targetPath.length && !smoothed.length) {
+      const fallback = targetPath[targetPath.length - 1]
+      smoothed.push({ x: fallback.x, y: fallback.y })
+    }
     snake.renderPath = smoothed
     this.fitPathLength(snake.renderPath, Math.max(SEGMENT_SPACING * 2, snake.length || 0), SEGMENT_SPACING)
   }
