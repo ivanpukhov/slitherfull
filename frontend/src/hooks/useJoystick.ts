@@ -3,11 +3,11 @@ import type { GameController } from './useGame'
 
 interface UseJoystickOptions {
   controller: GameController
-  joystickRef?: React.RefObject<HTMLDivElement>
-  joystickHandleRef?: React.RefObject<HTMLDivElement>
-  boostButtonRef?: React.RefObject<HTMLButtonElement>
-  cashoutButtonRef?: React.RefObject<HTMLButtonElement>
-  touchControlsRef?: React.RefObject<HTMLDivElement>
+  joystickRef: React.RefObject<HTMLDivElement>
+  joystickHandleRef: React.RefObject<HTMLDivElement>
+  boostButtonRef: React.RefObject<HTMLButtonElement>
+  cashoutButtonRef: React.RefObject<HTMLButtonElement>
+  touchControlsRef: React.RefObject<HTMLDivElement>
 }
 
 function updateHandle(joystick: HTMLDivElement, handle: HTMLDivElement, clientX: number, clientY: number) {
@@ -40,49 +40,36 @@ export function useJoystick({
   touchControlsRef
 }: UseJoystickOptions) {
   useEffect(() => {
-    if (typeof window === 'undefined') return
     const pointerMedia = window.matchMedia('(pointer: coarse)')
-    let lastEnabled: boolean | null = null
+    const touchControls = touchControlsRef.current
 
-    const updateEnabled = (matches: boolean) => {
-      const hasTouchUI = Boolean(touchControlsRef?.current)
-      const shouldEnable = hasTouchUI && matches
-      if (lastEnabled === shouldEnable) return
-      lastEnabled = shouldEnable
-      controller.setTouchControlsEnabled(shouldEnable)
-      document.body.classList.toggle('is-touch', shouldEnable)
-      const touchControls = touchControlsRef?.current
+    const setEnabled = (enabled: boolean) => {
+      controller.setTouchControlsEnabled(enabled)
+      document.body.classList.toggle('is-touch', enabled)
       if (touchControls) {
-        touchControls.classList.toggle('active', shouldEnable)
-        touchControls.setAttribute('aria-hidden', shouldEnable ? 'false' : 'true')
+        touchControls.classList.toggle('active', enabled)
+        touchControls.setAttribute('aria-hidden', enabled ? 'false' : 'true')
       }
-      if (!shouldEnable) {
-        resetHandle(joystickHandleRef?.current ?? null)
-      }
+      resetHandle(joystickHandleRef.current)
       controller.resetBoostIntent()
       controller.refreshBoostState(true)
     }
 
-    updateEnabled(pointerMedia.matches)
-
-    const handler = (event: MediaQueryListEvent) => {
-      updateEnabled(event.matches)
+    const handler = (event: MediaQueryListEvent | MediaQueryList) => {
+      setEnabled(event.matches)
     }
 
+    handler(pointerMedia)
     pointerMedia.addEventListener('change', handler)
 
     return () => {
       pointerMedia.removeEventListener('change', handler)
-      if (lastEnabled) {
-        controller.setTouchControlsEnabled(false)
-        document.body.classList.remove('is-touch')
-      }
     }
   }, [controller, joystickHandleRef, touchControlsRef])
 
   useEffect(() => {
-    const joystick = joystickRef?.current
-    const handle = joystickHandleRef?.current
+    const joystick = joystickRef.current
+    const handle = joystickHandleRef.current
     if (!joystick || !handle) return
     let active = false
 
@@ -122,7 +109,7 @@ export function useJoystick({
   }, [controller, joystickRef, joystickHandleRef])
 
   useEffect(() => {
-    const boostButton = boostButtonRef?.current
+    const boostButton = boostButtonRef.current
     if (!boostButton) return
 
     const startBoost = (event: PointerEvent) => {
@@ -160,7 +147,7 @@ export function useJoystick({
   }, [controller, boostButtonRef])
 
   useEffect(() => {
-    const cashoutButton = cashoutButtonRef?.current
+    const cashoutButton = cashoutButtonRef.current
     if (!cashoutButton) return
 
     const startHold = (event: PointerEvent) => {
