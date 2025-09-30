@@ -2,17 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useGame } from './hooks/useGame'
 import { useCanvas } from './hooks/useCanvas'
 import { useConnection } from './hooks/useConnection'
-import { useJoystick } from './hooks/useJoystick'
 import { usePointerControls } from './hooks/usePointerControls'
-import { sanitizeBetValue } from './utils/helpers'
+import { sanitizeBetValue, centsToUsdInput, BET_AMOUNTS_CENTS } from './utils/helpers'
 import { useAuth } from './hooks/useAuth'
 import { useWallet } from './hooks/useWallet'
 import { useWinningsLeaderboard, type LeaderboardRange } from './hooks/useWinningsLeaderboard'
 import { usePlayerStats } from './hooks/usePlayerStats'
 import { ScorePanel } from './components/ScorePanel'
 import { GameLeaderboard } from './components/Leaderboard'
-import { Minimap } from './components/Minimap'
-import { TouchControls } from './components/TouchControls'
 import { CashoutControl } from './components/CashoutControl'
 import { NicknameScreen } from './components/NicknameScreen'
 import { AuthModal } from './components/AuthModal'
@@ -20,12 +17,7 @@ import { AdminDashboard } from './components/AdminDashboard'
 
 function GameView() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const minimapRef = useRef<HTMLCanvasElement>(null)
-  const joystickRef = useRef<HTMLDivElement>(null)
-  const joystickHandleRef = useRef<HTMLDivElement>(null)
-  const boostButtonRef = useRef<HTMLButtonElement>(null)
   const cashoutButtonRef = useRef<HTMLButtonElement>(null)
-  const touchControlsRef = useRef<HTMLDivElement>(null)
 
   const game = useGame()
   const auth = useAuth()
@@ -62,25 +54,12 @@ function GameView() {
   }, [winningsLeaderboard.data?.priceUsd])
   const accountStateSyncedRef = useRef(false)
 
-  useCanvas({ canvasRef, minimapRef, controller: game.controller })
-  usePointerControls({ controller: game.controller, canvasRef })
-  useJoystick({
-    controller: game.controller,
-    joystickRef,
-    joystickHandleRef,
-    boostButtonRef,
-    cashoutButtonRef,
-    touchControlsRef
-  })
+  useCanvas({ canvasRef, controller: game.controller })
+  usePointerControls({ controller: game.controller, canvasRef, cashoutButtonRef })
 
-  const normalizeBetInput = useCallback((value: string, maxBalanceValue: number) => {
-    if (value === '') return ''
-    const max = Math.max(0, Math.floor(maxBalanceValue || 0))
-    if (max <= 0) return ''
-    const parsed = Math.floor(Number(value))
-    if (!Number.isFinite(parsed)) return ''
-    if (parsed <= 0) return '0'
-    return String(Math.min(parsed, max))
+  const getBetDisplay = useCallback((value: string | number, balanceCents: number) => {
+    const sanitized = sanitizeBetValue(value, balanceCents)
+    return sanitized > 0 ? centsToUsdInput(sanitized) : ''
   }, [])
 
   const handleWithdraw = useCallback(
@@ -130,15 +109,23 @@ function GameView() {
         if (game.betValue !== '') setBetValue('')
         if (game.retryBetValue !== '') setRetryBetValue('')
       } else {
-        const normalizedBet = normalizeBetInput(game.betValue, available)
-        if (!game.betValue && !wasSynced) {
-          setBetValue(String(Math.min(available, 1)))
-        } else if (normalizedBet !== game.betValue) {
-          setBetValue(normalizedBet)
-        }
-        const normalizedRetryBet = normalizeBetInput(game.retryBetValue, available)
-        if (normalizedRetryBet !== game.retryBetValue) {
-          setRetryBetValue(normalizedRetryBet)
+        const smallestBet = BET_AMOUNTS_CENTS.find((option) => option <= available) ?? 0
+        if (!smallestBet) {
+          if (game.betValue !== '') setBetValue('')
+          if (game.retryBetValue !== '') setRetryBetValue('')
+        } else {
+          if (!game.betValue && !wasSynced) {
+            setBetValue(centsToUsdInput(smallestBet))
+          } else {
+            const normalizedBet = getBetDisplay(game.betValue, available)
+            if (normalizedBet !== game.betValue) {
+              setBetValue(normalizedBet)
+            }
+          }
+          const normalizedRetryBet = getBetDisplay(game.retryBetValue, available)
+          if (normalizedRetryBet !== game.retryBetValue) {
+            setRetryBetValue(normalizedRetryBet)
+          }
         }
       }
       setAuthModalOpen(false)
@@ -163,7 +150,7 @@ function GameView() {
     game.betValue,
     game.nickname,
     game.retryBetValue,
-    normalizeBetInput,
+    getBetDisplay,
     setNickname,
     setBetValue,
     setRetryBetValue
@@ -186,34 +173,32 @@ function GameView() {
   }, [game])
 
   const handleBetChange = useCallback((value: string) => {
-    const normalized = normalizeBetInput(value, game.account.balance)
-    game.setBetValue(normalized)
-  }, [game, normalizeBetInput])
+    const display = getBetDisplay(value, game.account.balance)
+    game.setBetValue(display)
+  }, [game, getBetDisplay])
 
   const handleBetBlur = useCallback(() => {
     const sanitized = sanitizeBetValue(game.betValue, game.account.balance)
     if (sanitized > 0) {
-      game.setBetValue(String(sanitized))
-    } else if (game.account.balance > 0) {
-      game.setBetValue('1')
+      game.setBetValue(centsToUsdInput(sanitized))
     } else {
-      game.setBetValue('')
+      const smallest = BET_AMOUNTS_CENTS.find((option) => option <= game.account.balance)
+      game.setBetValue(smallest ? centsToUsdInput(smallest) : '')
     }
   }, [game])
 
   const handleRetryBetChange = useCallback((value: string) => {
-    const normalized = normalizeBetInput(value, game.account.balance)
-    setRetryBetValue(normalized)
-  }, [game, normalizeBetInput, setRetryBetValue])
+    const display = getBetDisplay(value, game.account.balance)
+    setRetryBetValue(display)
+  }, [game.account.balance, getBetDisplay, setRetryBetValue])
 
   const handleRetryBetBlur = useCallback(() => {
     const sanitized = sanitizeBetValue(game.retryBetValue, game.account.balance)
     if (sanitized > 0) {
-      setRetryBetValue(String(sanitized))
-    } else if (game.account.balance > 0) {
-      setRetryBetValue('1')
+      setRetryBetValue(centsToUsdInput(sanitized))
     } else {
-      setRetryBetValue('')
+      const smallest = BET_AMOUNTS_CENTS.find((option) => option <= game.account.balance)
+      setRetryBetValue(smallest ? centsToUsdInput(smallest) : '')
     }
   }, [game, setRetryBetValue])
 
@@ -223,11 +208,13 @@ function GameView() {
     }
     const name = game.nickname.trim() || auth.user.nickname
     const balance = game.account.balance
-    const betAmount = sanitizeBetValue(game.betValue, balance)
+    let betAmount = sanitizeBetValue(game.betValue, balance)
+    if (betAmount <= 0) {
+      const fallback = BET_AMOUNTS_CENTS.find((option) => option <= balance) ?? 0
+      betAmount = fallback
+    }
     if (betAmount > 0) {
-      game.setBetValue(String(betAmount))
-    } else if (balance > 0) {
-      game.setBetValue('1')
+      game.setBetValue(centsToUsdInput(betAmount))
     } else {
       game.setBetValue('')
     }
@@ -241,13 +228,18 @@ function GameView() {
       window.location.reload()
       return
     }
-    const betAmount = sanitizeBetValue(game.retryBetValue || balance, balance)
+    let betAmount = sanitizeBetValue(game.retryBetValue || balance, balance)
+    if (betAmount <= 0) {
+      const fallback = BET_AMOUNTS_CENTS.find((option) => option <= balance) ?? 0
+      betAmount = fallback
+    }
     if (betAmount <= 0) return
+    setRetryBetValue(centsToUsdInput(betAmount))
     connection.requestRespawn(betAmount)
     game.controller.setPendingBet(null)
     clearLastResult()
     setNicknameVisible(false)
-  }, [clearLastResult, connection, game, setNicknameVisible])
+  }, [clearLastResult, connection, game, setNicknameVisible, setRetryBetValue])
 
   const handleWalletRefresh = useCallback(() => {
     wallet.refresh()
@@ -271,11 +263,12 @@ function GameView() {
     auth.status === 'checking' ||
     game.cashout.pending ||
     game.transfer.pending ||
-    (isAuthenticated && game.account.balance <= 0)
+    (isAuthenticated && game.account.balance < BET_AMOUNTS_CENTS[0])
   const startHint = useMemo(() => {
     if (game.cashout.pending) return 'Дождитесь подтверждения вывода средств.'
     if (game.transfer.pending) return 'Проводим транзакцию с вашим балансом.'
-    if (isAuthenticated && game.account.balance <= 0) return 'Недостаточно монет на балансе.'
+    if (isAuthenticated && game.account.balance < BET_AMOUNTS_CENTS[0])
+      return 'Недостаточно средств для минимальной ставки ($1).'
     return undefined
   }, [game.cashout.pending, game.transfer.pending, isAuthenticated, game.account.balance])
 
@@ -295,14 +288,6 @@ function GameView() {
       {!game.nicknameScreenVisible ? (
         <GameLeaderboard entries={game.leaderboard} meName={game.controller.state.meName} />
       ) : null}
-      <Minimap ref={minimapRef} />
-      <TouchControls
-        enabled={game.touchControlsEnabled}
-        joystickRef={joystickRef}
-        joystickHandleRef={joystickHandleRef}
-        boostButtonRef={boostButtonRef}
-        ref={touchControlsRef}
-      />
       <CashoutControl state={game.cashout} buttonRef={cashoutButtonRef} />
       <NicknameScreen
         visible={game.nicknameScreenVisible}

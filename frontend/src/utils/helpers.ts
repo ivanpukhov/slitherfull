@@ -3,12 +3,50 @@ export function formatNumber(value: number | null | undefined): string {
   return safe.toLocaleString('ru-RU')
 }
 
-export function sanitizeBetValue(value: number | string | null | undefined, maxBalance: number): number {
-  const max = Math.max(0, Math.floor(maxBalance || 0))
-  if (max <= 0) return 0
-  const raw = Math.floor(Number(value) || 0)
-  if (raw < 1) return 1
-  return Math.min(raw, max)
+export const BET_AMOUNTS_CENTS = [100, 500, 2000]
+
+export function formatUsd(valueCents: number | null | undefined): string {
+  const cents = Math.max(0, Math.floor(Number.isFinite(valueCents as number) ? (valueCents as number) : 0))
+  const formatter = new Intl.NumberFormat('ru-RU', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+  return formatter.format(cents / 100)
+}
+
+export function centsToUsdInput(valueCents: number): string {
+  const cents = Math.max(0, Math.floor(Number(valueCents) || 0))
+  if (cents === 0) return ''
+  return (cents / 100).toString().replace(/\.00$/, '').replace(/,(00)?$/, '')
+}
+
+export function sanitizeBetValue(value: number | string | null | undefined, maxBalanceCents: number): number {
+  const max = Math.max(0, Math.floor(maxBalanceCents || 0))
+  const available = BET_AMOUNTS_CENTS.filter((option) => option <= max)
+  if (!available.length) {
+    return 0
+  }
+  let candidate: number
+  if (typeof value === 'number') {
+    candidate = Math.floor(value)
+  } else {
+    const normalized = typeof value === 'string' ? value.trim().replace(',', '.') : ''
+    const parsed = Number.parseFloat(normalized || '0')
+    candidate = Number.isFinite(parsed) ? Math.round(parsed * 100) : NaN
+  }
+  if (!Number.isFinite(candidate)) {
+    return available[0]
+  }
+  if (BET_AMOUNTS_CENTS.includes(candidate)) {
+    return candidate
+  }
+  const candidates = available.filter((option) => option <= candidate)
+  if (candidates.length) {
+    return candidates[candidates.length - 1]
+  }
+  return available[0]
 }
 
 export function lerp(a: number, b: number, t: number): number {

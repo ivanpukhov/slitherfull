@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { formatNumber, sanitizeBetValue, lerp, lerpAngle } from '../utils/helpers'
-import { drawBackground, drawFoods, drawSnakes, drawMinimap as renderMinimap } from '../utils/drawing'
+import { formatNumber, sanitizeBetValue, lerp, lerpAngle, formatUsd, centsToUsdInput, BET_AMOUNTS_CENTS } from '../utils/helpers'
+import { drawBackground, drawFoods, drawSnakes } from '../utils/drawing'
 
 export const SKINS: Record<string, string[]> = {
   default: ['#38bdf8'],
@@ -30,7 +30,6 @@ export const CAMERA_ZOOM = 1.2
 export const MAX_PREDICTION_SECONDS = 0.28
 export const SEGMENT_SPACING = 4.6
 export const LENGTH_EPS = 1e-3
-export const MINIMAP_SIZE = 188
 export const CASHOUT_HOLD_MS = 2000
 export const RENDER_PATH_BLEND = 0.26
 
@@ -129,6 +128,7 @@ export interface DeathScreenState {
   betValue: string
   betBalance: string
   canRetry: boolean
+  balanceCents: number
 }
 
 export interface CashoutScreenState {
@@ -158,7 +158,6 @@ interface GameUIState {
   selectedSkin: string
   betValue: string
   retryBetValue: string
-  touchControlsEnabled: boolean
   transfer: {
     pending: boolean
     message: string
@@ -226,7 +225,8 @@ const initialUI: GameUIState = {
     showBetControl: false,
     betValue: '',
     betBalance: '0',
-    canRetry: false
+    canRetry: false,
+    balanceCents: 0
   },
   cashoutScreen: {
     visible: false,
@@ -237,9 +237,8 @@ const initialUI: GameUIState = {
   nickname: '',
   nicknameLocked: false,
   selectedSkin: 'default',
-  betValue: '10',
+  betValue: '1',
   retryBetValue: '',
-  touchControlsEnabled: false,
   transfer: {
     pending: false,
     message: ''
@@ -319,11 +318,6 @@ export class GameController {
 
   setRetryBetValue(value: string) {
     this.state.ui.retryBetValue = value
-    this.notify()
-  }
-
-  setTouchControlsEnabled(enabled: boolean) {
-    this.state.ui.touchControlsEnabled = enabled
     this.notify()
   }
 
@@ -470,7 +464,7 @@ export class GameController {
         'Мы зафиксировали ваш баланс и завершим перевод автоматически.'
       ],
       showRetryControls: false,
-      retryBalance: formatNumber(pendingBalance),
+      retryBalance: formatUsd(pendingBalance),
       variant: 'cashout'
     }
     this.state.cashoutHold = { start: null, frame: null, triggered: true, source: null }
@@ -636,26 +630,27 @@ export class GameController {
     this.resetCashoutHold()
     const killerName = payload?.killerName ? payload.killerName : 'неизвестный'
     const score = typeof payload?.yourScore === 'number' ? payload.yourScore : 0
-    const balance = Math.max(0, this.state.account.balance || 0)
+    const balance = Math.max(0, Math.floor(this.state.account.balance || 0))
     const betValue = balance > 0 ? this.sanitizeBet(this.state.ui.retryBetValue || balance, balance) : 0
     const details: string[] = [`Счёт: ${formatNumber(score)}`]
-    details.push(balance > 0 ? `На счету осталось ${formatNumber(balance)} очков` : 'Баланс обнулён')
+    details.push(balance > 0 ? `На счету осталось ${formatUsd(balance)}` : 'Баланс обнулён')
     this.state.ui.death = {
       visible: false,
       summary: `Вас победил ${killerName}`,
       score: `Счёт: ${formatNumber(score)}`,
-      balance: balance > 0 ? `На счету осталось ${formatNumber(balance)} очков` : 'Баланс обнулён',
+      balance: balance > 0 ? `На счету осталось ${formatUsd(balance)}` : 'Баланс обнулён',
       showBetControl: balance > 0,
-      betValue: balance > 0 ? String(betValue) : '',
-      betBalance: formatNumber(balance),
-      canRetry: balance > 0
+      betValue: balance > 0 ? centsToUsdInput(betValue) : '',
+      betBalance: formatUsd(balance),
+      canRetry: balance > 0,
+      balanceCents: balance
     }
-    this.state.ui.retryBetValue = balance > 0 ? String(betValue) : ''
+    this.state.ui.retryBetValue = balance > 0 ? centsToUsdInput(betValue) : ''
     this.state.ui.lastResult = {
       title: `Вас победил ${killerName}`,
       details,
       showRetryControls: balance > 0,
-      retryBalance: formatNumber(balance),
+      retryBalance: formatUsd(balance),
       variant: 'death'
     }
     this.updateScoreHUD(0)
@@ -680,15 +675,15 @@ export class GameController {
     }
     this.state.ui.cashoutScreen = {
       visible: false,
-      summary: `Ваш баланс теперь ${formatNumber(safeBalance)}.`
+      summary: `Ваш баланс теперь ${formatUsd(safeBalance)}.`
     }
     this.state.ui.death.visible = false
     this.state.ui.retryBetValue = ''
     this.state.ui.lastResult = {
       title: 'Баланс выведен',
-      details: [`Ваш баланс теперь ${formatNumber(safeBalance)} очков.`],
+      details: [`Ваш баланс теперь ${formatUsd(safeBalance)}.`],
       showRetryControls: false,
-      retryBalance: formatNumber(safeBalance),
+      retryBalance: formatUsd(safeBalance),
       variant: 'cashout'
     }
     this.updateScoreHUD(0)
@@ -1091,18 +1086,6 @@ export class GameController {
     })
   }
 
-  drawMinimap(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, dpr: number) {
-    renderMinimap({
-      ctx,
-      canvas,
-      foods: this.state.foods,
-      snakes: this.state.snakes,
-      world: this.state.world,
-      dpr,
-      skins: SKINS,
-      meId: this.state.meId
-    })
-  }
 }
 
 const controller = new GameController()
@@ -1147,7 +1130,6 @@ export function useGame() {
     skinName,
     betValue: ui.betValue,
     retryBetValue: ui.retryBetValue,
-    touchControlsEnabled: ui.touchControlsEnabled,
     setNickname: (value: string) => controller.setNickname(value),
     setSelectedSkin: (skin: string) => controller.setSelectedSkin(skin),
     setBetValue: (value: string) => controller.setBetValue(value),

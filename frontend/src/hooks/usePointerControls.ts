@@ -5,6 +5,7 @@ import type { GameController } from './useGame'
 interface UsePointerControlsOptions {
   controller: GameController
   canvasRef: React.RefObject<HTMLCanvasElement>
+  cashoutButtonRef?: React.RefObject<HTMLButtonElement>
 }
 
 function updatePointerAngle(controller: GameController, canvas: HTMLCanvasElement, clientX: number, clientY: number) {
@@ -31,7 +32,7 @@ function updatePointerFromTouch(controller: GameController, canvas: HTMLCanvasEl
   controller.setTouchPointerAngle(Math.atan2(touch.clientY - cy, touch.clientX - cx))
 }
 
-export function usePointerControls({ controller, canvasRef }: UsePointerControlsOptions) {
+export function usePointerControls({ controller, canvasRef, cashoutButtonRef }: UsePointerControlsOptions) {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -42,8 +43,6 @@ export function usePointerControls({ controller, canvasRef }: UsePointerControls
 
     const onMouseDown = (event: MouseEvent) => {
       if (event.button !== 0) return
-      if (isEditableTarget(event.target)) return
-      if ((event.target as HTMLElement)?.closest?.('.touch-controls')) return
       controller.setBoostIntent(true)
     }
 
@@ -57,34 +56,59 @@ export function usePointerControls({ controller, canvasRef }: UsePointerControls
       controller.resetCashoutHold()
     }
 
+    let lastTapTime = 0
+    let boostFromDoubleTap = false
+
     const onTouchStart = (event: TouchEvent) => {
-      if (controller.getUI().touchControlsEnabled) return
       if (!event.touches || !event.touches.length) return
-      updatePointerFromTouch(controller, canvas, event.touches[0])
-      controller.setBoostIntent(event.touches.length > 1)
+      const primaryTouch = event.touches[0]
+      const now = performance.now()
+      const tapDelta = now - lastTapTime
+      if (tapDelta > 0 && tapDelta < 280) {
+        boostFromDoubleTap = true
+      }
+      lastTapTime = now
+      updatePointerFromTouch(controller, canvas, primaryTouch)
+      if (boostFromDoubleTap || event.touches.length > 1) {
+        controller.setBoostIntent(true)
+      } else {
+        controller.resetBoostIntent()
+      }
       event.preventDefault()
     }
 
     const onTouchMove = (event: TouchEvent) => {
-      if (controller.getUI().touchControlsEnabled) return
       if (!event.touches || !event.touches.length) return
-      updatePointerFromTouch(controller, canvas, event.touches[0])
-      controller.setBoostIntent(event.touches.length > 1)
+      const primaryTouch = event.touches[0]
+      updatePointerFromTouch(controller, canvas, primaryTouch)
+      if (boostFromDoubleTap || event.touches.length > 1) {
+        controller.setBoostIntent(true)
+      } else {
+        controller.resetBoostIntent()
+      }
       event.preventDefault()
     }
 
     const onTouchEnd = (event: TouchEvent) => {
-      if (controller.getUI().touchControlsEnabled) return
       if (!event.touches || event.touches.length === 0) {
+        boostFromDoubleTap = false
         controller.resetBoostIntent()
+        controller.setTouchPointerAngle(null)
       } else {
-        controller.setBoostIntent(event.touches.length > 1)
+        const primaryTouch = event.touches[0]
+        updatePointerFromTouch(controller, canvas, primaryTouch)
+        if (boostFromDoubleTap || event.touches.length > 1) {
+          controller.setBoostIntent(true)
+        } else {
+          controller.resetBoostIntent()
+        }
       }
     }
 
     const onTouchCancel = () => {
-      if (controller.getUI().touchControlsEnabled) return
+      boostFromDoubleTap = false
       controller.resetBoostIntent()
+      controller.setTouchPointerAngle(null)
     }
 
     document.addEventListener('mousemove', onMouseMove)
@@ -107,4 +131,63 @@ export function usePointerControls({ controller, canvasRef }: UsePointerControls
       canvas.removeEventListener('touchcancel', onTouchCancel)
     }
   }, [controller, canvasRef])
+
+  useEffect(() => {
+    const cashoutButton = cashoutButtonRef?.current
+    if (!cashoutButton) return
+
+    const startHold = (event: PointerEvent) => {
+      if (event.button !== undefined && event.button !== 0) return
+      if (cashoutButton.disabled || cashoutButton.getAttribute('aria-disabled') === 'true') return
+      event.preventDefault()
+      controller.startCashoutHold('pointer')
+    }
+
+    const stopHold = () => {
+      if (!controller.state.ui.cashout.pending) {
+        controller.resetCashoutHold()
+      }
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.repeat) return
+      if (event.code === 'Space') {
+        if (isEditableTarget(event.target)) return
+        event.preventDefault()
+        controller.setBoostIntent(true)
+      }
+      if (event.code === 'KeyQ') {
+        if (isEditableTarget(event.target)) return
+        event.preventDefault()
+        controller.startCashoutHold('keyboard')
+      }
+    }
+
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.code === 'Space') {
+        controller.resetBoostIntent()
+      }
+      if (event.code === 'KeyQ') {
+        if (!controller.state.ui.cashout.pending) {
+          controller.resetCashoutHold()
+        }
+      }
+    }
+
+    cashoutButton.addEventListener('pointerdown', startHold)
+    cashoutButton.addEventListener('pointerup', stopHold)
+    cashoutButton.addEventListener('pointerleave', stopHold)
+    cashoutButton.addEventListener('pointercancel', stopHold)
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+
+    return () => {
+      cashoutButton.removeEventListener('pointerdown', startHold)
+      cashoutButton.removeEventListener('pointerup', stopHold)
+      cashoutButton.removeEventListener('pointerleave', stopHold)
+      cashoutButton.removeEventListener('pointercancel', stopHold)
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
+    }
+  }, [controller, cashoutButtonRef])
 }

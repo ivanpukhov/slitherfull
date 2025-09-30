@@ -1,4 +1,5 @@
 import type { DeathScreenState } from '../hooks/useGame'
+import { BET_AMOUNTS_CENTS, centsToUsdInput, sanitizeBetValue } from '../utils/helpers'
 
 interface DeathScreenProps {
   state: DeathScreenState
@@ -8,6 +9,21 @@ interface DeathScreenProps {
 }
 
 export function DeathScreen({ state, onBetChange, onBetBlur, onRetry }: DeathScreenProps) {
+  const normalizedBetCents = sanitizeBetValue(state.betValue, state.balanceCents)
+  const selectedBetCents = normalizedBetCents > 0 ? normalizedBetCents : null
+  const betOptions = BET_AMOUNTS_CENTS.map((value) => ({
+    value,
+    label: `$${centsToUsdInput(value)}`,
+    disabled: value > state.balanceCents
+  }))
+  const betOptionsText = betOptions.map((option) => option.label).join(', ')
+
+  const handleBetSelect = (valueCents: number) => {
+    if (valueCents > state.balanceCents) return
+    onBetChange(centsToUsdInput(valueCents))
+    onBetBlur()
+  }
+
   return (
     <div id="deathScreen" className={state.visible ? 'overlay' : 'overlay hidden'}>
       <div className="card">
@@ -22,18 +38,30 @@ export function DeathScreen({ state, onBetChange, onBetBlur, onRetry }: DeathScr
         </div>
         {state.showBetControl ? (
           <div className="bet-control" id="deathBetControl">
-            <label htmlFor="retryBetInput">Новая ставка</label>
-            <input
-              id="retryBetInput"
-              type="number"
-              min={1}
-              step={1}
-              value={state.betValue}
-              onChange={(event) => onBetChange(event.target.value)}
-              onBlur={onBetBlur}
-            />
+            <label id="deathRetryBetLabel" htmlFor="retryBetInput">
+              Новая ставка
+            </label>
+            <div className="bet-options bet-options--compact" role="group" aria-labelledby="deathRetryBetLabel">
+              {betOptions.map((option) => {
+                const selected = option.value === selectedBetCents
+                return (
+                  <button
+                    type="button"
+                    key={`death-${option.value}`}
+                    className={`bet-option bet-option--compact${selected ? ' selected' : ''}`}
+                    onClick={() => handleBetSelect(option.value)}
+                    disabled={option.disabled}
+                    aria-pressed={selected}
+                  >
+                    <span className="bet-option-value">{option.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+            <input id="retryBetInput" type="hidden" value={state.betValue} readOnly />
             <div className="bet-hint">
-              Доступно: <span id="deathBetBalance">{state.betBalance}</span>
+              Ставки: <span className="bet-options-list">{betOptionsText}</span>. Доступно:{' '}
+              <span id="deathBetBalance">{state.betBalance}</span>
             </div>
           </div>
         ) : null}
