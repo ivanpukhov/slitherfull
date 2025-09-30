@@ -72,6 +72,7 @@ const cfg = {
     // геймплей
     tickRate: 40,
     snapshotRate: 15,
+    historyLimit: 120,
     maxTurn: 0.18,
     maxTurnRate: 7.2,
     inputMinIntervalMs: 10,
@@ -193,7 +194,10 @@ wss.on('connection', (ws) => {
                     currentBet: Math.max(0, Math.floor(player.currentBet || 0)),
                     balanceUsdCents: world.unitsToUsdCents(player.balance),
                     currentBetUsdCents: Math.max(0, Math.floor(player.currentBetUsdCents || 0)),
-                    priceUsd: Number.isFinite(priceUsd) ? priceUsd : null
+                    priceUsd: Number.isFinite(priceUsd) ? priceUsd : null,
+                    serverTime: Date.now(),
+                    tickRate: cfg.tickRate,
+                    snapshotRate: cfg.snapshotRate
                 })
                 return
             }
@@ -282,15 +286,21 @@ setInterval(() => {
             betUsdCents: Math.max(0, Math.floor(p.currentBetUsdCents || 0))
         }))
 
+    const pathUpdates = world.collectPathUpdates()
+    const serverTime = Date.now()
     for (const p of world.players.values()) {
-        const aoi = world.aoiFor(p)
+        const aoi = world.aoiFor(p, pathUpdates)
         const priceUsd = world.cachedUsdPrice
         const balanceUsdCents = world.unitsToUsdCents(p.balance)
         const currentBetUsdCents = Math.max(0, Math.floor(p.currentBetUsdCents || 0))
         const totalUsdCents = balanceUsdCents !== null ? balanceUsdCents + currentBetUsdCents : null
+        const pathInfo = pathUpdates.get(p.id)
         send(p.ws, {
             type: MSG_SNAPSHOT,
             tick: world.tickId,
+            serverTime,
+            snapshotIntervalMs: Math.floor(1000 / cfg.snapshotRate),
+            tickRate: cfg.tickRate,
             you: {
                 id: p.id,
                 x: p.x,
@@ -304,7 +314,10 @@ setInterval(() => {
                 balanceUsdCents,
                 currentBetUsdCents,
                 totalUsdCents,
-                priceUsd
+                priceUsd,
+                velocityX: pathInfo?.velocityX || 0,
+                velocityY: pathInfo?.velocityY || 0,
+                path: pathInfo?.path || null
             },
             players: aoi.players,
             foods: aoi.foods,

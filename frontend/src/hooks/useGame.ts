@@ -60,6 +60,10 @@ export interface SnakePoint {
   y: number
 }
 
+export interface SnakeSegment extends SnakePoint {
+  seq?: number
+}
+
 export interface SnakeState {
   id: string
   name?: string
@@ -81,10 +85,13 @@ export interface SnakeState {
   displayDir?: number
   speed?: number
   skin: string
-  segments: SnakePoint[]
+  segments: SnakeSegment[]
   renderPath: SnakePoint[]
   bet?: number
   betUsdCents?: number
+  pathRevision?: number
+  lastSeq?: number
+  tailSeq?: number
 }
 
 export interface FoodState {
@@ -199,6 +206,14 @@ interface InternalState {
     triggered: boolean
     source: 'pointer' | 'keyboard' | null
   }
+  clock: {
+    offset: number
+    lastServerTime: number
+    lastClientTime: number
+    lastServerTick: number
+    tickRate: number
+    snapshotRate: number
+  }
   ui: GameUIState
 }
 
@@ -286,6 +301,14 @@ export class GameController {
       pendingBet: null,
       usdPrice: null,
       cashoutHold: { start: null, frame: null, triggered: false, source: null },
+      clock: {
+        offset: 0,
+        lastServerTime: 0,
+        lastClientTime: 0,
+        lastServerTick: 0,
+        tickRate: 40,
+        snapshotRate: 15
+      },
       ui: { ...initialUI }
     }
   }
@@ -565,13 +588,78 @@ export class GameController {
     this.state.pointerAngle = angle
   }
 
+  syncClock({ serverTime, tickRate, snapshotRate }: { serverTime: number; tickRate?: number; snapshotRate?: number }) {
+    if (typeof serverTime !== 'number' || !Number.isFinite(serverTime)) return
+    const now = performance.now()
+    const measuredOffset = serverTime - now
+    const clock = this.state.clock
+    if (!Number.isFinite(clock.offset) || clock.lastServerTime === 0) {
+      clock.offset = measuredOffset
+    } else {
+      clock.offset = lerp(clock.offset, measuredOffset, 0.2)
+    }
+    clock.lastServerTime = serverTime
+    clock.lastClientTime = now
+    if (typeof tickRate === 'number' && Number.isFinite(tickRate) && tickRate > 0) {
+      clock.tickRate = tickRate
+    }
+    if (typeof snapshotRate === 'number' && Number.isFinite(snapshotRate) && snapshotRate > 0) {
+      clock.snapshotRate = snapshotRate
+    }
+  }
+
+  updateClockFromSnapshot({
+    serverTime,
+    tick,
+    tickRate,
+    snapshotRate
+  }: {
+    serverTime?: number
+    tick?: number
+    tickRate?: number
+    snapshotRate?: number
+  }) {
+    const clock = this.state.clock
+    if (typeof serverTime === 'number' && Number.isFinite(serverTime)) {
+      const now = performance.now()
+      const measuredOffset = serverTime - now
+      if (!Number.isFinite(clock.offset) || clock.lastServerTime === 0) {
+        clock.offset = measuredOffset
+      } else {
+        clock.offset = lerp(clock.offset, measuredOffset, 0.12)
+      }
+      clock.lastServerTime = serverTime
+      clock.lastClientTime = now
+    }
+    if (typeof tick === 'number' && Number.isFinite(tick)) {
+      clock.lastServerTick = tick
+    }
+    if (typeof tickRate === 'number' && Number.isFinite(tickRate) && tickRate > 0) {
+      clock.tickRate = tickRate
+    }
+    if (typeof snapshotRate === 'number' && Number.isFinite(snapshotRate) && snapshotRate > 0) {
+      clock.snapshotRate = snapshotRate
+    }
+  }
+
+  estimateServerTick(now: number = performance.now()) {
+    const rate = this.state.clock.tickRate > 0 ? this.state.clock.tickRate : 40
+    const serverTime = this.getServerTime(now)
+    return serverTime * (rate / 1000)
+  }
+
+  getServerTime(now: number = performance.now()) {
+    return now + (Number.isFinite(this.state.clock.offset) ? this.state.clock.offset : 0)
+  }
+
   getInputPayload(now: number) {
     const boostStatus = this.refreshBoostState()
     const angle = this.state.pointerAngle
     return {
       angle: typeof angle === 'number' && !Number.isNaN(angle) ? angle : undefined,
       boost: boostStatus.active,
-      timestamp: now
+      timestamp: now,
+      tick: Math.round(this.estimateServerTick(now))
     }
   }
 
@@ -768,6 +856,7 @@ export class GameController {
     }
     if (snapshot.you && snapshot.you.id) {
       seen.add(snapshot.you.id)
+      this.upsertSnake(snapshot.you)
     }
     for (const id of Array.from(this.state.snakes.keys())) {
       if (!seen.has(id)) {
@@ -819,7 +908,7 @@ export class GameController {
       this.updateScoreHUD(Math.floor(snapshot.you.length))
     }
     this.refreshBoostState()
-    this.state.lastSnapshotAt = performance.now()
+    this.state.lastSnapshotAt = this.getServerTime()
     this.notify()
   }
 
@@ -832,67 +921,232 @@ export class GameController {
     return colors[Math.abs(hash) % colors.length]
   }
 
+  private cloneSegments(points?: SnakeSegment[]) {
+    if (!Array.isArray(points)) return []
+    return points.map((point) => ({ x: point.x, y: point.y, seq: point.seq }))
+  }
+
+  private cloneRenderPath(points?: SnakePoint[]) {
+    if (!Array.isArray(points)) return []
+    return points.map((point) => ({ x: point.x, y: point.y }))
+  }
+
+  private trimSegmentsToLength(points: SnakeSegment[], maxLength: number) {
+    if (!Array.isArray(points) || points.length === 0) return []
+    if (points.length === 1) return [{ ...points[0] }]
+    const trimmed: SnakeSegment[] = points.map((point) => ({ ...point }))
+    let total = 0
+    for (let i = 1; i < trimmed.length; i++) {
+      const prev = trimmed[i - 1]
+      const cur = trimmed[i]
+      total += Math.hypot(cur.x - prev.x, cur.y - prev.y)
+    }
+    if (!Number.isFinite(total) || total <= maxLength) {
+      return trimmed
+    }
+    let excess = total - maxLength
+    while (trimmed.length > 1 && excess > 0) {
+      const first = trimmed[0]
+      const second = trimmed[1]
+      const segLen = Math.hypot(second.x - first.x, second.y - first.y)
+      if (segLen <= LENGTH_EPS) {
+        trimmed.shift()
+        continue
+      }
+      if (excess >= segLen) {
+        excess -= segLen
+        trimmed.shift()
+        continue
+      }
+      const ratio = excess / segLen
+      const nx = first.x + (second.x - first.x) * ratio
+      const ny = first.y + (second.y - first.y) * ratio
+      const seq = typeof second.seq === 'number' ? second.seq : first.seq
+      trimmed[0] = { x: nx, y: ny, seq }
+      excess = 0
+      break
+    }
+    return trimmed
+  }
+
+  private applyPathDelta(snake: SnakeState, path: any) {
+    if (!path) return
+    const revision = typeof path.revision === 'number' ? path.revision : snake.pathRevision ?? 0
+    const resetRequired = Boolean(path.reset) || snake.pathRevision === undefined || snake.pathRevision !== revision
+    let working: SnakeSegment[] = resetRequired ? [] : this.cloneSegments(snake.segments)
+    if (resetRequired) {
+      snake.renderPath = []
+      snake.lastSeq = typeof path.tailSeq === 'number' ? path.tailSeq : snake.lastSeq
+      snake.tailSeq = typeof path.tailSeq === 'number' ? path.tailSeq : snake.tailSeq
+    }
+
+    if (!Array.isArray(working)) {
+      working = []
+    }
+
+    if (typeof path.tailSeq === 'number') {
+      const tailSeq = path.tailSeq
+      snake.tailSeq = tailSeq
+      while (working.length && (working[0].seq ?? 0) < tailSeq) {
+        working.shift()
+      }
+      if (typeof path.tailX === 'number' && typeof path.tailY === 'number') {
+        if (working.length && (working[0].seq ?? 0) === tailSeq) {
+          working[0] = { x: path.tailX, y: path.tailY, seq: tailSeq }
+        } else {
+          working.unshift({ x: path.tailX, y: path.tailY, seq: tailSeq })
+        }
+      }
+    }
+
+    if (Array.isArray(path.segments)) {
+      for (const segment of path.segments) {
+        if (!segment) continue
+        const seq = typeof segment.seq === 'number' ? segment.seq : (snake.lastSeq ?? snake.tailSeq ?? 0) + 1
+        const x = typeof segment.x === 'number' && Number.isFinite(segment.x) ? segment.x : 0
+        const y = typeof segment.y === 'number' && Number.isFinite(segment.y) ? segment.y : 0
+        const index = working.findIndex((pt) => (pt.seq ?? 0) === seq)
+        if (index >= 0) {
+          working[index] = { x, y, seq }
+        } else {
+          working.push({ x, y, seq })
+        }
+        snake.lastSeq = seq
+      }
+    }
+
+    working.sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0))
+    const targetLength = typeof path.length === 'number' && Number.isFinite(path.length) ? path.length : snake.length
+    const maxLength = Math.max(SEGMENT_SPACING * 2, (targetLength || 0) + SEGMENT_SPACING * 8)
+    const trimmed = this.trimSegmentsToLength(working, maxLength)
+    const maxSegments = Math.max(120, Math.ceil(maxLength / Math.max(SEGMENT_SPACING, 1)) + 12)
+    while (trimmed.length > maxSegments) {
+      trimmed.shift()
+    }
+    if (!trimmed.length && typeof path.tailX === 'number' && typeof path.tailY === 'number') {
+      trimmed.push({
+        x: path.tailX,
+        y: path.tailY,
+        seq: typeof path.tailSeq === 'number' ? path.tailSeq : snake.lastSeq ?? 0
+      })
+    }
+    snake.segments = trimmed.map((segment) => ({ x: segment.x, y: segment.y, seq: segment.seq }))
+    if (snake.segments.length) {
+      snake.tailSeq = snake.segments[0].seq
+      const head = snake.segments[snake.segments.length - 1]
+      snake.lastSeq = head.seq
+      if (typeof head.x === 'number' && Number.isFinite(head.x)) {
+        snake.targetX = head.x
+      }
+      if (typeof head.y === 'number' && Number.isFinite(head.y)) {
+        snake.targetY = head.y
+      }
+    }
+    if (typeof path.headSeq === 'number') {
+      snake.lastSeq = path.headSeq
+    }
+    if (!snake.renderPath || resetRequired) {
+      snake.renderPath = snake.segments.map((segment) => ({ x: segment.x, y: segment.y }))
+    }
+    snake.pathRevision = revision
+  }
+
+  private computePathError(prev: SnakePoint[], next: SnakePoint[]) {
+    if (!prev.length || !next.length) return 0
+    const samples = Math.min(prev.length, next.length, 40)
+    if (samples <= 0) return 0
+    let sum = 0
+    for (let i = 0; i < samples; i++) {
+      const a = prev[prev.length - 1 - Math.min(prev.length - 1, i * Math.max(1, Math.floor(prev.length / samples)))]
+      const b = next[next.length - 1 - Math.min(next.length - 1, i * Math.max(1, Math.floor(next.length / samples)))]
+      sum += Math.hypot((a?.x || 0) - (b?.x || 0), (a?.y || 0) - (b?.y || 0))
+    }
+    return sum / samples
+  }
+
   upsertSnake(payload: any) {
+    if (!payload || !payload.id) return
     const id = payload.id
     const existing = this.state.snakes.get(id)
-    const segments = Array.isArray(payload.path)
-      ? payload.path.map((point: any) => ({ x: point.x || 0, y: point.y || 0 }))
-      : existing?.segments || []
+    const baseSegments = this.cloneSegments(existing?.segments)
+    const baseRenderPath = this.cloneRenderPath(existing?.renderPath)
     const snake: SnakeState = existing
-      ? { ...existing }
+      ? { ...existing, segments: baseSegments, renderPath: baseRenderPath }
       : {
           id,
-          name: payload.name || existing?.name || 'Anon',
-          alive: Boolean(payload.alive ?? existing?.alive ?? true),
-          length: payload.length || existing?.length || 20,
-          displayLength: existing?.displayLength || payload.length || 20,
-          targetX: typeof payload.x === 'number' ? payload.x : existing?.targetX || 0,
-          targetY: typeof payload.y === 'number' ? payload.y : existing?.targetY || 0,
-          predictedX:
-            typeof payload.x === 'number'
-              ? payload.x
-              : existing?.predictedX ?? existing?.targetX ?? existing?.serverX ?? 0,
-          predictedY:
-            typeof payload.y === 'number'
-              ? payload.y
-              : existing?.predictedY ?? existing?.targetY ?? existing?.serverY ?? 0,
-          skin: payload.skin || existing?.skin || 'default',
-          segments: segments.length ? segments : [{ x: payload.x || 0, y: payload.y || 0 }],
-          renderPath: segments.length ? segments.slice() : [{ x: payload.x || 0, y: payload.y || 0 }],
-          bet: typeof payload.bet === 'number' ? payload.bet : existing?.bet,
+          name: typeof payload.name === 'string' && payload.name.length ? payload.name : 'Anon',
+          alive: Boolean(payload.alive ?? true),
+          length: typeof payload.length === 'number' && Number.isFinite(payload.length) ? payload.length : 20,
+          displayLength:
+            typeof payload.length === 'number' && Number.isFinite(payload.length) ? payload.length : existing?.displayLength || 20,
+          serverX: typeof payload.x === 'number' ? payload.x : undefined,
+          serverY: typeof payload.y === 'number' ? payload.y : undefined,
+          targetX: typeof payload.x === 'number' ? payload.x : 0,
+          targetY: typeof payload.y === 'number' ? payload.y : 0,
+          predictedX: typeof payload.x === 'number' ? payload.x : undefined,
+          predictedY: typeof payload.y === 'number' ? payload.y : undefined,
+          skin: payload.skin || 'default',
+          segments: [],
+          renderPath: [],
+          bet: typeof payload.bet === 'number' ? payload.bet : undefined,
           betUsdCents:
-            typeof payload.betUsdCents === 'number' ? Math.max(0, Math.floor(payload.betUsdCents)) : existing?.betUsdCents
+            typeof payload.betUsdCents === 'number' ? Math.max(0, Math.floor(payload.betUsdCents)) : undefined,
+          pathRevision: existing?.pathRevision,
+          lastSeq: existing?.lastSeq,
+          tailSeq: existing?.tailSeq
         }
-    snake.name = payload.name || snake.name
-    snake.alive = payload.alive !== undefined ? payload.alive : true
-    snake.length = payload.length || snake.length
+
+    snake.name = typeof payload.name === 'string' && payload.name.length ? payload.name : snake.name
+    snake.alive = payload.alive !== undefined ? Boolean(payload.alive) : snake.alive
+    if (typeof payload.length === 'number' && Number.isFinite(payload.length)) {
+      snake.length = payload.length
+    }
     snake.displayLength = existing?.displayLength ?? snake.length
     snake.skin = payload.skin || snake.skin || 'default'
-    snake.serverX = payload.x ?? snake.serverX
-    snake.serverY = payload.y ?? snake.serverY
-    snake.velocityX = payload.vx ?? payload.velocityX ?? snake.velocityX ?? 0
-    snake.velocityY = payload.vy ?? payload.velocityY ?? snake.velocityY ?? 0
-    snake.lastServerAt = performance.now()
-    if (typeof payload.x === 'number') {
+    if (typeof payload.x === 'number' && Number.isFinite(payload.x)) {
+      snake.serverX = payload.x
+      snake.targetX = payload.x
       snake.predictedX = payload.x
     }
-    if (typeof payload.y === 'number') {
+    if (typeof payload.y === 'number' && Number.isFinite(payload.y)) {
+      snake.serverY = payload.y
+      snake.targetY = payload.y
       snake.predictedY = payload.y
     }
-    snake.targetX = payload.x ?? snake.targetX
-    snake.targetY = payload.y ?? snake.targetY
-    snake.targetDir = typeof payload.angle === 'number' ? payload.angle : snake.targetDir
-    snake.speed = typeof payload.speed === 'number' ? payload.speed : snake.speed
+    if (typeof payload.angle === 'number' && Number.isFinite(payload.angle)) {
+      snake.targetDir = payload.angle
+    }
+    const velocityX = payload.vx ?? payload.velocityX
+    const velocityY = payload.vy ?? payload.velocityY
+    if (typeof velocityX === 'number' && Number.isFinite(velocityX)) {
+      snake.velocityX = velocityX
+    }
+    if (typeof velocityY === 'number' && Number.isFinite(velocityY)) {
+      snake.velocityY = velocityY
+    }
+    snake.speed = typeof payload.speed === 'number' && Number.isFinite(payload.speed) ? payload.speed : snake.speed
+    snake.lastServerAt = performance.now()
     if (typeof payload.bet === 'number') {
       snake.bet = payload.bet
     }
     if (typeof payload.betUsdCents === 'number') {
       snake.betUsdCents = Math.max(0, Math.floor(payload.betUsdCents))
     }
-    if (segments.length) {
-      snake.segments = segments
-      this.smoothAssignPath(snake, segments)
+
+    if (payload.path) {
+      this.applyPathDelta(snake, payload.path)
     }
+
+    if (!snake.segments.length && typeof snake.targetX === 'number' && typeof snake.targetY === 'number') {
+      const seq = typeof snake.lastSeq === 'number' ? snake.lastSeq : 0
+      snake.segments = [{ x: snake.targetX, y: snake.targetY, seq }]
+    }
+
+    if (snake.segments.length) {
+      const resampled = this.resamplePath(snake.segments, SEGMENT_SPACING)
+      this.smoothAssignPath(snake, resampled)
+    }
+
     this.state.snakes.set(id, snake)
   }
 
@@ -935,6 +1189,11 @@ export class GameController {
       snake.renderPath = targetPath.slice()
       return
     }
+    const deviation = this.computePathError(prev, targetPath)
+    if (deviation > 320) {
+      snake.renderPath = targetPath.slice()
+      return
+    }
     const overlap = Math.min(prev.length, targetPath.length)
     const prevOffset = Math.max(0, prev.length - overlap)
     const targetOffset = Math.max(0, targetPath.length - overlap)
@@ -952,9 +1211,13 @@ export class GameController {
       const mix = overlap > 1 ? i / (overlap - 1) : 1
       const headWeight = mix
       const tailWeight = 1 - headWeight
+      const errorFactor = Math.min(1, deviation / 180)
       const dynamicBlend = Math.min(
-        0.72,
-        RENDER_PATH_BLEND + headWeight * RENDER_PATH_HEAD_WEIGHT + tailWeight * RENDER_PATH_TAIL_WEIGHT
+        0.85,
+        RENDER_PATH_BLEND +
+          headWeight * RENDER_PATH_HEAD_WEIGHT +
+          tailWeight * RENDER_PATH_TAIL_WEIGHT +
+          errorFactor * 0.25
       )
       blended.push({
         x: lerp(prevPoint.x, targetPoint.x, dynamicBlend),

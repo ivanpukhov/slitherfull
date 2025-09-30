@@ -221,14 +221,43 @@ export function drawSnakes({
     const headY = typeof snake.displayY === 'number' ? snake.displayY : snake.targetY || 0
     const head = { x: headX, y: headY }
     path[path.length - 1] = { x: head.x, y: head.y }
+    const tail = path[0]
 
     ctx.lineJoin = 'round'
     ctx.lineCap = 'round'
+    const gradient = tail
+      ? (() => {
+          const fade = ctx.createLinearGradient(tail.x, tail.y, head.x, head.y)
+          fade.addColorStop(0, withAlpha(baseColor, 0))
+          fade.addColorStop(0.18, withAlpha(baseColor, 0.45))
+          fade.addColorStop(0.55, withAlpha(baseColor, 0.85))
+          fade.addColorStop(1, baseColor)
+          return fade
+        })()
+      : baseColor
+
     ctx.strokeStyle = shadeColor(baseColor, -0.55)
     ctx.lineWidth = bodyRadius * 2 + 6
     strokeSmoothPath(ctx, path)
 
-    ctx.strokeStyle = baseColor
+    ctx.save()
+    ctx.globalCompositeOperation = 'lighter'
+    ctx.strokeStyle = withAlpha(baseColor, 0.18)
+    ctx.lineWidth = bodyRadius * 2.6
+    strokeSmoothPath(ctx, path)
+    ctx.restore()
+
+    const velocityMag = Math.hypot(snake.velocityX || 0, snake.velocityY || 0)
+    if (velocityMag > 120) {
+      ctx.save()
+      ctx.globalAlpha = Math.min(0.4, velocityMag / 720)
+      ctx.strokeStyle = withAlpha(baseColor, 0.22)
+      ctx.lineWidth = bodyRadius * 2.9
+      strokeSmoothPath(ctx, path)
+      ctx.restore()
+    }
+
+    ctx.strokeStyle = gradient
     ctx.lineWidth = bodyRadius * 2
     ctx.shadowColor = withAlpha(baseColor, 0.45)
     ctx.shadowBlur = bodyRadius * 0.9

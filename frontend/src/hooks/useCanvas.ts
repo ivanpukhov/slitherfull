@@ -159,7 +159,7 @@ export function useCanvas({ canvasRef, minimapRef, controller }: UseCanvasOption
       lastTime = now
       accumulator += frameSeconds
       const maxStep = 1 / 60
-      const minStep = 1 / 180
+      const minStep = 1 / 120
 
       while (accumulator >= minStep) {
         const step = Math.min(maxStep, accumulator)

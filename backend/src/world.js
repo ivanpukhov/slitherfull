@@ -101,7 +101,21 @@ function computePathLength(points) {
     return sum
 }
 
+function ensurePathSeqCounter(player) {
+    if (typeof player.pathSeqCounter !== 'number') {
+        player.pathSeqCounter = -1
+    }
+    return player.pathSeqCounter
+}
+
+function makeSegment(player, x, y) {
+    ensurePathSeqCounter(player)
+    player.pathSeqCounter += 1
+    return { x, y, seq: player.pathSeqCounter }
+}
+
 function trimPathToLength(player, maxLength) {
+    if (!player.path || player.path.length === 0) return
     const target = Math.max(0, maxLength)
     while (player.path.length > 1 && player.pathLen > target) {
         const first = player.path[0]
@@ -116,17 +130,20 @@ function trimPathToLength(player, maxLength) {
             player.path.shift()
             player.pathLen -= segLen
             if (player.pathLen < 0) player.pathLen = 0
-        } else {
-            const ratio = excess / segLen
-            player.path[0] = {
-                x: first.x + (second.x - first.x) * ratio,
-                y: first.y + (second.y - first.y) * ratio
-            }
-            player.pathLen -= excess
-            if (player.pathLen < 0) player.pathLen = 0
-            break
+            continue
         }
+        const ratio = excess / segLen
+        const nx = first.x + (second.x - first.x) * ratio
+        const ny = first.y + (second.y - first.y) * ratio
+        player.path[0] = makeSegment(player, nx, ny)
+        player.pathLen -= excess
+        if (player.pathLen < 0) player.pathLen = 0
+        break
     }
+    const tail = player.path[0]
+    player.tailSeq = tail ? tail.seq : player.pathSeqCounter
+    player.tailX = tail ? tail.x : player.x
+    player.tailY = tail ? tail.y : player.y
 }
 
 class World {
@@ -154,6 +171,8 @@ class World {
             : cfg.maxTurn * cfg.tickRate
         this.cachedUsdPrice = null
         this.cachedUsdPriceAt = 0
+        this.history = []
+        this.historyLimit = typeof cfg.historyLimit === 'number' ? cfg.historyLimit : 120
 
         for (let i = 0; i < cfg.initialFood; i++) this.spawnFood()
     }
@@ -268,7 +287,8 @@ class World {
             length: this.cfg.baseLength,
             alive: true,
             boost: false,
-            path: [{ x: spawn.x, y: spawn.y }],
+            pathSeqCounter: -1,
+            path: [],
             pathLen: 0,
             pathCarry: 0,
             lastDrop: 0,
@@ -281,8 +301,21 @@ class World {
             currentBet: 0,
             currentBetUsdCents: 0,
             cashedOut: false,
-            userId: context.userId || null
+            userId: context.userId || null,
+            pendingPathReset: true,
+            pathRevision: 0,
+            lastBroadcastSeq: -1,
+            tailSeq: 0,
+            tailX: spawn.x,
+            tailY: spawn.y,
+            vx: 0,
+            vy: 0,
+            lastClientTs: 0
         }
+        const startSegment = makeSegment(p, spawn.x, spawn.y)
+        p.path.push(startSegment)
+        p.tailSeq = startSegment.seq
+        p.lastBroadcastSeq = startSegment.seq
         p.dir = p.angle
         p.targetAngle = p.angle
         this.players.set(id, p)
@@ -310,9 +343,18 @@ class World {
         p.length = this.cfg.baseLength
         p.alive = true
         p.boost = false
-        p.path = [{ x: p.x, y: p.y }]
+        p.pathSeqCounter = -1
+        p.path = []
         p.pathLen = 0
         p.pathCarry = 0
+        const start = makeSegment(p, p.x, p.y)
+        p.path.push(start)
+        p.tailSeq = start.seq
+        p.tailX = start.x
+        p.tailY = start.y
+        p.pendingPathReset = true
+        p.pathRevision = (p.pathRevision || 0) + 1
+        p.lastBroadcastSeq = start.seq
         p.r = this.cfg.headRadius
         const key = this.playerSpatial.add(p.id, p.x, p.y)
         this.playerCells.set(p.id, key)
@@ -333,12 +375,17 @@ class World {
             const canBoost = p.length > this.cfg.minLength + 1e-6
             p.boost = data.boost && canBoost
         }
+        if (typeof data.timestamp === 'number' && Number.isFinite(data.timestamp)) {
+            p.lastClientTs = data.timestamp
+        }
     }
 
     stepMovement(dt) {
         for (const p of this.players.values()) {
             if (!p.alive) continue
 
+            const prevX = p.x
+            const prevY = p.y
             const desiredAngle = typeof p.targetAngle === 'number' ? p.targetAngle : p.angle
             const diff = normalizeAngle(desiredAngle - p.angle)
             const maxTurn = this.maxTurnRate * dt
@@ -361,6 +408,14 @@ class World {
             p.y += Math.sin(p.angle) * speed * dt
             p.dir = p.angle
 
+            if (dt > 0) {
+                p.vx = (p.x - prevX) / dt
+                p.vy = (p.y - prevY) / dt
+            } else {
+                p.vx = 0
+                p.vy = 0
+            }
+
             // границы карты (круглый мир)
             const border = projectToCircle(this.centerX, this.centerY, Math.max(0, this.radius - p.r), p.x, p.y)
             p.x = border.x
@@ -369,9 +424,13 @@ class World {
             // обновляем полилинию хвоста
             const spacing = this.cfg.segmentSpacing
             if (!Array.isArray(p.path) || p.path.length === 0) {
-                p.path = [{ x: p.x, y: p.y }]
+                const start = makeSegment(p, p.x, p.y)
+                p.path = [start]
                 p.pathLen = 0
                 p.pathCarry = 0
+                p.tailSeq = start.seq
+                p.tailX = start.x
+                p.tailY = start.y
             } else {
                 const previousHead = p.path[p.path.length - 1]
                 const dx = p.x - previousHead.x
@@ -385,7 +444,8 @@ class World {
                         const t = consumed / distance
                         const nx = previousHead.x + dx * t
                         const ny = previousHead.y + dy * t
-                        p.path.push({ x: nx, y: ny })
+                        const seg = makeSegment(p, nx, ny)
+                        p.path.push(seg)
                         p.pathLen += step
                         p.pathCarry = 0
                     }
@@ -397,11 +457,12 @@ class World {
                         p.pathCarry = 0
                     }
                     const lastPoint = p.path[p.path.length - 1]
-                    if (!lastPoint || Math.hypot(lastPoint.x - p.x, lastPoint.y - p.y) > 1e-5) {
-                        p.path.push({ x: p.x, y: p.y })
-                    } else {
+                    if (lastPoint) {
                         lastPoint.x = p.x
                         lastPoint.y = p.y
+                    } else {
+                        const seg = makeSegment(p, p.x, p.y)
+                        p.path.push(seg)
                     }
                 } else {
                     const headPoint = p.path[p.path.length - 1]
@@ -409,7 +470,8 @@ class World {
                         headPoint.x = p.x
                         headPoint.y = p.y
                     } else {
-                        p.path.push({ x: p.x, y: p.y })
+                        const seg = makeSegment(p, p.x, p.y)
+                        p.path.push(seg)
                     }
                 }
             }
@@ -422,6 +484,12 @@ class World {
             if (p.path.length > this.cfg.maxPathPoints) {
                 p.path = p.path.slice(p.path.length - this.cfg.maxPathPoints)
                 p.pathLen = computePathLength(p.path)
+                const tail = p.path[0]
+                if (tail) {
+                    p.tailSeq = tail.seq
+                    p.tailX = tail.x
+                    p.tailY = tail.y
+                }
             }
 
             // буст — только ускоряет змею, без потери длины и выброса еды
@@ -508,6 +576,9 @@ class World {
         victim.path = []
         victim.pathLen = 0
         victim.pathCarry = 0
+        victim.tailSeq = victim.pathSeqCounter
+        victim.tailX = victim.x
+        victim.tailY = victim.y
 
         const bountyUnits = Math.max(0, Math.floor(victim.currentBet || 0))
         const bountyUsdCents = Math.max(0, Math.floor(victim.currentBetUsdCents || 0))
@@ -759,9 +830,83 @@ class World {
         this.rebuildSpatial()
         this.stepFoodPickup()
         this.stepCollisions()
+        this.recordHistory()
     }
 
-    aoiFor(p) {
+    collectPathUpdates() {
+        const updates = new Map()
+        for (const p of this.players.values()) {
+            if (!Array.isArray(p.path)) continue
+            const lastSeq = typeof p.lastBroadcastSeq === 'number' ? p.lastBroadcastSeq : -1
+            const pathSegments = []
+            if (p.pendingPathReset) {
+                for (const point of p.path) {
+                    if (!point) continue
+                    pathSegments.push({ x: point.x, y: point.y, seq: point.seq })
+                }
+            } else {
+                for (const point of p.path) {
+                    if (!point) continue
+                    if (typeof point.seq === 'number' && point.seq > lastSeq) {
+                        pathSegments.push({ x: point.x, y: point.y, seq: point.seq })
+                    }
+                }
+            }
+            const tail = p.path[0]
+            const head = p.path[p.path.length - 1]
+            const tailSeq = typeof p.tailSeq === 'number' ? p.tailSeq : tail ? tail.seq : p.pathSeqCounter
+            const tailX = typeof p.tailX === 'number' ? p.tailX : tail ? tail.x : p.x
+            const tailY = typeof p.tailY === 'number' ? p.tailY : tail ? tail.y : p.y
+            const headSeq = head && typeof head.seq === 'number' ? head.seq : lastSeq
+            updates.set(p.id, {
+                path: {
+                    segments: pathSegments,
+                    tailSeq,
+                    tailX,
+                    tailY,
+                    headSeq,
+                    length: p.length,
+                    revision: p.pathRevision || 0,
+                    reset: Boolean(p.pendingPathReset)
+                },
+                velocityX: Number.isFinite(p.vx) ? p.vx : 0,
+                velocityY: Number.isFinite(p.vy) ? p.vy : 0,
+                speed: Number.isFinite(p.speed) ? p.speed : this.cfg.baseSpeed
+            })
+            if (head && typeof head.seq === 'number') {
+                p.lastBroadcastSeq = head.seq
+            }
+            p.pendingPathReset = false
+        }
+        return updates
+    }
+
+    recordHistory() {
+        if (!Array.isArray(this.history)) this.history = []
+        const snapshot = {
+            tick: this.tickId,
+            time: Date.now(),
+            players: []
+        }
+        for (const p of this.players.values()) {
+            snapshot.players.push({
+                id: p.id,
+                x: p.x,
+                y: p.y,
+                angle: p.angle,
+                length: p.length,
+                alive: p.alive,
+                tailSeq: p.tailSeq,
+                headSeq: p.path && p.path.length ? p.path[p.path.length - 1].seq : p.lastBroadcastSeq,
+                speed: p.speed
+            })
+        }
+        this.history.push(snapshot)
+        const limit = typeof this.historyLimit === 'number' ? this.historyLimit : 120
+        while (this.history.length > limit) this.history.shift()
+    }
+
+    aoiFor(p, cache = null) {
         const r = this.cfg.viewRadius
         const px = p.x
         const py = p.y
@@ -773,6 +918,27 @@ class World {
             if (!o) continue
             if (!o.alive) continue
             if (dist2(px, py, o.x, o.y) <= r * r) {
+                const cached = cache ? cache.get(o.id) : null
+                const pathPayload = cached?.path || {
+                    segments: [],
+                    tailSeq: o.tailSeq,
+                    tailX: o.tailX,
+                    tailY: o.tailY,
+                    headSeq: o.path && o.path.length ? o.path[o.path.length - 1].seq : o.lastBroadcastSeq,
+                    length: o.length,
+                    revision: o.pathRevision || 0,
+                    reset: Boolean(o.pendingPathReset)
+                }
+                const velocityX = cached && Number.isFinite(cached.velocityX)
+                    ? cached.velocityX
+                    : Number.isFinite(o.vx)
+                        ? o.vx
+                        : Math.cos(o.dir || o.angle) * (o.speed || this.cfg.baseSpeed)
+                const velocityY = cached && Number.isFinite(cached.velocityY)
+                    ? cached.velocityY
+                    : Number.isFinite(o.vy)
+                        ? o.vy
+                        : Math.sin(o.dir || o.angle) * (o.speed || this.cfg.baseSpeed)
                 players.push({
                     id: o.id,
                     x: o.x,
@@ -782,9 +948,11 @@ class World {
                     alive: o.alive,
                     name: o.name,
                     skin: o.skin,
-                    path: o.path,
+                    path: pathPayload,
                     dir: o.dir || o.angle,
-                    speed: o.speed || this.cfg.baseSpeed,
+                    speed: cached?.speed || o.speed || this.cfg.baseSpeed,
+                    velocityX,
+                    velocityY,
                     bet: Math.max(0, Math.floor(o.currentBet || 0)),
                     betUsdCents: Math.max(0, Math.floor(o.currentBetUsdCents || 0))
                 })
