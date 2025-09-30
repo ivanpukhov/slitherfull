@@ -33,8 +33,8 @@ const cfg = {
     port: process.env.PORT ? parseInt(process.env.PORT) : 8080,
 
     // размеры карты
-    width: 4000,
-    height: 4000,
+    width: 2000,
+    height: 2000,
     sectorSize: 128,
 
     // еда
@@ -67,7 +67,7 @@ const cfg = {
     segmentSampleStep: 3,
 
     // видимость
-    viewRadius: 900,
+    viewRadius: 450,
 
     // геймплей
     tickRate: 40,
