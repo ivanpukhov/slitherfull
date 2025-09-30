@@ -74,6 +74,13 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
               const resolvedName = typeof message.name === 'string' ? message.name : name
               controller.setMe(message.id, resolvedName)
             }
+            if (typeof message.serverTime === 'number') {
+              controller.syncClock({
+                serverTime: message.serverTime,
+                tickRate: typeof message.tickRate === 'number' ? message.tickRate : undefined,
+                snapshotRate: typeof message.snapshotRate === 'number' ? message.snapshotRate : undefined
+              })
+            }
             controller.setAlive(true)
             controller.setCashoutPending(false)
             const nextBalance =
@@ -135,7 +142,15 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
             }
           }
           if (message.type === 'snapshot') {
-            controller.state.lastSnapshotAt = performance.now()
+            controller.updateClockFromSnapshot({
+              serverTime: typeof message.serverTime === 'number' ? message.serverTime : undefined,
+              tick: typeof message.tick === 'number' ? message.tick : undefined,
+              tickRate: typeof message.tickRate === 'number' ? message.tickRate : undefined,
+              snapshotRate:
+                typeof message.snapshotIntervalMs === 'number' && message.snapshotIntervalMs > 0
+                  ? 1000 / message.snapshotIntervalMs
+                  : undefined
+            })
             if (message.you && (typeof message.you.balance === 'number' || typeof message.you.currentBet === 'number')) {
               controller.applyBalanceUpdate({
                 balance: message.you.balance,
@@ -240,6 +255,12 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
     const message: Record<string, unknown> = { type: 'input', boost: payload.boost }
     if (typeof payload.angle === 'number') {
       message.angle = payload.angle
+    }
+    if (typeof payload.timestamp === 'number') {
+      message.timestamp = payload.timestamp
+    }
+    if (typeof payload.tick === 'number') {
+      message.tick = payload.tick
     }
     ws.send(JSON.stringify(message))
   }, [controller])
