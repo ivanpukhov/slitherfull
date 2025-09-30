@@ -1278,6 +1278,17 @@
             .utility-grid {
                 grid-template-columns: 1fr;
             }
+
+
+        }
+
+        @media (max-width: 1240px) {
+
+
+            .overlay--lobby .lobby-card {
+                margin-top: 700px !important;
+            }
+
         }
 
         .utility-card {

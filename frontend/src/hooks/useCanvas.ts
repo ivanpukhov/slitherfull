@@ -166,5 +166,5 @@ export function useCanvas({ canvasRef, controller }: UseCanvasOptions) {
       if (animationFrame) cancelAnimationFrame(animationFrame)
       window.removeEventListener('resize', handleResize)
     }
-  }, [canvasRef, minimapRef, controller])
+  }, [canvasRef, controller])
 }
