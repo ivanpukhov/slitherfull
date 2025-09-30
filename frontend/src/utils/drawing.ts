@@ -42,14 +42,17 @@ export function strokeSmoothPath(ctx: CanvasRenderingContext2D, points: SnakePoi
   if (!points || points.length < 2) return
   ctx.beginPath()
   ctx.moveTo(points[0].x, points[0].y)
-  for (let i = 1; i < points.length - 1; i++) {
-    const midX = (points[i].x + points[i + 1].x) / 2
-    const midY = (points[i].y + points[i + 1].y) / 2
-    ctx.quadraticCurveTo(points[i].x, points[i].y, midX, midY)
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i - 1] || points[i]
+    const p1 = points[i]
+    const p2 = points[i + 1] || points[i]
+    const p3 = points[i + 2] || p2
+    const cp1x = p1.x + (p2.x - p0.x) / 6
+    const cp1y = p1.y + (p2.y - p0.y) / 6
+    const cp2x = p2.x - (p3.x - p1.x) / 6
+    const cp2y = p2.y - (p3.y - p1.y) / 6
+    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y)
   }
-  const last = points[points.length - 1]
-  const penultimate = points[points.length - 2]
-  ctx.quadraticCurveTo(penultimate.x, penultimate.y, last.x, last.y)
   ctx.stroke()
 }
 
