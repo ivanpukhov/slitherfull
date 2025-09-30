@@ -1038,6 +1038,28 @@ export class GameController {
         const resampled = this.resamplePath(snake.segments, SEGMENT_SPACING)
         this.smoothAssignPath(snake, resampled)
       }
+      const headX = typeof snake.displayX === 'number' ? snake.displayX : snake.targetX
+      const headY = typeof snake.displayY === 'number' ? snake.displayY : snake.targetY
+      if (Number.isFinite(headX) && Number.isFinite(headY)) {
+        const basePath = Array.isArray(snake.renderPath) && snake.renderPath.length > 0
+          ? snake.renderPath
+          : Array.isArray(snake.segments) && snake.segments.length > 0
+            ? snake.segments
+            : null
+        if (basePath && basePath.length) {
+          const orientation = typeof snake.displayDir === 'number'
+            ? snake.displayDir
+            : typeof snake.targetDir === 'number'
+              ? snake.targetDir
+              : 0
+          const desiredLength = Math.max(SEGMENT_SPACING * 2, snake.length || 0)
+          const rebuilt = this.rebuildPath(basePath, headX, headY, desiredLength, orientation)
+          const predictedPath = this.resamplePath(rebuilt, SEGMENT_SPACING)
+          if (predictedPath.length) {
+            snake.renderPath = predictedPath
+          }
+        }
+      }
     }
     for (const food of this.state.foods.values()) {
       food.displayX = typeof food.displayX === 'number' ? lerp(food.displayX, food.targetX, smoothPos) : food.targetX
