@@ -9,6 +9,10 @@ const {
     encode
 } = require('./protocol')
 
+const BET_AMOUNTS_CENTS = [100, 500, 2000]
+const GOLDEN_FOOD_VALUE_CENTS = 20
+const GOLDEN_FOOD_COLOR = '#facc15'
+
 const SKIN_PRESETS = {
     default: ['#38bdf8'],
     emerald: ['#34d399'],
@@ -185,7 +189,8 @@ class World {
         const big = Boolean(options.big)
         const createdAt = Date.now()
         const pulse = typeof options.pulse === 'number' ? options.pulse : Math.random() * Math.PI * 2
-        const f = { id, x: pos.x, y: pos.y, v: value, color, big, pulse, createdAt }
+        const betValue = typeof options.betValue === 'number' ? Math.max(0, Math.floor(options.betValue)) : 0
+        const f = { id, x: pos.x, y: pos.y, v: value, color, big, pulse, createdAt, betValue }
         this.foods.set(id, f)
         const key = this.foodSpatial.add(id, f.x, f.y)
         this.foodCells.set(id, key)
@@ -403,6 +408,14 @@ class World {
                     this.foodCells.delete(id)
                     this.foods.delete(id)
                     p.length += f.v
+                    if (f.betValue) {
+                        const betIncrement = Math.max(0, Math.floor(f.betValue))
+                        if (betIncrement > 0) {
+                            const current = Math.max(0, Math.floor(p.currentBet || 0))
+                            p.currentBet = current + betIncrement
+                            this.notifyBalance(p)
+                        }
+                    }
                     if (this.foods.size < this.cfg.targetFood) this.spawnFood()
                 }
             }
@@ -455,43 +468,64 @@ class World {
         this.playerSpatial.removeKey(victim.id, cellKey)
         this.playerCells.delete(victim.id)
 
-        if (killer && bounty > 0) {
-            const killerBet = Math.max(0, Math.floor(killer.currentBet || 0))
-            killer.currentBet = killerBet + bounty
-            this.notifyBalance(killer)
-        }
         this.notifyBalance(victim)
 
-        const totalValue = Math.max(1, Math.floor(victim.length))
+        const totalLength = Math.max(0, Math.floor(victim.length))
         const palette = this.skinPalette(victim.skin)
         const anchors = dropPath.length ? dropPath : [{ x: victim.x, y: victim.y }]
         const spacing = Math.max(6, this.cfg.segmentSpacing * 1.1)
         const sampled = resamplePath(anchors, spacing)
         const points = sampled.length ? sampled : anchors
-        const pieces = Math.max(1, Math.ceil(totalValue / this.cfg.deathFoodChunkValue))
-        const stride = Math.max(1, Math.floor(points.length / pieces))
 
-        let remaining = totalValue
-        for (let i = points.length - 1; i >= 0 && remaining > 0; i -= stride) {
-            const target = points[i]
-            const base = Math.max(3, Math.round(totalValue / pieces))
-            const value = Math.min(remaining, Math.round(base * rnd(0.8, 1.3)))
-            const clamped = projectToCircle(this.centerX, this.centerY, this.radius, target.x, target.y)
-            this.spawnFoodAt(clamped.x, clamped.y, value, {
-                palette,
-                big: value >= this.cfg.bigFoodThreshold
-            })
-            remaining -= value
+        let lengthRemaining = totalLength
+
+        if (bounty >= GOLDEN_FOOD_VALUE_CENTS) {
+            const goldenPieces = Math.max(1, Math.floor(bounty / GOLDEN_FOOD_VALUE_CENTS))
+            const stride = Math.max(1, Math.floor(points.length / goldenPieces))
+            for (let i = 0; i < goldenPieces; i++) {
+                const index = Math.max(0, points.length - 1 - i * stride)
+                const target = points[index]
+                const clamped = projectToCircle(this.centerX, this.centerY, this.radius, target.x, target.y)
+                const piecesLeft = goldenPieces - i
+                let segmentValue = 0
+                if (lengthRemaining > 0 && piecesLeft > 0) {
+                    segmentValue = Math.max(1, Math.floor(lengthRemaining / piecesLeft))
+                    segmentValue = Math.min(lengthRemaining, segmentValue)
+                    lengthRemaining -= segmentValue
+                }
+                this.spawnFoodAt(clamped.x, clamped.y, Math.max(1, segmentValue), {
+                    color: GOLDEN_FOOD_COLOR,
+                    big: true,
+                    betValue: GOLDEN_FOOD_VALUE_CENTS
+                })
+            }
         }
 
-        let index = points.length - 1
-        while (remaining > 0 && points.length) {
-            const target = points[index]
-            const clamped = projectToCircle(this.centerX, this.centerY, this.radius, target.x, target.y)
-            const value = Math.min(remaining, 2)
-            this.spawnFoodAt(clamped.x, clamped.y, value, { palette })
-            remaining -= value
-            index = (index - 1 + points.length) % points.length
+        if (lengthRemaining > 0) {
+            const pieces = Math.max(1, Math.ceil(lengthRemaining / this.cfg.deathFoodChunkValue))
+            const stride = Math.max(1, Math.floor(points.length / pieces))
+            let remaining = lengthRemaining
+            for (let i = points.length - 1; i >= 0 && remaining > 0; i -= stride) {
+                const target = points[i]
+                const base = Math.max(3, Math.round(lengthRemaining / pieces))
+                const value = Math.min(remaining, Math.round(base * rnd(0.8, 1.3)))
+                const clamped = projectToCircle(this.centerX, this.centerY, this.radius, target.x, target.y)
+                this.spawnFoodAt(clamped.x, clamped.y, value, {
+                    palette,
+                    big: value >= this.cfg.bigFoodThreshold
+                })
+                remaining -= value
+            }
+
+            let index = points.length - 1
+            while (remaining > 0 && points.length) {
+                const target = points[index]
+                const clamped = projectToCircle(this.centerX, this.centerY, this.radius, target.x, target.y)
+                const value = Math.min(remaining, 2)
+                this.spawnFoodAt(clamped.x, clamped.y, value, { palette })
+                remaining -= value
+                index = (index - 1 + points.length) % points.length
+            }
         }
 
         this.killLogger.log({
@@ -524,32 +558,31 @@ class World {
             return { ok: false, error: 'invalid_amount' }
         }
         const bet = Math.floor(raw)
-        if (bet <= 0) {
+        if (!BET_AMOUNTS_CENTS.includes(bet)) {
             return { ok: false, error: 'invalid_amount' }
         }
         if (p.currentBet > 0) {
             return { ok: false, error: 'bet_exists' }
         }
         const balance = Math.max(0, Math.floor(p.balance || 0))
-        const finalBet = Math.min(bet, balance)
-        if (finalBet <= 0) {
+        if (balance < bet) {
             return { ok: false, error: 'insufficient_balance' }
         }
         try {
             if (p.userId) {
-                const refreshed = await walletService.transferUserToGame(p.userId, finalBet)
+                const refreshed = await walletService.transferUserToGame(p.userId, bet)
                 if (refreshed && typeof refreshed.units === 'number') {
                     p.balance = Math.max(0, Math.floor(refreshed.units))
                 } else {
-                    p.balance = Math.max(0, balance - finalBet)
+                    p.balance = Math.max(0, balance - bet)
                 }
             } else {
-                p.balance = balance - finalBet
+                p.balance = balance - bet
             }
         } catch (err) {
             return { ok: false, error: err.message === 'insufficient_funds' ? 'insufficient_balance' : 'transfer_failed' }
         }
-        p.currentBet = finalBet
+        p.currentBet = bet
         try {
             if (this.accountStore && p.userId) {
                 await this.accountStore.updateBalance(p.userId, Math.max(0, Math.floor(p.balance)))
@@ -557,7 +590,7 @@ class World {
         } catch (err) {
             if (p.userId) {
                 try {
-                    await walletService.transferGameToUser(p.userId, finalBet)
+                    await walletService.transferGameToUser(p.userId, bet)
                 } catch (transferErr) {
                     console.error('Failed to revert bet transfer', transferErr)
                 }
@@ -673,7 +706,8 @@ class World {
                 color: f.color,
                 big: f.big,
                 pulse: f.pulse,
-                createdAt: f.createdAt
+                createdAt: f.createdAt,
+                betValue: Math.max(0, Math.floor(f.betValue || 0))
             })
         }
         return { players, foods }

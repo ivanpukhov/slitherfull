@@ -1,10 +1,9 @@
 import { useEffect } from 'react'
-import { MINIMAP_SIZE, CAMERA_ZOOM } from './useGame'
+import { CAMERA_ZOOM } from './useGame'
 import type { GameController } from './useGame'
 
 interface UseCanvasOptions {
   canvasRef: React.RefObject<HTMLCanvasElement>
-  minimapRef: React.RefObject<HTMLCanvasElement>
   controller: GameController
 }
 
@@ -108,14 +107,12 @@ function buildHexPattern(ctx: CanvasRenderingContext2D) {
   return ctx.createPattern(off, 'repeat')
 }
 
-export function useCanvas({ canvasRef, minimapRef, controller }: UseCanvasOptions) {
+export function useCanvas({ canvasRef, controller }: UseCanvasOptions) {
   useEffect(() => {
     const canvas = canvasRef.current
-    const minimap = minimapRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    const minimapCtx = minimap ? minimap.getContext('2d') : null
     let animationFrame: number | null = null
     let dpr = getDpr()
     let accumulator = 0
@@ -133,23 +130,11 @@ export function useCanvas({ canvasRef, minimapRef, controller }: UseCanvasOption
       controller.hexPattern = buildHexPattern(ctx)
     }
 
-    const setMinimapSize = () => {
-      if (!minimap || !minimapCtx) return
-      const size = MINIMAP_SIZE
-      minimap.width = Math.round(size * dpr)
-      minimap.height = Math.round(size * dpr)
-      minimap.style.width = `${size}px`
-      minimap.style.height = `${size}px`
-      minimapCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    }
-
     const handleResize = () => {
       setCanvasSize()
-      setMinimapSize()
     }
 
     setCanvasSize()
-    setMinimapSize()
     window.addEventListener('resize', handleResize)
 
     let lastTime = performance.now()
@@ -172,9 +157,6 @@ export function useCanvas({ canvasRef, minimapRef, controller }: UseCanvasOption
         accumulator = 0
       }
       controller.draw(canvas, ctx, now / 1000, dpr)
-      if (minimap && minimapCtx) {
-        controller.drawMinimap(minimap, minimapCtx, dpr)
-      }
       animationFrame = requestAnimationFrame(loop)
     }
 

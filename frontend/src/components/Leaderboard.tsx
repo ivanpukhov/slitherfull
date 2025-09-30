@@ -1,6 +1,6 @@
 import type { LeaderboardEntry } from '../hooks/useGame'
 import type { LeaderboardRange, WinningsLeaderboardEntry } from '../hooks/useWinningsLeaderboard'
-import { formatNumber } from '../utils/helpers'
+import { formatNumber, formatUsd } from '../utils/helpers'
 
 const RANGE_LABELS: Record<LeaderboardRange, string> = {
   '24h': '24 часа',
@@ -38,7 +38,7 @@ export function GameLeaderboard({ entries, meName }: GameLeaderboardProps) {
                 {idx + 1}. {entry.name}
               </span>
               {typeof entry.bet === 'number' ? (
-                <span className="bet">Ставка: {formatNumber(entry.bet)}</span>
+                <span className="bet">Ставка: {formatUsd(entry.bet)}</span>
               ) : null}
             </div>
             <div className="amounts">

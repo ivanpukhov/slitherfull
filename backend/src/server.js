@@ -33,8 +33,8 @@ const cfg = {
     port: process.env.PORT ? parseInt(process.env.PORT) : 8080,
 
     // размеры карты
-    width: 4000,
-    height: 4000,
+    width: 2688,
+    height: 2688,
     sectorSize: 128,
 
     // еда
@@ -49,13 +49,13 @@ const cfg = {
     // змея
     headRadius: 8,
     bodyRadius: 6,
-    baseLength: 20,
-    minLength: 10,
+    baseLength: 100,
+    minLength: 80,
     baseSpeed: 160,
     speedMinFactor: 0.42,
     speedLengthSoftCap: 500,
     speedLengthExponent: 0.65,
-    boostMultiplier: 1.7,
+    boostMultiplier: 2.35,
     boostLengthDrain: 3,
     boostDropIntervalMs: 120,
 

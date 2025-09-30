@@ -6,6 +6,7 @@ const TRANSLATIONS = {
     walletButtonTitle: 'Кошелек',
     walletButtonCaption: 'Управление средствами',
     walletButtonAriaLabel: 'Открыть кошелек',
+    walletButtonLabel: 'Кошелек',
     currentBetLabel: 'Текущая ставка',
     skinLabel: 'Скин',
     authPrompt: 'Авторизоваться'
@@ -15,6 +16,7 @@ const TRANSLATIONS = {
     walletButtonTitle: 'Wallet',
     walletButtonCaption: 'Manage funds',
     walletButtonAriaLabel: 'Open wallet',
+    walletButtonLabel: 'Wallet',
     currentBetLabel: 'Current bet',
     skinLabel: 'Skin',
     authPrompt: 'Sign in'

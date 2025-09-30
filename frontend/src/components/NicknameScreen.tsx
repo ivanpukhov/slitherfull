@@ -1,11 +1,20 @@
-import { FormEvent, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { formatNumber } from '../utils/helpers'
+import {
+  FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties
+} from 'react'
+import { BET_AMOUNTS_CENTS, centsToUsdInput, formatUsd, sanitizeBetValue } from '../utils/helpers'
 import { SKINS, SKIN_LABELS, type LastResultState } from '../hooks/useGame'
 import type { PlayerStatsData } from '../hooks/usePlayerStats'
 import type { LeaderboardRange, WinningsLeaderboardEntry } from '../hooks/useWinningsLeaderboard'
 import { PlayerStatsChart } from './PlayerStatsChart'
 import { WinningsLeaderboardCard } from './Leaderboard'
 import { Modal } from './Modal'
+import { useTranslation } from '../hooks/useTranslation'
 
 interface NicknameScreenProps {
   visible: boolean
@@ -231,6 +240,44 @@ export function NicknameScreen({
   const sanitizedNickname = nickname?.trim() || ''
   const profileName = sanitizedNickname || (isAuthenticated ? 'Игрок' : 'Новый игрок')
   const profileInitial = profileName.trim().charAt(0).toUpperCase() || 'S'
+  const { t } = useTranslation()
+  const selectedBetCents = useMemo(() => {
+    const normalized = sanitizeBetValue(betValue, balance)
+    return normalized > 0 ? normalized : null
+  }, [balance, betValue])
+  const selectedRetryBetCents = useMemo(() => {
+    const normalized = sanitizeBetValue(retryBetValue, balance)
+    return normalized > 0 ? normalized : null
+  }, [balance, retryBetValue])
+  const betOptions = useMemo(
+    () =>
+      BET_AMOUNTS_CENTS.map((value) => ({
+        value,
+        label: `$${centsToUsdInput(value)}`,
+        disabled: value > balance
+      })),
+    [balance]
+  )
+  const betOptionsText = useMemo(
+    () => betOptions.map((option) => option.label).join(', '),
+    [betOptions]
+  )
+  const handleBetSelect = useCallback(
+    (valueCents: number) => {
+      if (valueCents > balance) return
+      onBetChange(centsToUsdInput(valueCents))
+      onBetBlur()
+    },
+    [balance, onBetBlur, onBetChange]
+  )
+  const handleRetryBetSelect = useCallback(
+    (valueCents: number) => {
+      if (valueCents > balance) return
+      onRetryBetChange(centsToUsdInput(valueCents))
+      onRetryBetBlur()
+    },
+    [balance, onRetryBetBlur, onRetryBetChange]
+  )
 
   return (
     <div id="nicknameScreen" className={visible ? 'overlay overlay--lobby' : 'overlay overlay--lobby hidden'}>
@@ -273,24 +320,28 @@ export function NicknameScreen({
             <aside className="lobby-column lobby-column-left">
               <div className="balance-widget glass-card">
                 <div className="balance-widget-header">
-                  <div className="balance-widget-title">Баланс</div>
+                  <div className="balance-widget-title">{t('balanceTitle')}</div>
                   <button
                     type="button"
-                    className="icon-button"
+                    className="wallet-action-button"
                     onClick={() => (isAuthenticated ? setWalletModalOpen(true) : onStart())}
-                    aria-label="Кошелек"
+                    aria-label={t('walletButtonAriaLabel')}
                     disabled={!isAuthenticated}
                   >
-                    <span className="icon-wallet" aria-hidden="true" />
+                    <span className="wallet-action-icon" aria-hidden="true" />
+                    <span className="wallet-action-text">
+                      <span className="wallet-action-title">{t('walletButtonLabel')}</span>
+                      <span className="wallet-action-caption">{t('walletButtonCaption')}</span>
+                    </span>
                   </button>
                 </div>
-                <div className="balance-widget-value">{formatNumber(balance)}</div>
+                <div className="balance-widget-value">{formatUsd(balance)}</div>
                 <div className="balance-widget-meta">
-                  <span>Текущая ставка</span>
-                  <strong>{formatNumber(currentBet)}</strong>
+                  <span>{t('currentBetLabel')}</span>
+                  <strong>{formatUsd(currentBet)}</strong>
                 </div>
                 <div className="balance-widget-meta">
-                  <span>Скин</span>
+                  <span>{t('skinLabel')}</span>
                   <strong>{skinName}</strong>
                 </div>
                 {showWallet ? (
@@ -301,7 +352,7 @@ export function NicknameScreen({
                 ) : null}
                 {!isAuthenticated ? (
                   <button type="button" className="auth-link" onClick={onStart}>
-                    Авторизоваться
+                    {t('authPrompt')}
                   </button>
                 ) : null}
               </div>
@@ -355,20 +406,31 @@ export function NicknameScreen({
                 {nicknameLocked ? <p className="nickname-note">Никнейм закреплён за аккаунтом.</p> : null}
               </div>
               <div className="control-card glass-card">
-                <label className="field-label" htmlFor="betInput">
+                <label className="field-label" id="betInputLabel" htmlFor="betInput">
                   Ставка перед стартом
                 </label>
-                <input
-                    id="betInput"
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={betValue}
-                    onChange={(event) => onBetChange(event.target.value)}
-                    onBlur={onBetBlur}
-                />
+                <div className="bet-options" role="group" aria-labelledby="betInputLabel">
+                  {betOptions.map((option) => {
+                    const selected = option.value === selectedBetCents
+                    return (
+                      <button
+                        type="button"
+                        key={option.value}
+                        className={`bet-option${selected ? ' selected' : ''}`}
+                        onClick={() => handleBetSelect(option.value)}
+                        disabled={option.disabled}
+                        aria-pressed={selected}
+                      >
+                        <span className="bet-option-value">{option.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+                <input id="betInput" type="hidden" value={betValue} readOnly />
                 <div className="bet-hint">
-                  Доступно: <span id="betBalanceDisplay">{formatNumber(balance)}</span>
+                  Доступные ставки: <span className="bet-options-list">{betOptionsText}</span>. Баланс:
+                  {' '}
+                  <span id="betBalanceDisplay">{formatUsd(balance)}</span>
                 </div>
               </div>
               <button
@@ -400,16 +462,25 @@ export function NicknameScreen({
                     {lastResult.showRetryControls ? (
                         <div className="result-retry">
                           <div className="bet-control">
-                          <label htmlFor="retryBetInput">Ставка для повтора</label>
-                            <input
-                                id="retryBetInput"
-                                type="number"
-                                min={1}
-                                step={1}
-                                value={retryBetValue}
-                                onChange={(event) => onRetryBetChange(event.target.value)}
-                                onBlur={onRetryBetBlur}
-                            />
+                          <label id="retryBetInputLabel" htmlFor="retryBetInput">Ставка для повтора</label>
+                            <div className="bet-options bet-options--compact" role="group" aria-labelledby="retryBetInputLabel">
+                              {betOptions.map((option) => {
+                                const selected = option.value === selectedRetryBetCents
+                                return (
+                                  <button
+                                    type="button"
+                                    key={`retry-${option.value}`}
+                                    className={`bet-option bet-option--compact${selected ? ' selected' : ''}`}
+                                    onClick={() => handleRetryBetSelect(option.value)}
+                                    disabled={option.disabled}
+                                    aria-pressed={selected}
+                                  >
+                                    <span className="bet-option-value">{option.label}</span>
+                                  </button>
+                                )
+                              })}
+                            </div>
+                            <input id="retryBetInput" type="hidden" value={retryBetValue} readOnly />
                             <div className="bet-hint">
                               Доступно: <span>{lastResult.retryBalance}</span>
                             </div>
@@ -488,7 +559,7 @@ export function NicknameScreen({
         <div className="wallet-section wallet-modal-section">
           <div className="wallet-row">
             <span className="wallet-label">Игровой баланс</span>
-            <span className="wallet-value">{formatNumber(balance)}</span>
+            <span className="wallet-value">{formatUsd(balance)}</span>
           </div>
           {showWallet ? (
               <>

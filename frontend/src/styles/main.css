@@ -828,46 +828,6 @@
             color: rgba(191, 219, 254, 0.6);
         }
 
-        #minimapPanel {
-            position: fixed;
-            bottom: calc(var(--layout-vertical-tight) + var(--safe-bottom));
-            right: calc(var(--layout-horizontal) + var(--safe-right));
-            width: clamp(200px, 28vw, 260px);
-            padding: 18px;
-            background: linear-gradient(160deg, rgba(8, 14, 30, 0.9), rgba(37, 99, 235, 0.24));
-        }
-
-        #minimapPanel::after {
-            content: "";
-            position: absolute;
-            inset: auto -30% -40% auto;
-            width: 160px;
-            height: 160px;
-            background: radial-gradient(circle, rgba(56, 189, 248, 0.28), rgba(56, 189, 248, 0));
-            filter: blur(12px);
-            opacity: 0.55;
-            pointer-events: none;
-        }
-
-        #minimapPanel .title {
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.24em;
-            text-transform: uppercase;
-            color: rgba(191, 219, 254, 0.72);
-            margin-bottom: 14px;
-        }
-
-        #minimapCanvas {
-            display: block;
-            width: clamp(172px, 24vw, 200px);
-            height: clamp(172px, 24vw, 200px);
-            border-radius: 18px;
-            border: 1px solid rgba(96, 165, 250, 0.32);
-            background: linear-gradient(140deg, rgba(5, 10, 22, 0.88), rgba(17, 24, 39, 0.78));
-            box-shadow: inset 0 0 32px rgba(56, 189, 248, 0.18);
-        }
-
         .overlay {
             position: fixed;
             inset: 0;
@@ -1149,6 +1109,61 @@
             align-items: center;
             justify-content: space-between;
             gap: 12px;
+        }
+
+        .wallet-action-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(96, 165, 250, 0.35);
+            background: linear-gradient(135deg, rgba(30, 64, 175, 0.45), rgba(59, 130, 246, 0.4));
+            color: #e2e8f0;
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 0.02em;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.45);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .wallet-action-button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .wallet-action-button:not(:disabled):hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 36px rgba(59, 130, 246, 0.28);
+            border-color: rgba(147, 197, 253, 0.7);
+        }
+
+        .wallet-action-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            background: linear-gradient(145deg, rgba(226, 232, 240, 0.9), rgba(148, 197, 255, 0.65));
+            mask: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"%3E%3Crect x="3" y="6" width="18" height="12" rx="2" ry="2"/%3E%3Cpath d="M16 10h4"/%3E%3Ccircle cx="16" cy="12" r="1"/%3E%3C/svg%3E') center/16px 16px no-repeat;
+        }
+
+        .wallet-action-text {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            line-height: 1.1;
+        }
+
+        .wallet-action-title {
+            font-size: 13px;
+        }
+
+        .wallet-action-caption {
+            font-size: 11px;
+            font-weight: 500;
+            color: rgba(226, 232, 240, 0.78);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
         }
 
         .balance-widget-title {
@@ -2783,34 +2798,75 @@
             margin-bottom: 8px;
         }
 
-        .bet-control input[type="number"] {
-            width: 100%;
-            padding: 12px 14px;
-            border-radius: 16px;
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            background: linear-gradient(145deg, rgba(8, 16, 31, 0.92), rgba(12, 24, 46, 0.78));
-            color: #f1f5f9;
+        .bet-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .bet-option {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 110px;
+            padding: 14px 18px;
+            border-radius: 18px;
+            border: 1px solid rgba(94, 234, 212, 0.32);
+            background:
+                linear-gradient(160deg, rgba(20, 184, 166, 0.32), rgba(14, 165, 233, 0.26)),
+                radial-gradient(circle at top, rgba(96, 165, 250, 0.18), transparent 60%);
+            color: #ecfeff;
             font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+            box-shadow: 0 18px 38px rgba(13, 148, 136, 0.35);
+        }
+
+        .bet-option.selected {
+            border-color: rgba(236, 254, 255, 0.9);
+            box-shadow:
+                0 20px 48px rgba(45, 212, 191, 0.4),
+                0 0 0 1px rgba(226, 232, 240, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .bet-option:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow:
+                0 24px 52px rgba(14, 165, 233, 0.32),
+                0 0 0 1px rgba(186, 230, 253, 0.35);
+        }
+
+        .bet-option:disabled {
+            opacity: 0.42;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .bet-option-value {
+            font-size: 15px;
+            letter-spacing: 0.08em;
+        }
+
+        .bet-options--compact {
+            justify-content: flex-start;
+            gap: 10px;
+        }
+
+        .bet-option--compact {
+            min-width: 88px;
+            padding: 12px 16px;
+            font-size: 14px;
+        }
+
+        .bet-options-list {
             font-weight: 600;
-            outline: none;
-            appearance: textfield;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-            box-shadow:
-                inset 0 0 0 1px rgba(15, 23, 42, 0.4),
-                0 12px 32px rgba(15, 23, 42, 0.45);
-        }
-
-        .bet-control input[type="number"]:focus {
-            border-color: rgba(56, 189, 248, 0.65);
-            box-shadow:
-                0 0 0 3px rgba(56, 189, 248, 0.24),
-                0 16px 36px rgba(37, 99, 235, 0.24);
-        }
-
-        .bet-control input[type="number"]::-webkit-outer-spin-button,
-        .bet-control input[type="number"]::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
+            color: rgba(186, 230, 253, 0.9);
         }
 
         .bet-control .bet-hint {
@@ -2881,58 +2937,6 @@
             box-shadow: 0 14px 26px rgba(59, 130, 246, 0.35);
         }
 
-        .touch-controls {
-            position: fixed;
-            left: calc(var(--layout-horizontal-tight) + var(--safe-left));
-            bottom: calc(var(--layout-vertical-tight) + var(--safe-bottom));
-            display: none;
-            gap: 16px;
-            align-items: flex-end;
-            z-index: 8;
-            pointer-events: none;
-        }
-
-        .touch-controls.active {
-            display: flex;
-        }
-
-        .touch-controls > * {
-            pointer-events: auto;
-        }
-
-        .joystick {
-            position: relative;
-            width: clamp(120px, 30vw, 160px);
-            height: clamp(120px, 30vw, 160px);
-            border-radius: 999px;
-            background: rgba(8, 14, 24, 0.7);
-            border: 1px solid rgba(94, 117, 151, 0.28);
-            box-shadow: inset 0 18px 38px rgba(2, 6, 12, 0.55);
-            touch-action: none;
-        }
-
-        .joystick::before {
-            content: "";
-            position: absolute;
-            inset: 18%;
-            border-radius: 999px;
-            border: 1px solid rgba(59, 76, 103, 0.45);
-            background: radial-gradient(circle, rgba(59, 76, 103, 0.35), rgba(15, 23, 42, 0.65));
-        }
-
-        .joystick-handle {
-            position: absolute;
-            width: clamp(48px, 16vw, 64px);
-            height: clamp(48px, 16vw, 64px);
-            border-radius: 50%;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            background: linear-gradient(145deg, rgba(59, 130, 246, 0.85), rgba(29, 78, 216, 0.9));
-            border: 2px solid rgba(148, 163, 184, 0.4);
-            box-shadow: 0 14px 30px rgba(29, 78, 216, 0.45);
-            pointer-events: none;
-        }
 
         .boost-button {
             border: none;
@@ -2977,17 +2981,6 @@
             bottom: auto;
         }
 
-        body.is-touch #minimapPanel {
-            bottom: calc(var(--layout-vertical-tight) + var(--safe-bottom));
-            right: calc(var(--layout-horizontal-tight) + var(--safe-right));
-            left: auto;
-            top: auto;
-        }
-
-        body.is-touch .touch-controls {
-            display: flex;
-        }
-
         #deathScreen .card {
             width: min(360px, 90vw);
         }
@@ -3015,10 +3008,6 @@
 
         #deathScreen .bet-control {
             margin-bottom: 16px;
-        }
-
-        #deathScreen .bet-control input[type="number"] {
-            background: rgba(11, 18, 30, 0.92);
         }
 
         #deathScreen .bet-control .bet-hint {
@@ -3055,13 +3044,6 @@
                 left: calc(var(--layout-horizontal-tight) + var(--safe-left));
             }
 
-            body:not(.is-touch) #minimapPanel {
-                top: calc(var(--layout-vertical-tight) + var(--safe-top));
-                bottom: auto;
-                right: calc(var(--layout-horizontal-tight) + var(--safe-right));
-                left: auto;
-                width: clamp(180px, 32vw, 220px);
-            }
         }
 
         @media (max-width: 540px) {
@@ -3071,17 +3053,12 @@
             }
 
             #leaderboard .title,
-            #scorePanel .label,
-            #minimapPanel .title {
+            #scorePanel .label {
                 font-size: 12px;
             }
 
             #leaderboard {
                 width: clamp(180px, 40vw, 220px);
-            }
-
-            #minimapCanvas {
-                border-radius: 14px;
             }
 
             body.is-touch #leaderboard,
