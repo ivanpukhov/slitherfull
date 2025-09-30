@@ -17,6 +17,7 @@ type SnakeState = {
   targetDir?: number
   alive?: boolean
   speed?: number
+  headHistory?: SnakePoint[]
 }
 
 type FoodState = {

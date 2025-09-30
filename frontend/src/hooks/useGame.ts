@@ -1008,9 +1008,14 @@ export class GameController {
     const smoothPos = Math.min(1, dt * POSITION_SMOOTH)
     const smoothAngle = Math.min(1, dt * ANGLE_SMOOTH)
     const now = performance.now()
+
     for (const snake of this.state.snakes.values()) {
+      // --- предсказание позиции головы ---
       if (typeof snake.serverX === 'number' && typeof snake.serverY === 'number') {
-        const elapsed = Math.max(0, Math.min(MAX_PREDICTION_SECONDS, (now - (snake.lastServerAt || now)) / 1000))
+        const elapsed = Math.max(
+            0,
+            Math.min(MAX_PREDICTION_SECONDS, (now - (snake.lastServerAt || now)) / 1000)
+        )
         const vx = snake.velocityX || 0
         const vy = snake.velocityY || 0
         const predictedX = snake.serverX + vx * elapsed
@@ -1024,47 +1029,82 @@ export class GameController {
           }
         }
       }
+
+      // --- сглаживаем позицию головы ---
       if (typeof snake.targetX === 'number' && typeof snake.targetY === 'number') {
-        snake.displayX = typeof snake.displayX === 'number' ? lerp(snake.displayX, snake.targetX, smoothPos) : snake.targetX
-        snake.displayY = typeof snake.displayY === 'number' ? lerp(snake.displayY, snake.targetY, smoothPos) : snake.targetY
+        snake.displayX =
+            typeof snake.displayX === 'number'
+                ? lerp(snake.displayX, snake.targetX, smoothPos)
+                : snake.targetX
+        snake.displayY =
+            typeof snake.displayY === 'number'
+                ? lerp(snake.displayY, snake.targetY, smoothPos)
+                : snake.targetY
       }
+
+      // --- сглаживаем направление ---
       if (typeof snake.targetDir === 'number') {
-        snake.displayDir = typeof snake.displayDir === 'number'
-          ? lerpAngle(snake.displayDir, snake.targetDir, smoothAngle)
-          : snake.targetDir
+        snake.displayDir =
+            typeof snake.displayDir === 'number'
+                ? lerpAngle(snake.displayDir, snake.targetDir, smoothAngle)
+                : snake.targetDir
       }
-      snake.displayLength = lerp(snake.displayLength || snake.length || 20, snake.length || 20, smoothPos)
-      if (Array.isArray(snake.segments) && snake.segments.length > 1) {
-        const resampled = this.resamplePath(snake.segments, SEGMENT_SPACING)
-        this.smoothAssignPath(snake, resampled)
-      }
+
+      // --- сглаживаем длину ---
+      snake.displayLength = lerp(
+          snake.displayLength || snake.length || 20,
+          snake.length || 20,
+          smoothPos
+      )
+
+      // --- записываем историю головы ---
       const headX = typeof snake.displayX === 'number' ? snake.displayX : snake.targetX
       const headY = typeof snake.displayY === 'number' ? snake.displayY : snake.targetY
       if (Number.isFinite(headX) && Number.isFinite(headY)) {
-        const basePath = Array.isArray(snake.renderPath) && snake.renderPath.length > 0
-          ? snake.renderPath
-          : Array.isArray(snake.segments) && snake.segments.length > 0
-            ? snake.segments
-            : null
-        if (basePath && basePath.length) {
-          const orientation = typeof snake.displayDir === 'number'
-            ? snake.displayDir
-            : typeof snake.targetDir === 'number'
-              ? snake.targetDir
-              : 0
-          const desiredLength = Math.max(SEGMENT_SPACING * 2, snake.length || 0)
-          const rebuilt = this.rebuildPath(basePath, headX, headY, desiredLength, orientation)
-          const predictedPath = this.resamplePath(rebuilt, SEGMENT_SPACING)
-          if (predictedPath.length) {
-            this.smoothAssignPath(snake, predictedPath)
-          }
+        if (!snake.headHistory) snake.headHistory = []
+        snake.headHistory.push({ x: headX, y: headY })
+        if (snake.headHistory.length > 600) {
+          snake.headHistory.shift()
         }
       }
+
+      // --- строим хвост из истории ---
+      if (snake.headHistory && snake.headHistory.length > 1) {
+        const output: SnakePoint[] = []
+        let remaining = Math.max(SEGMENT_SPACING * 2, snake.length || 0)
+        let prev = snake.headHistory[snake.headHistory.length - 1]
+        output.push(prev)
+
+        for (let i = snake.headHistory.length - 2; i >= 0 && remaining > 0; i--) {
+          const curr = snake.headHistory[i]
+          const dx = prev.x - curr.x
+          const dy = prev.y - curr.y
+          const dist = Math.hypot(dx, dy)
+
+          if (dist >= SEGMENT_SPACING) {
+            output.push(curr)
+            remaining -= dist
+            prev = curr
+          }
+        }
+
+        snake.renderPath = output.reverse()
+      }
     }
+
+    // --- еда ---
     for (const food of this.state.foods.values()) {
-      food.displayX = typeof food.displayX === 'number' ? lerp(food.displayX, food.targetX, smoothPos) : food.targetX
-      food.displayY = typeof food.displayY === 'number' ? lerp(food.displayY, food.targetY, smoothPos) : food.targetY
+      food.displayX =
+          typeof food.displayX === 'number'
+              ? lerp(food.displayX, food.targetX, smoothPos)
+              : food.targetX
+      food.displayY =
+          typeof food.displayY === 'number'
+              ? lerp(food.displayY, food.targetY, smoothPos)
+              : food.targetY
     }
+
+    // --- камера ---
     if (this.state.alive) {
       const me = this.getMeSnake()
       if (me && typeof me.displayX === 'number' && typeof me.displayY === 'number') {
@@ -1072,8 +1112,16 @@ export class GameController {
         this.state.camera.targetY = me.displayY
       }
     }
-    this.state.camera.x = lerp(this.state.camera.x, this.state.camera.targetX, Math.min(1, dt * CAMERA_SMOOTH))
-    this.state.camera.y = lerp(this.state.camera.y, this.state.camera.targetY, Math.min(1, dt * CAMERA_SMOOTH))
+    this.state.camera.x = lerp(
+        this.state.camera.x,
+        this.state.camera.targetX,
+        Math.min(1, dt * CAMERA_SMOOTH)
+    )
+    this.state.camera.y = lerp(
+        this.state.camera.y,
+        this.state.camera.targetY,
+        Math.min(1, dt * CAMERA_SMOOTH)
+    )
   }
 
   draw(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, time: number, dpr: number) {
