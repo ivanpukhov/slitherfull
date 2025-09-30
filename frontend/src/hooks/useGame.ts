@@ -1056,7 +1056,7 @@ export class GameController {
           const rebuilt = this.rebuildPath(basePath, headX, headY, desiredLength, orientation)
           const predictedPath = this.resamplePath(rebuilt, SEGMENT_SPACING)
           if (predictedPath.length) {
-            snake.renderPath = predictedPath
+            this.smoothAssignPath(snake, predictedPath)
           }
         }
       }
