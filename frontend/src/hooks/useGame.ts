@@ -1271,20 +1271,12 @@ export class GameController {
     const maxSegments = 6
     const baseSpacing = Math.max(SEGMENT_SPACING * 0.7, LENGTH_EPS)
     const steps = Math.max(1, Math.min(maxSegments, Math.round(dist / baseSpacing)))
-    if (dist <= baseSpacing) {
-      lastPoint.x = targetX
-      lastPoint.y = targetY
-    } else {
-      for (let i = 1; i <= steps; i++) {
-        const t = i / steps
-        path.push({
-          x: startX + dx * t,
-          y: startY + dy * t
-        })
-      }
-      const head = path[path.length - 1]
-      head.x = targetX
-      head.y = targetY
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps
+      path.push({
+        x: startX + dx * t,
+        y: startY + dy * t
+      })
     }
     this.fitPathLength(path, Math.max(SEGMENT_SPACING * 2, snake.length || 0), SEGMENT_SPACING)
   }
