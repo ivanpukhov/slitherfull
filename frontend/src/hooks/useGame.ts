@@ -23,18 +23,20 @@ export const SKIN_LABELS: Record<string, string> = {
 }
 
 export const FOOD_PULSE_SPEED = 4.4
-export const CAMERA_SMOOTH = 5.2
-export const POSITION_SMOOTH = 14.5
-export const ANGLE_SMOOTH = 11.5
+export const CAMERA_SMOOTH = 4.8
+export const POSITION_SMOOTH = 11.5
+export const ANGLE_SMOOTH = 9.8
 export const CAMERA_ZOOM = 1.2
-export const MAX_PREDICTION_SECONDS = 0.28
-export const PREDICTION_CORRECTION = 6.8
-export const PREDICTION_SNAP_DISTANCE = 320
-export const SEGMENT_SPACING = 4.6
+export const MAX_PREDICTION_SECONDS = 0.34
+export const PREDICTION_CORRECTION = 5.2
+export const PREDICTION_SNAP_DISTANCE = 220
+export const SEGMENT_SPACING = 6
 export const LENGTH_EPS = 1e-3
 export const MINIMAP_SIZE = 188
 export const CASHOUT_HOLD_MS = 2000
-export const RENDER_PATH_BLEND = 0.26
+export const RENDER_PATH_BLEND = 0.18
+const RENDER_PATH_HEAD_WEIGHT = 0.38
+const RENDER_PATH_TAIL_WEIGHT = 0.12
 
 export interface AccountState {
   balance: number
@@ -933,23 +935,33 @@ export class GameController {
       snake.renderPath = targetPath.slice()
       return
     }
-    const baseBlend = RENDER_PATH_BLEND
-    const limit = Math.min(prev.length, targetPath.length)
+    const overlap = Math.min(prev.length, targetPath.length)
+    const prevOffset = Math.max(0, prev.length - overlap)
+    const targetOffset = Math.max(0, targetPath.length - overlap)
     const blended: SnakePoint[] = []
-    for (let i = 0; i < limit; i++) {
-      const point = prev[i]
-      const target = targetPath[i]
-      const mix = limit > 1 ? i / (limit - 1) : 0
-      const headBias = 1 - mix
-      const dynamicBlend = Math.min(0.65, baseBlend + headBias * 0.32 + mix * 0.08)
+
+    for (let i = 0; i < targetOffset; i++) {
+      const point = targetPath[i]
+      blended.push({ x: point.x, y: point.y })
+    }
+
+    for (let i = 0; i < overlap; i++) {
+      const prevPoint = prev[prevOffset + i]
+      const targetPoint = targetPath[targetOffset + i]
+      if (!prevPoint || !targetPoint) continue
+      const mix = overlap > 1 ? i / (overlap - 1) : 1
+      const headWeight = mix
+      const tailWeight = 1 - headWeight
+      const dynamicBlend = Math.min(
+        0.72,
+        RENDER_PATH_BLEND + headWeight * RENDER_PATH_HEAD_WEIGHT + tailWeight * RENDER_PATH_TAIL_WEIGHT
+      )
       blended.push({
-        x: lerp(point.x, target.x, dynamicBlend),
-        y: lerp(point.y, target.y, dynamicBlend)
+        x: lerp(prevPoint.x, targetPoint.x, dynamicBlend),
+        y: lerp(prevPoint.y, targetPoint.y, dynamicBlend)
       })
     }
-    for (let i = limit; i < targetPath.length; i++) {
-      blended.push(targetPath[i])
-    }
+
     const smoothed: SnakePoint[] = blended.map((point, index, array) => {
       if (index === 0 || index === array.length - 1) {
         return point
@@ -961,15 +973,15 @@ export class GameController {
         y: (prevPoint.y + point.y * 2 + nextPoint.y) / 4
       }
     })
+
     if (targetPath.length && smoothed.length) {
-      smoothed[smoothed.length - 1] = {
-        x: targetPath[targetPath.length - 1].x,
-        y: targetPath[targetPath.length - 1].y
-      }
+      const head = targetPath[targetPath.length - 1]
+      smoothed[smoothed.length - 1] = { x: head.x, y: head.y }
     } else if (targetPath.length && !smoothed.length) {
       const fallback = targetPath[targetPath.length - 1]
       smoothed.push({ x: fallback.x, y: fallback.y })
     }
+
     snake.renderPath = smoothed
     this.fitPathLength(snake.renderPath, Math.max(SEGMENT_SPACING * 2, snake.length || 0), SEGMENT_SPACING)
   }
@@ -1108,7 +1120,9 @@ export class GameController {
     let total = this.pathLength(points)
     if (!Number.isFinite(total)) return
     if (total > safeTarget + SEGMENT_SPACING * 0.25) {
-      this.trimPathFront(points, total - safeTarget)
+      const excess = total - safeTarget
+      const trimStep = spacing * 6
+      this.trimPathFront(points, Math.min(excess, trimStep))
     }
   }
 
