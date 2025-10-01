@@ -469,16 +469,7 @@ export function NicknameScreen({
 
           <form className="damn-column damn-column--center" onSubmit={handleSubmit}>
             <section className="damn-card damn-card--join">
-              <header className="damn-card__header">
-                <div>
-                  <h2 className="damn-card__title">Join Game</h2>
-                  <p className="damn-card__subtitle">Choose your stake and jump in.</p>
-                </div>
-                <div className="damn-card__balance">
-                  <span className="damn-card__balance-label">Balance</span>
-                  <span className="damn-card__balance-value">{formatUsd(balance)}</span>
-                </div>
-              </header>
+
 
               <div className="damn-field">
                 <label className="damn-field__label" htmlFor="nicknameInput">
@@ -499,11 +490,9 @@ export function NicknameScreen({
                   }}
                   disabled={nicknameLocked}
                 />
-                {nicknameLocked ? <p className="damn-field__note">Nickname locked to your account.</p> : null}
               </div>
 
               <div className="damn-field">
-                <span className="damn-field__label">Select Bet</span>
                 <div className="damn-bet-options" role="group" aria-label="Select bet">
                   {betOptions.map((option) => {
                     const selected = option.value === selectedBetCents
@@ -522,7 +511,6 @@ export function NicknameScreen({
                   })}
                 </div>
                 <input id="betInput" type="hidden" value={betValue} readOnly />
-                <div className="damn-bet-hint">Options: {betOptionsText} · Balance {formatUsd(balance)}</div>
               </div>
 
               <button
@@ -547,12 +535,7 @@ export function NicknameScreen({
                   <span className="damn-join-stat__value">{totalPaidUsdDisplay}</span>
                   <span className="damn-join-stat__label">Paid out · {rangeBadge}</span>
                 </div>
-                {totalPaidSolDisplay ? (
-                  <div className="damn-join-stat">
-                    <span className="damn-join-stat__value">{totalPaidSolDisplay}</span>
-                    <span className="damn-join-stat__label">Across winners</span>
-                  </div>
-                ) : null}
+
               </div>
             </section>
 
@@ -631,10 +614,6 @@ export function NicknameScreen({
               <div className="damn-wallet__balance">
                 <span className="damn-wallet__label">Available</span>
                 <span className="damn-wallet__value">{formatUsd(balance)}</span>
-              </div>
-              <div className="damn-wallet__meta-row">
-                <span className="damn-wallet__meta-label">Current bet</span>
-                <span className="damn-wallet__meta-value">{formatUsd(currentBet)}</span>
               </div>
               {showWallet ? (
                 <div className="damn-wallet__meta">
