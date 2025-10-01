@@ -3848,6 +3848,168 @@ body.is-touch #leaderboard {
     color: #FF9900;
 }
 
+.damn-card--friends {
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+}
+
+.damn-card--friends .friends-add-button {
+    margin-top: auto;
+}
+
+.friends-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.friends-tabs {
+    display: flex;
+    gap: 8px;
+}
+
+.friends-tab {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    background: rgba(24, 26, 35, 0.6);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s ease;
+}
+
+.friends-tab.active {
+    background: linear-gradient(135deg, #6366f1, #22d3ee);
+}
+
+.friends-tab-badge {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 12px;
+}
+
+.friends-search {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.friends-search label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.friends-search input {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(24, 26, 35, 0.6);
+    color: #fff;
+}
+
+.friends-search-hint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.friends-section {
+    min-height: 160px;
+}
+
+.friends-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.friends-search-results {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 8px;
+}
+
+.friends-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: rgba(24, 26, 35, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    gap: 12px;
+}
+
+.friends-row-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.friends-row-name {
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.friends-row-meta {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.friends-row-since {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.friends-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.friends-row-status {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.friends-action {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(99, 102, 241, 0.8);
+    background: rgba(59, 130, 246, 0.1);
+    color: #fff;
+    font-size: 13px;
+    transition: background 0.2s ease;
+}
+
+.friends-action:hover {
+    background: rgba(59, 130, 246, 0.25);
+}
+
+.friends-empty {
+    padding: 16px;
+    text-align: center;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.friends-error {
+    font-size: 13px;
+    color: #f87171;
+    text-align: center;
+}
+
 @media (max-width: 1023px) {
     .damn-topbar__profile {
         width: 100%;

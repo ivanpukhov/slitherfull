@@ -3,27 +3,13 @@ const { GamePayout } = require('../models/GamePayout')
 const { User } = require('../models/User')
 const solana = require('./solanaService')
 
-const RANGE_WINDOWS = {
-  '24h': 24 * 60 * 60 * 1000,
-  '7d': 7 * 24 * 60 * 60 * 1000,
-  '30d': 30 * 24 * 60 * 60 * 1000
-}
-
 function normalizeNumber(value, fallback = 0) {
   const num = Number(value)
   return Number.isFinite(num) ? num : fallback
 }
 
-async function getLeaderboardRange(rangeKey, priceUsdOverride = null) {
-  const windowMs = RANGE_WINDOWS[rangeKey]
-  if (!windowMs) {
-    return []
-  }
-  const since = new Date(Date.now() - windowMs)
+async function getAllTimeLeaderboard(limit = 20, priceUsdOverride = null) {
   const rows = await GamePayout.findAll({
-    where: {
-      createdAt: { [Op.gte]: since }
-    },
     attributes: [
       'userId',
       [fn('COALESCE', fn('SUM', col('amountUsd')), 0), 'totalUsd'],
@@ -40,7 +26,7 @@ async function getLeaderboardRange(rangeKey, priceUsdOverride = null) {
     ],
     group: ['GamePayout.userId', 'user.id'],
     order: [[fn('COALESCE', fn('SUM', col('amountUsd')), 0), 'DESC']],
-    limit: 10
+    limit
   })
   const priceUsd = priceUsdOverride
   return rows.map((row) => {
@@ -60,14 +46,10 @@ async function getLeaderboardRange(rangeKey, priceUsdOverride = null) {
   })
 }
 
-async function getWinningsLeaderboards() {
+async function getWinningsLeaderboard() {
   const priceUsd = await solana.fetchSolPriceUsd().catch(() => null)
-  const result = {}
-  for (const key of Object.keys(RANGE_WINDOWS)) {
-    result[key] = await getLeaderboardRange(key, priceUsd)
-  }
   return {
-    leaderboards: result,
+    entries: await getAllTimeLeaderboard(20, priceUsd),
     priceUsd,
     generatedAt: new Date().toISOString()
   }
@@ -136,6 +118,6 @@ async function getUserPayoutHistory(userId, days = 30) {
 }
 
 module.exports = {
-  getWinningsLeaderboards,
+  getWinningsLeaderboard,
   getUserPayoutHistory
 }

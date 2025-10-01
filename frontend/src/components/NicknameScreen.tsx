@@ -16,16 +16,11 @@ import {
 } from '../utils/helpers'
 import { SKINS, SKIN_LABELS, type LastResultState } from '../hooks/useGame'
 import type { PlayerStatsData } from '../hooks/usePlayerStats'
-import type { LeaderboardRange, WinningsLeaderboardEntry } from '../hooks/useWinningsLeaderboard'
+import type { WinningsLeaderboardEntry } from '../hooks/useWinningsLeaderboard'
 import { PlayerStatsChart } from './PlayerStatsChart'
 import { WinningsLeaderboardCard } from './Leaderboard'
 import { Modal } from './Modal'
-
-const RANGE_BADGES: Record<LeaderboardRange, string> = {
-  '24h': 'Last 24h',
-  '7d': 'Last 7d',
-  '30d': 'Last 30d'
-}
+import { FriendsModal } from './FriendsModal'
 
 interface NicknameScreenProps {
   visible: boolean
@@ -68,12 +63,11 @@ interface NicknameScreenProps {
   winningsEntries: WinningsLeaderboardEntry[]
   winningsLoading?: boolean
   winningsError?: string | null
-  winningsRange: LeaderboardRange
-  onWinningsRangeChange: (range: LeaderboardRange) => void
   winningsPriceHint?: string | null
   activePlayers?: number
   totalWinningsUsd?: number
   totalWinningsSol?: number
+  authToken?: string | null
 }
 
 export function NicknameScreen({
@@ -117,12 +111,11 @@ export function NicknameScreen({
   winningsEntries,
   winningsLoading,
   winningsError,
-  winningsRange,
-  onWinningsRangeChange,
   winningsPriceHint,
   activePlayers,
   totalWinningsUsd,
-  totalWinningsSol
+  totalWinningsSol,
+  authToken
 }: NicknameScreenProps) {
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -172,6 +165,7 @@ export function NicknameScreen({
   const [walletModalOpen, setWalletModalOpen] = useState(false)
   const [statsModalOpen, setStatsModalOpen] = useState(false)
   const [winningsModalOpen, setWinningsModalOpen] = useState(false)
+  const [friendsModalOpen, setFriendsModalOpen] = useState(false)
   const skinListRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -188,6 +182,12 @@ export function NicknameScreen({
       setWithdrawError(null)
     }
   }, [withdrawStatus])
+
+  useEffect(() => {
+    if (!isAuthenticated && friendsModalOpen) {
+      setFriendsModalOpen(false)
+    }
+  }, [friendsModalOpen, isAuthenticated])
 
   const resetCopyStatus = () => {
     if (copyResetTimer.current) {
@@ -332,14 +332,19 @@ export function NicknameScreen({
     }
   }, [])
 
+  const handleOpenFriends = useCallback(() => {
+    if (!isAuthenticated) {
+      onStart()
+      return
+    }
+    setFriendsModalOpen(true)
+  }, [isAuthenticated, onStart])
+
   const leaderboardEntries = useMemo(() => winningsEntries.slice(0, 5), [winningsEntries])
-  const leaderboardLoading = winningsLoading && leaderboardEntries.length === 0
+  const leaderboardLoading = Boolean(winningsLoading && leaderboardEntries.length === 0)
+  const leaderboardRefreshing = Boolean(winningsLoading && leaderboardEntries.length > 0)
   const leaderboardHasError = !winningsLoading && Boolean(winningsError)
-  const leaderboardRanges = useMemo(
-    () => ['24h', '7d', '30d'] as LeaderboardRange[],
-    []
-  )
-  const rangeBadge = RANGE_BADGES[winningsRange]
+  const rangeBadge = 'All time'
   const activePlayersDisplay = formatNumber(Math.max(0, activePlayers ?? 0))
   const totalPaidUsdDisplay = Number.isFinite(totalWinningsUsd ?? NaN)
     ? usdFormatter.format(totalWinningsUsd ?? 0)
@@ -402,22 +407,8 @@ export function NicknameScreen({
                   <h2 className="damn-card__title">Leaderboard</h2>
                   <span className="damn-card__caption">{rangeBadge}</span>
                 </div>
-                <div className="damn-card__filters" role="group" aria-label="Leaderboard range">
-                  {leaderboardRanges.map((range) => (
-                    <button
-                      type="button"
-                      key={range}
-                      className={`damn-filter${range === winningsRange ? ' active' : ''}`}
-                      onClick={() => onWinningsRangeChange(range)}
-                    >
-                      {RANGE_BADGES[range]}
-                    </button>
-                  ))}
-                </div>
               </header>
-              <ol
-                className={`damn-leaderboard${winningsLoading ? ' loading' : ''}`}
-              >
+              <ol className={`damn-leaderboard${leaderboardRefreshing ? ' loading' : ''}`}>
                 {leaderboardLoading ? <li className="damn-leaderboard__placeholder">Loading…</li> : null}
                 {leaderboardHasError ? (
                   <li className="damn-leaderboard__placeholder">Unable to load leaderboard</li>
@@ -446,7 +437,18 @@ export function NicknameScreen({
               <header className="damn-card__header">
                 <h2 className="damn-card__title">Friends</h2>
               </header>
-              <p className="damn-empty-text">No friends yet — invite your crew!</p>
+              <p className="damn-empty-text">
+                {isAuthenticated
+                  ? 'Find teammates and track your crew in one place.'
+                  : 'Sign in to discover and add friends from the arena.'}
+              </p>
+              <button
+                type="button"
+                className="damn-primary-button damn-primary-button--full friends-add-button"
+                onClick={handleOpenFriends}
+              >
+                Add Friends
+              </button>
             </section>
 
             <div className="damn-side-actions">
@@ -810,11 +812,14 @@ export function NicknameScreen({
           entries={winningsEntries}
           loading={winningsLoading}
           error={winningsError ?? null}
-          range={winningsRange}
-          onRangeChange={onWinningsRangeChange}
           priceHint={winningsPriceHint}
         />
       </Modal>
+      <FriendsModal
+        open={friendsModalOpen}
+        token={authToken ?? null}
+        onClose={() => setFriendsModalOpen(false)}
+      />
     </div>
   )
 }

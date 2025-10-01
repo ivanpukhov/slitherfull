@@ -7,7 +7,7 @@ const router = express.Router()
 
 router.get('/leaderboard', async (req, res) => {
   try {
-    const data = await statsService.getWinningsLeaderboards()
+    const data = await statsService.getWinningsLeaderboard()
     res.json({ status: 'ok', data })
   } catch (err) {
     res.status(500).json({ error: 'leaderboard_unavailable' })
