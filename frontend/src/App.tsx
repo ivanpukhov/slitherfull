@@ -260,7 +260,7 @@ function GameView() {
     if (game.cashout.pending) return 'Ожидание вывода'
     if (game.transfer.pending) return 'Обработка...'
     if (auth.status === 'checking') return 'Загрузка...'
-    return isAuthenticated ? 'Играть' : 'Авторизоваться'
+    return isAuthenticated ? 'Play' : 'Login'
   }, [auth.status, game.cashout.pending, game.transfer.pending, isAuthenticated])
 
   const startDisabled =

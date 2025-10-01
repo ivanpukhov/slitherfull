@@ -3048,11 +3048,6 @@ body.is-touch #leaderboard {
     align-items: stretch;
     justify-content: center;
     padding: clamp(24px, 5vh, 72px) clamp(18px, 8vw, 84px);
-    background-color: #06070c;
-    background-image: radial-gradient(circle at 50% -10%, rgba(255, 204, 0, 0.18), transparent 60%),
-    linear-gradient(30deg, rgba(255, 204, 0, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(255, 204, 0, 0.08) 87.5%, rgba(255, 204, 0, 0.08)),
-    linear-gradient(150deg, rgba(255, 204, 0, 0.08) 12%, transparent 12.5%, transparent 87%, rgba(255, 204, 0, 0.08) 87.5%, rgba(255, 204, 0, 0.08)),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.62));
     background-size: auto, 64px 110px, 64px 110px, 100% 100%;
     background-position: 0 0, 0 0, 32px 55px, 0 0;
     overflow-y: auto;
@@ -3535,21 +3530,13 @@ body.is-touch #leaderboard {
 .damn-primary-button {
     background: linear-gradient(120deg, #FFC94D, #FF9900);
     color: #1A1A1A;
-    font-size: 28px;
-    font-family: "Orbitron";
-    font-weight: 600;
-    padding: 14px 20px;
+
     border-radius: 12px;
     cursor: pointer;
-    border: 3px solid #E68600;
 
-    /* 3D толщина */
-    box-shadow: 0 6px 0 #B87400, 0 12px 28px rgba(255, 153, 0, 0.35);
-
-    transition: all 0.2s ease-in-out;
 }
 
-.damn-primary-button:hover {
+.damn-primary-button--full:hover {
     animation: pressDown 0.25s forwards;
 }
 
@@ -3574,10 +3561,16 @@ body.is-touch #leaderboard {
     color: #FF9900;
     border: 1px solid rgba(255, 204, 0, 0.6);
     box-shadow: none;
+    padding: 12px 20px;
+
 }
 
 .damn-primary-button--full {
     width: 100%;
+    font-size: 28px;
+    font-family: "Orbitron", serif;
+    font-weight: 600;
+    padding: 14px 20px;
 }
 
 .damn-secondary-button {
