@@ -193,3 +193,5 @@ export function useFriends(token: string | null) {
     hasFriends
   }
 }
+
+export type UseFriendsResult = ReturnType<typeof useFriends>

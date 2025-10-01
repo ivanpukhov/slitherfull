@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Modal } from './Modal'
-import { useFriends, type FriendRequestEntry, type FriendSearchResult, type FriendSummary } from '../hooks/useFriends'
+import {
+  type FriendRequestEntry,
+  type FriendSearchResult,
+  type FriendSummary,
+  type UseFriendsResult
+} from '../hooks/useFriends'
 
 type TabKey = 'friends' | 'outgoing' | 'incoming'
 
@@ -23,13 +28,12 @@ const ERROR_MESSAGES: Record<string, string> = {
 
 interface FriendsModalProps {
   open: boolean
-  token: string | null
+  controller: UseFriendsResult
   onClose: () => void
 }
 
-export function FriendsModal({ open, token, onClose }: FriendsModalProps) {
-  const { friends, outgoing, incoming, loading, error, refresh, search, sendRequest, acceptRequest } =
-    useFriends(token)
+export function FriendsModal({ open, controller, onClose }: FriendsModalProps) {
+  const { friends, outgoing, incoming, loading, error, refresh, search, sendRequest, acceptRequest } = controller
   const [activeTab, setActiveTab] = useState<TabKey>('friends')
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<FriendSearchResult[]>([])
