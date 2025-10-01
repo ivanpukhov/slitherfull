@@ -767,6 +767,15 @@ export class GameController {
     if (snapshot.you && typeof snapshot.you.length === 'number') {
       this.updateScoreHUD(Math.floor(snapshot.you.length))
     }
+
+    if (snapshot.you && typeof snapshot.you.alive === 'boolean') {
+      const nextAlive = Boolean(snapshot.you.alive)
+      if (nextAlive !== this.state.alive) {
+        this.state.alive = nextAlive
+        this.refreshCashoutState()
+      }
+    }
+
     this.refreshBoostState()
     this.state.lastSnapshotAt = performance.now()
     this.notify()

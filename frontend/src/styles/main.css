@@ -2429,6 +2429,10 @@ canvas {
     transform: none;
 }
 
+.damn-card--wallet .wallet-withdraw {
+    margin-top: 16px;
+}
+
 .wallet-withdraw-status {
     font-size: 12px;
     letter-spacing: 0.06em;
@@ -2440,6 +2444,13 @@ canvas {
 
 .wallet-withdraw-status.success {
     color: #bbf7d0;
+}
+
+.wallet-withdraw-status--summary {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(30, 41, 59, 0.65);
 }
 
 .wallet-modal-section {
