@@ -1,6 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-
-export type LeaderboardRange = '24h' | '7d' | '30d'
+import { useCallback, useEffect, useState } from 'react'
 
 export interface WinningsLeaderboardEntry {
   userId: number
@@ -13,7 +11,7 @@ export interface WinningsLeaderboardEntry {
 }
 
 export interface WinningsLeaderboardData {
-  leaderboards: Record<LeaderboardRange, WinningsLeaderboardEntry[]>
+  entries: WinningsLeaderboardEntry[]
   priceUsd: number | null
   generatedAt: string
 }
@@ -54,11 +52,8 @@ export function useWinningsLeaderboard(refreshIntervalMs = 60_000) {
     }
   }, [fetchData, refreshIntervalMs])
 
-  const ranges = useMemo(() => (data ? (Object.keys(data.leaderboards) as LeaderboardRange[]) : []), [data])
-
   return {
     data,
-    ranges,
     loading,
     error,
     refresh: fetchData

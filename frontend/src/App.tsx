@@ -6,7 +6,7 @@ import { usePointerControls } from './hooks/usePointerControls'
 import { sanitizeBetValue, centsToUsdInput, BET_AMOUNTS_CENTS } from './utils/helpers'
 import { useAuth } from './hooks/useAuth'
 import { useWallet } from './hooks/useWallet'
-import { useWinningsLeaderboard, type LeaderboardRange } from './hooks/useWinningsLeaderboard'
+import { useWinningsLeaderboard } from './hooks/useWinningsLeaderboard'
 import { usePlayerStats } from './hooks/usePlayerStats'
 import { ScorePanel } from './components/ScorePanel'
 import { GameLeaderboard } from './components/Leaderboard'
@@ -23,7 +23,6 @@ function GameView() {
   const auth = useAuth()
   const wallet = useWallet({ token: auth.token })
   const winningsLeaderboard = useWinningsLeaderboard()
-  const [leaderboardRange, setLeaderboardRange] = useState<LeaderboardRange>('24h')
   const playerStats = usePlayerStats({ token: auth.token, days: 30 })
   const refreshPlayerStats = playerStats.refresh
   const [withdrawPending, setWithdrawPending] = useState(false)
@@ -37,18 +36,15 @@ function GameView() {
   })
   const controller = game.controller
   const { setNickname, setBetValue, setRetryBetValue, setNicknameVisible, clearLastResult } = game
-  const winningsRangeEntries = useMemo(
-    () => winningsLeaderboard.data?.leaderboards?.[leaderboardRange] ?? [],
-    [leaderboardRange, winningsLeaderboard.data]
-  )
-  const topWinningsEntries = useMemo(() => winningsRangeEntries.slice(0, 5), [winningsRangeEntries])
+  const winningsEntries = useMemo(() => winningsLeaderboard.data?.entries ?? [], [winningsLeaderboard.data])
+  const topWinningsEntries = useMemo(() => winningsEntries.slice(0, 5), [winningsEntries])
   const totalWinningsUsd = useMemo(
-    () => winningsRangeEntries.reduce((sum, entry) => sum + entry.totalUsd, 0),
-    [winningsRangeEntries]
+    () => winningsEntries.reduce((sum, entry) => sum + entry.totalUsd, 0),
+    [winningsEntries]
   )
   const totalWinningsSol = useMemo(
-    () => winningsRangeEntries.reduce((sum, entry) => sum + entry.totalSol, 0),
-    [winningsRangeEntries]
+    () => winningsEntries.reduce((sum, entry) => sum + entry.totalSol, 0),
+    [winningsEntries]
   )
   const winningsPriceHint = useMemo(() => {
     const priceUsd = winningsLeaderboard.data?.priceUsd ?? null
@@ -338,12 +334,11 @@ function GameView() {
         winningsEntries={topWinningsEntries}
         winningsLoading={winningsLeaderboard.loading}
         winningsError={winningsLeaderboard.error}
-        winningsRange={leaderboardRange}
-        onWinningsRangeChange={setLeaderboardRange}
         winningsPriceHint={winningsPriceHint}
         activePlayers={game.leaderboard.length}
         totalWinningsUsd={totalWinningsUsd}
         totalWinningsSol={totalWinningsSol}
+        authToken={auth.token}
       />
       {game.transfer.pending && (
         <div className="transfer-overlay">

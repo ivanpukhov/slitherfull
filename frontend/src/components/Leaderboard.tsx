@@ -1,12 +1,6 @@
 import type { LeaderboardEntry } from '../hooks/useGame'
-import type { LeaderboardRange, WinningsLeaderboardEntry } from '../hooks/useWinningsLeaderboard'
+import type { WinningsLeaderboardEntry } from '../hooks/useWinningsLeaderboard'
 import { formatNumber, formatUsd } from '../utils/helpers'
-
-const RANGE_LABELS: Record<LeaderboardRange, string> = {
-  '24h': '24 часа',
-  '7d': '7 дней',
-  '30d': '30 дней'
-}
 
 const currencyFormatter = new Intl.NumberFormat('ru-RU', {
   style: 'currency',
@@ -56,8 +50,6 @@ interface WinningsLeaderboardCardProps {
   entries: WinningsLeaderboardEntry[]
   loading?: boolean
   error?: string | null
-  range: LeaderboardRange
-  onRangeChange: (range: LeaderboardRange) => void
   priceHint?: string | null
 }
 
@@ -65,8 +57,6 @@ export function WinningsLeaderboardCard({
   entries,
   loading,
   error,
-  range,
-  onRangeChange,
   priceHint
 }: WinningsLeaderboardCardProps) {
   const safeEntries = entries.slice(0, 5)
@@ -78,20 +68,6 @@ export function WinningsLeaderboardCard({
           <div className="winnings-card-title">Лидеры по выигрышу</div>
           {priceHint ? <div className="winnings-card-subtitle">{priceHint}</div> : null}
         </div>
-        <label className="winnings-card-range" htmlFor="winningsRange">
-          <span>Период</span>
-          <select
-            id="winningsRange"
-            value={range}
-            onChange={(event) => onRangeChange(event.target.value as LeaderboardRange)}
-          >
-            {(Object.keys(RANGE_LABELS) as LeaderboardRange[]).map((value) => (
-              <option key={value} value={value}>
-                {RANGE_LABELS[value]}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
       <ol className={`winnings-card-list${loading ? ' loading' : ''}`}>
         {loading && safeEntries.length === 0 ? <li className="placeholder">Загрузка…</li> : null}
