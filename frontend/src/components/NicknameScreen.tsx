@@ -15,12 +15,14 @@ import {
   sanitizeBetValue
 } from '../utils/helpers'
 import { SKINS, SKIN_LABELS } from '../hooks/useGame'
+import { useFriends } from '../hooks/useFriends'
 import type { PlayerStatsData } from '../hooks/usePlayerStats'
 import type { WinningsLeaderboardEntry } from '../hooks/useWinningsLeaderboard'
 import { PlayerStatsChart } from './PlayerStatsChart'
 import { WinningsLeaderboardCard } from './Leaderboard'
 import { Modal } from './Modal'
 import { FriendsModal } from './FriendsModal'
+import { SnakePreview } from './SnakePreview'
 
 interface NicknameScreenProps {
   visible: boolean
@@ -157,7 +159,9 @@ export function NicknameScreen({
   const [statsModalOpen, setStatsModalOpen] = useState(false)
   const [winningsModalOpen, setWinningsModalOpen] = useState(false)
   const [friendsModalOpen, setFriendsModalOpen] = useState(false)
+  const [skinModalOpen, setSkinModalOpen] = useState(false)
   const skinListRef = useRef<HTMLDivElement>(null)
+  const friendsController = useFriends(authToken ?? null)
 
   useEffect(() => {
     return () => {
@@ -191,6 +195,23 @@ export function NicknameScreen({
       setWithdrawExpanded(false)
     }
   }, [visible])
+
+  useEffect(() => {
+    if (!visible && skinModalOpen) {
+      setSkinModalOpen(false)
+    }
+  }, [skinModalOpen, visible])
+
+  useEffect(() => {
+    if (!skinModalOpen) return
+    const handle = window.requestAnimationFrame(() => {
+      const target = skinListRef.current?.querySelector<HTMLButtonElement>('button.selected')
+      target?.focus()
+    })
+    return () => {
+      window.cancelAnimationFrame(handle)
+    }
+  }, [skinModalOpen, selectedSkin])
 
   const resetCopyStatus = () => {
     if (copyResetTimer.current) {
@@ -248,6 +269,8 @@ export function NicknameScreen({
 
   const topWinner = useMemo(() => winningsEntries[0] ?? null, [winningsEntries])
   const skinColors = useMemo(() => SKINS[selectedSkin] ?? [], [selectedSkin])
+  const { friends: friendsList, loading: friendsLoading, error: friendsError } = friendsController
+  const friendsPreview = useMemo(() => friendsList.slice(0, 3), [friendsList])
   const primaryColor = skinColors[0] ?? '#38bdf8'
   const secondaryColor = skinColors[1] ?? skinColors[0] ?? '#8b5cf6'
   const avatarStyle = useMemo(
@@ -295,14 +318,21 @@ export function NicknameScreen({
     [onBetBlur, onBetChange, spendableBalance]
   )
 
-  const handleCustomizeFocus = useCallback(() => {
-    const target = skinListRef.current?.querySelector<HTMLButtonElement>('button.selected')
-    if (target) {
-      target.focus()
-      return
-    }
-    skinListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  const handleOpenSkinModal = useCallback(() => {
+    setSkinModalOpen(true)
   }, [])
+
+  const handleSkinModalClose = useCallback(() => {
+    setSkinModalOpen(false)
+  }, [])
+
+  const handleSkinSelect = useCallback(
+    (skin: string) => {
+      onSelectSkin(skin)
+      setSkinModalOpen(false)
+    },
+    [onSelectSkin]
+  )
 
   const handleWalletOpen = useCallback(() => {
     if (isAuthenticated) {
@@ -440,18 +470,46 @@ export function NicknameScreen({
               <header className="damn-card__header">
                 <h2 className="damn-card__title">Friends</h2>
               </header>
-              <p className="damn-empty-text">
-                {isAuthenticated
-                  ? 'Find teammates and track your crew in one place.'
-                  : 'Sign in to discover and add friends from the arena.'}
-              </p>
-              <button
-                type="button"
-                className="damn-primary-button damn-primary-button--full friends-add-button"
-                onClick={handleOpenFriends}
-              >
-                Add Friends
-              </button>
+              {isAuthenticated ? (
+                <>
+                  {friendsLoading ? (
+                    <div className="friends-preview-empty">Загрузка друзей…</div>
+                  ) : friendsPreview.length > 0 ? (
+                    <ul className="friends-preview-grid">
+                      {friendsPreview.map((friend) => (
+                        <li key={friend.id} className="friends-preview-card">
+                          <div className="friends-preview-avatar" aria-hidden="true">
+                            {friend.nickname.charAt(0).toUpperCase() || '?'}
+                          </div>
+                          <div className="friends-preview-body">
+                            <div className="friends-preview-name">{friend.nickname}</div>
+                            <div className="friends-preview-meta">{friend.email}</div>
+                            {friend.since ? (
+                              <div className="friends-preview-since">
+                                Вместе с {new Date(friend.since).toLocaleDateString()}
+                              </div>
+                            ) : null}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="friends-preview-empty">
+                      {friendsError ? 'Не удалось загрузить друзей.' : 'Добавьте друзей, чтобы видеть их здесь.'}
+                    </div>
+                  )}
+                  <div className="friends-actions-grid">
+                    <button type="button" className="friends-card-button" onClick={handleOpenFriends}>
+                      Все друзья
+                    </button>
+                    <button type="button" className="friends-card-button" onClick={handleOpenFriends}>
+                      Добавить друга
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p className="damn-empty-text">Sign in to discover and add friends from the arena.</p>
+              )}
             </section>
 
             <div className="damn-side-actions">
@@ -658,11 +716,17 @@ export function NicknameScreen({
                   <h2 className="damn-card__title">Customize</h2>
                   <span className="damn-card__caption">{skinName}</span>
                 </div>
-                <button type="button" className="damn-link-button" onClick={handleCustomizeFocus}>
-                  Change appearance
-                </button>
               </header>
-              <div className="damn-customize__preview" aria-hidden="true" />
+              <div className="damn-customize__preview">
+                <SnakePreview colors={skinColors} length={100} />
+              </div>
+              <button
+                type="button"
+                className="damn-primary-button damn-primary-button--full skin-change-button"
+                onClick={handleOpenSkinModal}
+              >
+                Изменить
+              </button>
               {topWinner ? (
                 <div className="damn-customize__highlight">
                   <span className="damn-customize__label">Top winner</span>
@@ -670,26 +734,6 @@ export function NicknameScreen({
                   <span className="damn-customize__amount">{usdFormatter.format(topWinner.totalUsd)}</span>
                 </div>
               ) : null}
-              <div id="skinList" ref={skinListRef} className="damn-skin-grid">
-                {Object.entries(SKINS).map(([skin, colors]) => (
-                  <button
-                    type="button"
-                    key={skin}
-                    className={`damn-skin${skin === selectedSkin ? ' selected' : ''}`}
-                    data-skin={skin}
-                    data-name={SKIN_LABELS[skin] || skin}
-                    style={{
-                      background: `radial-gradient(circle at 35% 35%, ${colors[0] ?? '#38bdf8'}, ${
-                        colors[1] ?? colors[0] ?? '#8b5cf6'
-                      })`
-                    }}
-                    onClick={() => onSelectSkin(skin)}
-                    aria-label={SKIN_LABELS[skin] || skin}
-                  >
-                    <span className="damn-skin__ring" />
-                  </button>
-                ))}
-              </div>
             </section>
           </div>
         </div>
@@ -703,6 +747,38 @@ export function NicknameScreen({
           </a>
         </div>
       </div>
+
+      <Modal
+        open={skinModalOpen}
+        title="Выбор скина"
+        onClose={handleSkinModalClose}
+        width="520px"
+      >
+        <div className="skin-modal">
+          <p className="skin-modal__hint">Подберите внешний вид и цвет вашей змейки.</p>
+          <div id="skinList" ref={skinListRef} className="damn-skin-grid">
+            {Object.entries(SKINS).map(([skin, colors]) => (
+              <button
+                type="button"
+                key={skin}
+                className={`damn-skin${skin === selectedSkin ? ' selected' : ''}`}
+                data-skin={skin}
+                data-name={SKIN_LABELS[skin] || skin}
+                style={{
+                  background: `radial-gradient(circle at 35% 35%, ${colors[0] ?? '#38bdf8'}, ${
+                    colors[1] ?? colors[0] ?? '#8b5cf6'
+                  })`
+                }}
+                onClick={() => handleSkinSelect(skin)}
+                aria-label={SKIN_LABELS[skin] || skin}
+                aria-pressed={skin === selectedSkin}
+              >
+                <span className="damn-skin__ring" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </Modal>
 
       <Modal open={walletModalOpen} title="Wallet" onClose={() => setWalletModalOpen(false)} width="520px">
         <div className="wallet-section wallet-modal-section">
@@ -783,7 +859,7 @@ export function NicknameScreen({
       </Modal>
       <FriendsModal
         open={friendsModalOpen}
-        token={authToken ?? null}
+        controller={friendsController}
         onClose={() => setFriendsModalOpen(false)}
       />
     </div>
