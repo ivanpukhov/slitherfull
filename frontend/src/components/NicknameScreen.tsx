@@ -14,7 +14,7 @@ import {
   formatUsd,
   sanitizeBetValue
 } from '../utils/helpers'
-import { SKINS, SKIN_LABELS, type LastResultState } from '../hooks/useGame'
+import { SKINS, SKIN_LABELS } from '../hooks/useGame'
 import type { PlayerStatsData } from '../hooks/usePlayerStats'
 import type { WinningsLeaderboardEntry } from '../hooks/useWinningsLeaderboard'
 import { PlayerStatsChart } from './PlayerStatsChart'
@@ -45,12 +45,6 @@ interface NicknameScreenProps {
   usdRate?: number | null
   walletLoading?: boolean
   onRefreshWallet?: () => void
-  lastResult?: LastResultState | null
-  retryBetValue: string
-  onRetryBetChange: (value: string) => void
-  onRetryBetBlur: () => void
-  onRetry: () => void
-  retryDisabled?: boolean
   cashoutPending?: boolean
   transferPending?: boolean
   transferMessage?: string
@@ -93,12 +87,6 @@ export function NicknameScreen({
   usdRate,
   walletLoading,
   onRefreshWallet,
-  lastResult,
-  retryBetValue,
-  onRetryBetChange,
-  onRetryBetBlur,
-  onRetry,
-  retryDisabled,
   cashoutPending,
   transferPending,
   transferMessage,
@@ -269,10 +257,6 @@ export function NicknameScreen({
     const normalized = sanitizeBetValue(betValue, balance)
     return normalized > 0 ? normalized : null
   }, [balance, betValue])
-  const selectedRetryBetCents = useMemo(() => {
-    const normalized = sanitizeBetValue(retryBetValue, balance)
-    return normalized > 0 ? normalized : null
-  }, [balance, retryBetValue])
   const betOptions = useMemo(
     () =>
       BET_AMOUNTS_CENTS.map((value) => ({
@@ -293,14 +277,6 @@ export function NicknameScreen({
       onBetBlur()
     },
     [balance, onBetBlur, onBetChange]
-  )
-  const handleRetryBetSelect = useCallback(
-    (valueCents: number) => {
-      if (valueCents > balance) return
-      onRetryBetChange(centsToUsdInput(valueCents))
-      onRetryBetBlur()
-    },
-    [balance, onRetryBetBlur, onRetryBetChange]
   )
 
   const handleCustomizeFocus = useCallback(() => {
@@ -540,53 +516,6 @@ export function NicknameScreen({
 
               </div>
             </section>
-
-            {lastResult ? (
-              <section className={`damn-card damn-card--result result-${lastResult.variant}`}>
-                <div className="damn-result__title">{lastResult.title}</div>
-                <ul className="damn-result__details">
-                  {lastResult.details.map((line, index) => (
-                    <li key={index}>{line}</li>
-                  ))}
-                </ul>
-                {lastResult.showRetryControls ? (
-                  <div className="damn-result__retry">
-                    <div className="damn-field">
-                      <label className="damn-field__label" id="retryBetInputLabel" htmlFor="retryBetInput">
-                        Retry Bet
-                      </label>
-                      <div className="damn-bet-options damn-bet-options--compact" role="group" aria-labelledby="retryBetInputLabel">
-                        {betOptions.map((option) => {
-                          const selected = option.value === selectedRetryBetCents
-                          return (
-                            <button
-                              type="button"
-                              key={`retry-${option.value}`}
-                              className={`damn-bet-option damn-bet-option--compact${selected ? ' selected' : ''}`}
-                              onClick={() => handleRetryBetSelect(option.value)}
-                              disabled={option.disabled}
-                              aria-pressed={selected}
-                            >
-                              <span>{option.label}</span>
-                            </button>
-                          )
-                        })}
-                      </div>
-                      <input id="retryBetInput" type="hidden" value={retryBetValue} readOnly />
-                      <div className="damn-bet-hint">Available: {lastResult.retryBalance}</div>
-                    </div>
-                    <button
-                      type="button"
-                      className="damn-primary-button"
-                      onClick={onRetry}
-                      disabled={retryDisabled}
-                    >
-                      Play again
-                    </button>
-                  </div>
-                ) : null}
-              </section>
-            ) : null}
 
             <button
               type="button"
