@@ -34,6 +34,7 @@ interface NicknameScreenProps {
   onBetChange: (value: string) => void
   onBetBlur: () => void
   balance: number
+  bettingBalance?: number
   currentBet: number
   onStart: () => void
   startDisabled: boolean
@@ -76,6 +77,7 @@ export function NicknameScreen({
   onBetChange,
   onBetBlur,
   balance,
+  bettingBalance,
   currentBet,
   onStart,
   startDisabled,
@@ -150,6 +152,7 @@ export function NicknameScreen({
   const copyResetTimer = useRef<number | null>(null)
   const [withdrawAddress, setWithdrawAddress] = useState('')
   const [withdrawError, setWithdrawError] = useState<string | null>(null)
+  const [withdrawExpanded, setWithdrawExpanded] = useState(false)
   const [walletModalOpen, setWalletModalOpen] = useState(false)
   const [statsModalOpen, setStatsModalOpen] = useState(false)
   const [winningsModalOpen, setWinningsModalOpen] = useState(false)
@@ -176,6 +179,18 @@ export function NicknameScreen({
       setFriendsModalOpen(false)
     }
   }, [friendsModalOpen, isAuthenticated])
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setWithdrawExpanded(false)
+    }
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    if (!visible) {
+      setWithdrawExpanded(false)
+    }
+  }, [visible])
 
   const resetCopyStatus = () => {
     if (copyResetTimer.current) {
@@ -253,18 +268,19 @@ export function NicknameScreen({
   const sanitizedNickname = nickname?.trim() || ''
   const profileName = sanitizedNickname || (isAuthenticated ? 'Player' : 'New player')
   const profileInitial = profileName.trim().charAt(0).toUpperCase() || 'D'
+  const spendableBalance = typeof bettingBalance === 'number' ? bettingBalance : balance
   const selectedBetCents = useMemo(() => {
-    const normalized = sanitizeBetValue(betValue, balance)
+    const normalized = sanitizeBetValue(betValue, spendableBalance)
     return normalized > 0 ? normalized : null
-  }, [balance, betValue])
+  }, [betValue, spendableBalance])
   const betOptions = useMemo(
     () =>
       BET_AMOUNTS_CENTS.map((value) => ({
         value,
         label: `$${centsToUsdInput(value)}`,
-        disabled: value > balance
+        disabled: value > spendableBalance
       })),
-    [balance]
+    [spendableBalance]
   )
   const betOptionsText = useMemo(
     () => betOptions.map((option) => option.label).join(', '),
@@ -272,11 +288,11 @@ export function NicknameScreen({
   )
   const handleBetSelect = useCallback(
     (valueCents: number) => {
-      if (valueCents > balance) return
+      if (valueCents > spendableBalance) return
       onBetChange(centsToUsdInput(valueCents))
       onBetBlur()
     },
-    [balance, onBetBlur, onBetChange]
+    [onBetBlur, onBetChange, spendableBalance]
   )
 
   const handleCustomizeFocus = useCallback(() => {
@@ -295,6 +311,17 @@ export function NicknameScreen({
       onStart()
     }
   }, [isAuthenticated, onStart])
+
+  const handleToggleWithdraw = useCallback(() => {
+    if (!isAuthenticated) {
+      onStart()
+      return
+    }
+    setWithdrawExpanded((prev) => !prev)
+    if (withdrawError) {
+      setWithdrawError(null)
+    }
+  }, [isAuthenticated, onStart, withdrawError])
 
   const handleManageAffiliate = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -574,12 +601,55 @@ export function NicknameScreen({
                 <button
                   type="button"
                   className="damn-primary-button damn-primary-button--outline"
-                  onClick={handleWalletOpen}
+                  onClick={handleToggleWithdraw}
                   disabled={!isAuthenticated}
                 >
-                  Cash Out
+                  {withdrawExpanded ? 'Hide Withdraw' : 'Cash Out'}
                 </button>
               </div>
+              {withdrawExpanded && isAuthenticated ? (
+                <div className="wallet-withdraw">
+                  <label htmlFor="withdrawAddress">Withdraw balance</label>
+                  <div className="wallet-withdraw-controls">
+                    <input
+                      id="withdrawAddress"
+                      type="text"
+                      placeholder="Solana wallet address"
+                      value={withdrawAddress}
+                      onChange={(event) => {
+                        setWithdrawAddress(event.target.value)
+                        if (withdrawError) setWithdrawError(null)
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault()
+                          handleWithdraw()
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="wallet-withdraw-button"
+                      onClick={handleWithdraw}
+                      disabled={withdrawPending || !onWithdraw}
+                    >
+                      {withdrawPending ? 'Sending…' : 'Withdraw'}
+                    </button>
+                  </div>
+                  {withdrawError ? (
+                    <p className="wallet-withdraw-status error">{withdrawError}</p>
+                  ) : withdrawStatus ? (
+                    <p className={`wallet-withdraw-status ${withdrawStatus.type}`}>
+                      {withdrawStatus.message}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+              {!withdrawExpanded && withdrawStatus ? (
+                <p className={`wallet-withdraw-status wallet-withdraw-status--summary ${withdrawStatus.type}`}>
+                  {withdrawStatus.message}
+                </p>
+              ) : null}
             </section>
 
             <section className="damn-card damn-card--customize" style={customizeStyle}>
@@ -669,42 +739,9 @@ export function NicknameScreen({
                   {walletLoading ? 'Refreshing…' : 'Refresh'}
                 </button>
               </div>
-              <div className="wallet-withdraw">
-                <label htmlFor="withdrawAddress">Withdraw balance</label>
-                <div className="wallet-withdraw-controls">
-                  <input
-                    id="withdrawAddress"
-                    type="text"
-                    placeholder="Solana wallet address"
-                    value={withdrawAddress}
-                    onChange={(event) => {
-                      setWithdrawAddress(event.target.value)
-                      if (withdrawError) setWithdrawError(null)
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault()
-                        handleWithdraw()
-                      }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="wallet-withdraw-button"
-                    onClick={handleWithdraw}
-                    disabled={withdrawPending || !onWithdraw}
-                  >
-                    {withdrawPending ? 'Sending…' : 'Withdraw'}
-                  </button>
-                </div>
-                {withdrawError ? (
-                  <p className="wallet-withdraw-status error">{withdrawError}</p>
-                ) : withdrawStatus ? (
-                  <p className={`wallet-withdraw-status ${withdrawStatus.type}`}>
-                    {withdrawStatus.message}
-                  </p>
-                ) : null}
-              </div>
+              <p className="wallet-placeholder">
+                Use the Cash Out panel on the lobby screen to withdraw your balance.
+              </p>
             </>
           ) : (
             <p className="wallet-placeholder">Sign in to see wallet details.</p>

@@ -62,6 +62,16 @@ function GameView() {
   useCanvas({ canvasRef, controller: game.controller })
   usePointerControls({ controller: game.controller, canvasRef, cashoutButtonRef })
 
+  const effectiveBetBalance = useMemo(
+    () =>
+      Math.max(
+        game.account.balance,
+        auth.user?.balance ?? 0,
+        wallet.profile?.inGameBalance ?? 0
+      ),
+    [auth.user?.balance, game.account.balance, wallet.profile?.inGameBalance]
+  )
+
   const getBetDisplay = useCallback((value: string | number, balanceCents: number) => {
     const sanitized = sanitizeBetValue(value, balanceCents)
     return sanitized > 0 ? centsToUsdInput(sanitized) : ''
@@ -178,41 +188,41 @@ function GameView() {
   }, [game])
 
   const handleBetChange = useCallback((value: string) => {
-    const display = getBetDisplay(value, game.account.balance)
+    const display = getBetDisplay(value, effectiveBetBalance)
     game.setBetValue(display)
-  }, [game, getBetDisplay])
+  }, [effectiveBetBalance, game, getBetDisplay])
 
   const handleBetBlur = useCallback(() => {
-    const sanitized = sanitizeBetValue(game.betValue, game.account.balance)
+    const sanitized = sanitizeBetValue(game.betValue, effectiveBetBalance)
     if (sanitized > 0) {
       game.setBetValue(centsToUsdInput(sanitized))
     } else {
-      const smallest = BET_AMOUNTS_CENTS.find((option) => option <= game.account.balance)
+      const smallest = BET_AMOUNTS_CENTS.find((option) => option <= effectiveBetBalance)
       game.setBetValue(smallest ? centsToUsdInput(smallest) : '')
     }
-  }, [game])
+  }, [effectiveBetBalance, game])
 
   const handleRetryBetChange = useCallback((value: string) => {
-    const display = getBetDisplay(value, game.account.balance)
+    const display = getBetDisplay(value, effectiveBetBalance)
     setRetryBetValue(display)
-  }, [game.account.balance, getBetDisplay, setRetryBetValue])
+  }, [effectiveBetBalance, getBetDisplay, setRetryBetValue])
 
   const handleRetryBetBlur = useCallback(() => {
-    const sanitized = sanitizeBetValue(game.retryBetValue, game.account.balance)
+    const sanitized = sanitizeBetValue(game.retryBetValue, effectiveBetBalance)
     if (sanitized > 0) {
       setRetryBetValue(centsToUsdInput(sanitized))
     } else {
-      const smallest = BET_AMOUNTS_CENTS.find((option) => option <= game.account.balance)
+      const smallest = BET_AMOUNTS_CENTS.find((option) => option <= effectiveBetBalance)
       setRetryBetValue(smallest ? centsToUsdInput(smallest) : '')
     }
-  }, [game, setRetryBetValue])
+  }, [effectiveBetBalance, game, setRetryBetValue])
 
   const handleStart = useCallback(() => {
     if (auth.status !== 'authenticated' || !auth.user) {
       return
     }
     const name = game.nickname.trim() || auth.user.nickname
-    const balance = game.account.balance
+    const balance = effectiveBetBalance
     let betAmount = sanitizeBetValue(game.betValue, balance)
     if (betAmount <= 0) {
       const fallback = BET_AMOUNTS_CENTS.find((option) => option <= balance) ?? 0
@@ -225,10 +235,10 @@ function GameView() {
     }
     clearLastResult()
     connection.startGame(name, game.selectedSkin, betAmount > 0 ? betAmount : null)
-  }, [auth.status, auth.user, clearLastResult, connection, game])
+  }, [auth.status, auth.user, clearLastResult, connection, effectiveBetBalance, game])
 
   const handleRetry = useCallback(() => {
-    const balance = game.account.balance
+    const balance = effectiveBetBalance
     if (balance <= 0) {
       window.location.reload()
       return
@@ -244,7 +254,7 @@ function GameView() {
     game.controller.setPendingBet(null)
     clearLastResult()
     setNicknameVisible(false)
-  }, [clearLastResult, connection, game, setNicknameVisible, setRetryBetValue])
+  }, [clearLastResult, connection, effectiveBetBalance, game, setNicknameVisible, setRetryBetValue])
 
   const handleWalletRefresh = useCallback(() => {
     wallet.refresh()
@@ -306,6 +316,7 @@ function GameView() {
         onBetChange={handleBetChange}
         onBetBlur={handleBetBlur}
         balance={game.account.balance}
+        bettingBalance={effectiveBetBalance}
         currentBet={game.account.currentBet}
         onStart={handlePrimaryAction}
         startDisabled={startDisabled}
@@ -338,7 +349,7 @@ function GameView() {
       <ResultModal
         open={Boolean(game.lastResult)}
         result={game.lastResult}
-        balanceCents={game.account.balance}
+        balanceCents={effectiveBetBalance}
         retryBetValue={game.retryBetValue}
         onRetryBetChange={handleRetryBetChange}
         onRetryBetBlur={handleRetryBetBlur}
