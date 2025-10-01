@@ -322,13 +322,13 @@ export function NicknameScreen({
 
   const handleManageAffiliate = useCallback(() => {
     if (typeof window !== 'undefined') {
-      window.open('https://damnbruh.com/affiliate', '_blank', 'noreferrer')
+      window.open('https://snakefans.com/affiliate', '_blank', 'noreferrer')
     }
   }, [])
 
   const handleDiscordClick = useCallback(() => {
     if (typeof window !== 'undefined') {
-      window.open('https://discord.gg/damnbruh', '_blank', 'noreferrer')
+      window.open('https://discord.gg/snakefans', '_blank', 'noreferrer')
     }
   }, [])
 
@@ -364,7 +364,7 @@ export function NicknameScreen({
             </div>
             <div className="damn-topbar__details">
               <span className="damn-topbar__role">{isAuthenticated ? 'Signed in' : 'Guest'}</span>
-              <span className="damn-topbar__site">www.snakefans.com</span>
+              <span className="damn-topbar__site">snakefans.com</span>
             </div>
           </div>
         </div>
@@ -718,8 +718,8 @@ export function NicknameScreen({
           <button type="button" className="damn-secondary-button" onClick={handleDiscordClick}>
             Join Discord!
           </button>
-          <a className="damn-footer__link" href="https://damnbruh.com" target="_blank" rel="noreferrer">
-            damnbruh.com
+          <a className="damn-footer__link" href="https://snakefans.com" target="_blank" rel="noreferrer">
+            snakefans.com
           </a>
         </div>
       </div>
