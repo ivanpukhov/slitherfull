@@ -14,6 +14,7 @@ import { CashoutControl } from './components/CashoutControl'
 import { NicknameScreen } from './components/NicknameScreen'
 import { AuthModal } from './components/AuthModal'
 import { AdminDashboard } from './components/AdminDashboard'
+import { ResultModal } from './components/ResultModal'
 
 function GameView() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -316,12 +317,6 @@ function GameView() {
         usdRate={wallet.profile?.usdRate ?? null}
         walletLoading={wallet.loading}
         onRefreshWallet={handleWalletRefresh}
-        lastResult={game.lastResult}
-        retryBetValue={game.retryBetValue}
-        onRetryBetChange={handleRetryBetChange}
-        onRetryBetBlur={handleRetryBetBlur}
-        onRetry={handleRetry}
-        retryDisabled={!game.lastResult?.showRetryControls || game.account.balance <= 0}
         cashoutPending={game.cashout.pending}
         transferPending={game.transfer.pending}
         transferMessage={game.transfer.message}
@@ -339,6 +334,17 @@ function GameView() {
         totalWinningsUsd={totalWinningsUsd}
         totalWinningsSol={totalWinningsSol}
         authToken={auth.token}
+      />
+      <ResultModal
+        open={Boolean(game.lastResult)}
+        result={game.lastResult}
+        balanceCents={game.account.balance}
+        retryBetValue={game.retryBetValue}
+        onRetryBetChange={handleRetryBetChange}
+        onRetryBetBlur={handleRetryBetBlur}
+        onRetry={handleRetry}
+        onClose={clearLastResult}
+        retryDisabled={game.account.balance <= 0}
       />
       {game.transfer.pending && (
         <div className="transfer-overlay">
