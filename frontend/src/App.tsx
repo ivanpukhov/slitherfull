@@ -42,6 +42,14 @@ function GameView() {
     [leaderboardRange, winningsLeaderboard.data]
   )
   const topWinningsEntries = useMemo(() => winningsRangeEntries.slice(0, 5), [winningsRangeEntries])
+  const totalWinningsUsd = useMemo(
+    () => winningsRangeEntries.reduce((sum, entry) => sum + entry.totalUsd, 0),
+    [winningsRangeEntries]
+  )
+  const totalWinningsSol = useMemo(
+    () => winningsRangeEntries.reduce((sum, entry) => sum + entry.totalSol, 0),
+    [winningsRangeEntries]
+  )
   const winningsPriceHint = useMemo(() => {
     const priceUsd = winningsLeaderboard.data?.priceUsd ?? null
     if (!Number.isFinite(priceUsd || NaN)) return null
@@ -333,6 +341,9 @@ function GameView() {
         winningsRange={leaderboardRange}
         onWinningsRangeChange={setLeaderboardRange}
         winningsPriceHint={winningsPriceHint}
+        activePlayers={game.leaderboard.length}
+        totalWinningsUsd={totalWinningsUsd}
+        totalWinningsSol={totalWinningsSol}
       />
       {game.transfer.pending && (
         <div className="transfer-overlay">
