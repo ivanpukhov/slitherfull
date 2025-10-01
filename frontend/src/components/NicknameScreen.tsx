@@ -364,15 +364,15 @@ export function NicknameScreen({
             </div>
             <div className="damn-topbar__details">
               <span className="damn-topbar__role">{isAuthenticated ? 'Signed in' : 'Guest'}</span>
-              <span className="damn-topbar__site">www.damnbruh.com</span>
+              <span className="damn-topbar__site">www.snakefans.com</span>
             </div>
           </div>
         </div>
 
         <div className="damn-hero">
           <div className="damn-hero__brand">
-            <span className="damn-hero__brand-main">DAMN</span>
-            <span className="damn-hero__brand-accent">BRUH</span>
+            <span className="damn-hero__brand-main">SNAKE</span>
+            <span className="damn-hero__brand-accent">FANS</span>
           </div>
           <div className="damn-hero__tagline">Skill-Based Betting</div>
         </div>
