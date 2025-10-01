@@ -305,7 +305,7 @@ setInterval(() => {
 
 async function start() {
     try {
-        await sequelize.sync({ alter: true })
+        await sequelize.sync({ force: false })
         await walletService.ensureGameWallet()
         server.listen(cfg.port)
     } catch (err) {

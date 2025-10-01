@@ -12,28 +12,31 @@ async function getAllTimeLeaderboard(limit = 20, priceUsdOverride = null) {
   const rows = await GamePayout.findAll({
     attributes: [
       'userId',
-      [fn('COALESCE', fn('SUM', col('amountUsd')), 0), 'totalUsd'],
-      [fn('COALESCE', fn('SUM', col('amountSol')), 0), 'totalSol'],
-      [fn('COALESCE', fn('SUM', col('amountUnits')), 0), 'totalUnits'],
-      [fn('COUNT', col('id')), 'payoutCount']
+      [fn('COALESCE', fn('SUM', col('GamePayout.amountUsd')), 0), 'totalUsd'],
+      [fn('COALESCE', fn('SUM', col('GamePayout.amountSol')), 0), 'totalSol'],
+      [fn('COALESCE', fn('SUM', col('GamePayout.amountUnits')), 0), 'totalUnits'],
+      [fn('COUNT', col('GamePayout.id')), 'payoutCount']
     ],
     include: [
       {
         model: User,
         as: 'user',
-        attributes: ['id', 'nickname']
+        attributes: ['nickname'] // ⚡️ только никнейм (id не нужен, он уже есть)
       }
     ],
-    group: ['GamePayout.userId', 'user.id'],
-    order: [[fn('COALESCE', fn('SUM', col('amountUsd')), 0), 'DESC']],
+    group: ['GamePayout.userId', 'user.id', 'user.nickname'],
+    order: [[fn('COALESCE', fn('SUM', col('GamePayout.amountUsd')), 0), 'DESC']],
     limit
   })
+
   const priceUsd = priceUsdOverride
+
   return rows.map((row) => {
-    const plain = row.get({ plain: true })
+    const plain = row.get({ plain: true }) // превращаем в объект
     const totalSol = normalizeNumber(plain.totalSol)
     const recordedUsd = normalizeNumber(plain.totalUsd)
     const displayUsd = priceUsd ? totalSol * priceUsd : recordedUsd
+
     return {
       userId: plain.userId,
       nickname: plain.user?.nickname || 'Игрок',

@@ -73,3 +73,6 @@
 {"killer":"e12bfed9-7ece-43d3-9586-0ab6b8ab21f8","victim":"46d2a21a-5b29-4a8c-99c7-d6d8c290a8a9","x":3651.833400855084,"y":3109.850627128169,"tick":44695,"victimLength":42,"killerLength":31,"reason":"head_vs_body","bounty":1000}
 {"killer":"53d7c3b0-7d77-4b6e-a731-2033bf6a07b3","victim":"1d9f785e-72ef-47a7-a15a-bab70bb598fd","x":3625.0417234208726,"y":868.242682565059,"tick":5043,"victimLength":32,"killerLength":40,"reason":"head_vs_body","bounty":1}
 {"killer":"35201b12-5b1e-4f39-8fa6-221fd2c03913","victim":"90d3fe64-d46f-42d8-bcf3-549dbd03d681","x":3986.9091822730707,"y":1894.7350675623309,"tick":3766,"victimLength":59,"killerLength":47,"reason":"head_vs_body","bounty":1000}
+{"killer":"c554dd17-91a5-4a02-bc6c-716cfdfe8beb","victim":"aa132915-6823-40b3-a487-76b8d3516469","x":1812.1905511048471,"y":113.12283796228586,"tick":17866,"victimLength":139,"killerLength":107,"reason":"head_vs_body","bounty":100}
+{"killer":"d861f84b-344c-4fcd-969e-c80666bddbc2","victim":"4ca97e8c-0188-4e8e-bd50-19fb3eaffbcc","x":2393.960602409662,"y":533.3368247809029,"tick":7199,"victimLength":122,"killerLength":118,"reason":"head_vs_body","bounty":100}
+{"killer":"713ce01b-4ef2-410d-8230-0cdffb2ae7b7","victim":"8a8fb3ce-7c41-44eb-bcac-d6cb55ce9514","x":2003.4717255396256,"y":185.6775671951848,"tick":9895,"victimLength":107,"killerLength":110,"reason":"head_vs_body","bounty":100}

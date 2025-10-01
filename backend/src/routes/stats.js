@@ -10,9 +10,23 @@ router.get('/leaderboard', async (req, res) => {
     const data = await statsService.getWinningsLeaderboard()
     res.json({ status: 'ok', data })
   } catch (err) {
-    res.status(500).json({ error: 'leaderboard_unavailable' })
+    console.error('[Leaderboard Error]', {
+      time: new Date().toISOString(),
+      route: req.originalUrl,
+      method: req.method,
+      message: err.message,
+      stack: err.stack,
+      body: req.body,
+      query: req.query
+    })
+
+    res.status(500).json({
+      error: 'leaderboard_unavailable',
+      reason: err.message || 'unknown_error'
+    })
   }
 })
+
 
 router.use(async (req, res, next) => {
   try {
