@@ -7,14 +7,25 @@ import {
   useState,
   type CSSProperties
 } from 'react'
-import { BET_AMOUNTS_CENTS, centsToUsdInput, formatUsd, sanitizeBetValue } from '../utils/helpers'
+import {
+  BET_AMOUNTS_CENTS,
+  centsToUsdInput,
+  formatNumber,
+  formatUsd,
+  sanitizeBetValue
+} from '../utils/helpers'
 import { SKINS, SKIN_LABELS, type LastResultState } from '../hooks/useGame'
 import type { PlayerStatsData } from '../hooks/usePlayerStats'
 import type { LeaderboardRange, WinningsLeaderboardEntry } from '../hooks/useWinningsLeaderboard'
 import { PlayerStatsChart } from './PlayerStatsChart'
 import { WinningsLeaderboardCard } from './Leaderboard'
 import { Modal } from './Modal'
-import { useTranslation } from '../hooks/useTranslation'
+
+const RANGE_BADGES: Record<LeaderboardRange, string> = {
+  '24h': 'Last 24h',
+  '7d': 'Last 7d',
+  '30d': 'Last 30d'
+}
 
 interface NicknameScreenProps {
   visible: boolean
@@ -60,6 +71,9 @@ interface NicknameScreenProps {
   winningsRange: LeaderboardRange
   onWinningsRangeChange: (range: LeaderboardRange) => void
   winningsPriceHint?: string | null
+  activePlayers?: number
+  totalWinningsUsd?: number
+  totalWinningsSol?: number
 }
 
 export function NicknameScreen({
@@ -105,13 +119,27 @@ export function NicknameScreen({
   winningsError,
   winningsRange,
   onWinningsRangeChange,
-  winningsPriceHint
+  winningsPriceHint,
+  activePlayers,
+  totalWinningsUsd,
+  totalWinningsSol
 }: NicknameScreenProps) {
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     if (startDisabled) return
     onStart()
   }
+
+  const usdFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 2,
+        minimumFractionDigits: 2
+      }),
+    []
+  )
 
   const derivedUsd = useMemo(() => {
     if (typeof walletUsd === 'number') {
@@ -127,18 +155,14 @@ export function NicknameScreen({
   const formattedUsd = useMemo(() => {
     if (typeof derivedUsd === 'number') {
       try {
-        return new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        }).format(derivedUsd)
+        return usdFormatter.format(derivedUsd)
       } catch (error) {
         return `$${derivedUsd.toFixed(2)}`
       }
     }
     return '—'
-  }, [derivedUsd])
+  }, [derivedUsd, usdFormatter])
+
   const showWallet = Boolean(walletAddress)
 
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle')
@@ -148,6 +172,7 @@ export function NicknameScreen({
   const [walletModalOpen, setWalletModalOpen] = useState(false)
   const [statsModalOpen, setStatsModalOpen] = useState(false)
   const [winningsModalOpen, setWinningsModalOpen] = useState(false)
+  const skinListRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     return () => {
@@ -207,14 +232,14 @@ export function NicknameScreen({
     if (!onWithdraw) return
     const target = withdrawAddress.trim()
     if (!target) {
-      setWithdrawError('Введите адрес кошелька')
+      setWithdrawError('Enter a Solana address')
       return
     }
     setWithdrawError(null)
     try {
       await onWithdraw(target)
     } catch (error) {
-      // Ошибка уже отображается через withdrawStatus
+      // handled upstream
     }
   }
 
@@ -222,14 +247,6 @@ export function NicknameScreen({
   const skinColors = useMemo(() => SKINS[selectedSkin] ?? [], [selectedSkin])
   const primaryColor = skinColors[0] ?? '#38bdf8'
   const secondaryColor = skinColors[1] ?? skinColors[0] ?? '#8b5cf6'
-  const arenaStyle = useMemo(
-    () =>
-      ({
-        '--arena-primary': primaryColor,
-        '--arena-secondary': secondaryColor
-      }) as CSSProperties,
-    [primaryColor, secondaryColor]
-  )
   const avatarStyle = useMemo(
     () =>
       ({
@@ -237,10 +254,17 @@ export function NicknameScreen({
       }) as CSSProperties,
     [primaryColor, secondaryColor]
   )
+  const customizeStyle = useMemo(
+    () =>
+      ({
+        '--accent-primary': primaryColor,
+        '--accent-secondary': secondaryColor
+      }) as CSSProperties,
+    [primaryColor, secondaryColor]
+  )
   const sanitizedNickname = nickname?.trim() || ''
-  const profileName = sanitizedNickname || (isAuthenticated ? 'Игрок' : 'Новый игрок')
-  const profileInitial = profileName.trim().charAt(0).toUpperCase() || 'S'
-  const { t } = useTranslation()
+  const profileName = sanitizedNickname || (isAuthenticated ? 'Player' : 'New player')
+  const profileInitial = profileName.trim().charAt(0).toUpperCase() || 'D'
   const selectedBetCents = useMemo(() => {
     const normalized = sanitizeBetValue(betValue, balance)
     return normalized > 0 ? normalized : null
@@ -279,305 +303,450 @@ export function NicknameScreen({
     [balance, onRetryBetBlur, onRetryBetChange]
   )
 
+  const handleCustomizeFocus = useCallback(() => {
+    const target = skinListRef.current?.querySelector<HTMLButtonElement>('button.selected')
+    if (target) {
+      target.focus()
+      return
+    }
+    skinListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [])
+
+  const handleWalletOpen = useCallback(() => {
+    if (isAuthenticated) {
+      setWalletModalOpen(true)
+    } else {
+      onStart()
+    }
+  }, [isAuthenticated, onStart])
+
+  const handleManageAffiliate = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      window.open('https://damnbruh.com/affiliate', '_blank', 'noreferrer')
+    }
+  }, [])
+
+  const handleDiscordClick = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      window.open('https://discord.gg/damnbruh', '_blank', 'noreferrer')
+    }
+  }, [])
+
+  const leaderboardEntries = useMemo(() => winningsEntries.slice(0, 5), [winningsEntries])
+  const leaderboardLoading = winningsLoading && leaderboardEntries.length === 0
+  const leaderboardHasError = !winningsLoading && Boolean(winningsError)
+  const leaderboardRanges = useMemo(
+    () => ['24h', '7d', '30d'] as LeaderboardRange[],
+    []
+  )
+  const rangeBadge = RANGE_BADGES[winningsRange]
+  const activePlayersDisplay = formatNumber(Math.max(0, activePlayers ?? 0))
+  const totalPaidUsdDisplay = Number.isFinite(totalWinningsUsd ?? NaN)
+    ? usdFormatter.format(totalWinningsUsd ?? 0)
+    : '—'
+  const totalPaidSolDisplay = Number.isFinite(totalWinningsSol ?? NaN)
+    ? `${(totalWinningsSol ?? 0).toFixed(2)} SOL`
+    : null
+  const copyLabel = copyStatus === 'copied' ? 'Copied!' : copyStatus === 'error' ? 'Try again' : 'Copy Address'
+  const walletSubtitle = showWallet ? 'Wallet connected' : 'Sign in to manage your wallet.'
+
   return (
     <div id="nicknameScreen" className={visible ? 'overlay overlay--lobby' : 'overlay overlay--lobby hidden'}>
-      <div className="card lobby-card">
-        <div className="lobby-header">
-          <div className="lobby-header-brand">
-            <div className="lobby-logo" aria-label="Slither X">
-              <span className="lobby-logo-main">Slither</span>
-              <span className="lobby-logo-accent">X</span>
-            </div>
-            <p className="lobby-tagline">Неоновая арена мгновенных ставок.</p>
+      <div className="damn-lobby">
+        <div className="damn-lobby__topbar">
+          <div className="damn-topbar__welcome">
+            <span className="damn-topbar__label">Welcome,</span>
+            <span className="damn-topbar__name">{profileName}</span>
           </div>
-          <div className="lobby-header-profile">
-            <div className="profile-avatar" style={avatarStyle} aria-hidden="true">
+          <div className="damn-topbar__profile">
+            <div className="damn-topbar__avatar" style={avatarStyle} aria-hidden="true">
               <span>{profileInitial}</span>
             </div>
-            <div className="profile-details">
-              <span className="profile-label">{isAuthenticated ? 'Игрок' : 'Гость'}</span>
-              <span className="profile-name">{profileName}</span>
+            <div className="damn-topbar__details">
+              <span className="damn-topbar__role">{isAuthenticated ? 'Signed in' : 'Guest'}</span>
+              <span className="damn-topbar__site">www.damnbruh.com</span>
             </div>
           </div>
         </div>
-        <form onSubmit={handleSubmit} className="lobby-form">
-          {(cashoutPending || transferPending) && (
-            <div className={`status-banner${cashoutPending ? ' status-banner-cashout' : ''}`}>
-              <div className="status-indicator" />
-              <div className="status-content">
-                <div className="status-title">
-                  {cashoutPending ? 'Вывод средств выполняется' : 'Транзакция в обработке'}
-                </div>
-                <p>
-                  {transferMessage ||
-                    (cashoutPending ? 'Мы завершаем перевод на ваш кошелек.' : 'Подождите, операция скоро завершится.')}
-                </p>
+
+        <div className="damn-hero">
+          <div className="damn-hero__brand">
+            <span className="damn-hero__brand-main">DAMN</span>
+            <span className="damn-hero__brand-accent">BRUH</span>
+          </div>
+          <div className="damn-hero__tagline">Skill-Based Betting</div>
+        </div>
+
+        {(cashoutPending || transferPending) && (
+          <div className={`damn-status${cashoutPending ? ' damn-status--cashout' : ''}`}>
+            <div className="damn-status__indicator" />
+            <div className="damn-status__body">
+              <div className="damn-status__title">
+                {cashoutPending ? 'Cash out in progress' : 'Processing transaction'}
               </div>
+              <p className="damn-status__text">
+                {transferMessage ||
+                  (cashoutPending
+                    ? 'We are finalising your payout.'
+                    : 'Please wait a moment, we are syncing your balance.')}
+              </p>
             </div>
-          )}
+          </div>
+        )}
 
-          <div className="lobby-layout">
-            <aside className="lobby-column lobby-column-left">
-              <div className="balance-widget glass-card">
-                <div className="balance-widget-header">
-                  <div className="balance-widget-title">{t('balanceTitle')}</div>
-                  <button
-                    type="button"
-                    className="wallet-action-button"
-                    onClick={() => (isAuthenticated ? setWalletModalOpen(true) : onStart())}
-                    aria-label={t('walletButtonAriaLabel')}
-                    disabled={!isAuthenticated}
-                  >
-                    <span className="wallet-action-icon" aria-hidden="true" />
-                    <span className="wallet-action-text">
-                      <span className="wallet-action-title">{t('walletButtonLabel')}</span>
-                      <span className="wallet-action-caption">{t('walletButtonCaption')}</span>
-                    </span>
-                  </button>
+        <div className="damn-grid">
+          <div className="damn-column damn-column--left">
+            <section className="damn-card damn-card--leaderboard" aria-live="polite">
+              <header className="damn-card__header">
+                <div>
+                  <h2 className="damn-card__title">Leaderboard</h2>
+                  <span className="damn-card__caption">{rangeBadge}</span>
                 </div>
-                <div className="balance-widget-value">{formatUsd(balance)}</div>
-                <div className="balance-widget-meta">
-                  <span>{t('currentBetLabel')}</span>
-                  <strong>{formatUsd(currentBet)}</strong>
+                <div className="damn-card__filters" role="group" aria-label="Leaderboard range">
+                  {leaderboardRanges.map((range) => (
+                    <button
+                      type="button"
+                      key={range}
+                      className={`damn-filter${range === winningsRange ? ' active' : ''}`}
+                      onClick={() => onWinningsRangeChange(range)}
+                    >
+                      {RANGE_BADGES[range]}
+                    </button>
+                  ))}
                 </div>
-                <div className="balance-widget-meta">
-                  <span>{t('skinLabel')}</span>
-                  <strong>{skinName}</strong>
-                </div>
-                {showWallet ? (
-                  <div className="balance-wallet">
-                    <div className="wallet-amount">{formattedSol} SOL</div>
-                    {formattedUsd !== '—' ? <div className="wallet-amount usd">{formattedUsd}</div> : null}
-                  </div>
+              </header>
+              <ol
+                className={`damn-leaderboard${winningsLoading ? ' loading' : ''}`}
+              >
+                {leaderboardLoading ? <li className="damn-leaderboard__placeholder">Loading…</li> : null}
+                {leaderboardHasError ? (
+                  <li className="damn-leaderboard__placeholder">Unable to load leaderboard</li>
                 ) : null}
-                {!isAuthenticated ? (
-                  <button type="button" className="auth-link" onClick={onStart}>
-                    {t('authPrompt')}
-                  </button>
+                {!leaderboardLoading && !leaderboardHasError && leaderboardEntries.length === 0 ? (
+                  <li className="damn-leaderboard__placeholder">No winners yet</li>
                 ) : null}
-              </div>
-              <div className="utility-grid">
-                <button
-                  type="button"
-                  className="utility-card glass-card"
-                  onClick={() => (isAuthenticated ? setStatsModalOpen(true) : onStart())}
-                  disabled={!isAuthenticated && startDisabled}
-                >
-                  <div className="utility-icon utility-icon--stats" aria-hidden="true" />
-                  <div className="utility-content">
-                    <span className="utility-label">Статистика</span>
-                    <span className="utility-value">История игр</span>
-                  </div>
-                  {!isAuthenticated ? <span className="utility-lock" aria-hidden="true" /> : null}
-                </button>
+                {leaderboardEntries.map((entry, index) => (
+                  <li key={entry.userId}>
+                    <span className="damn-leaderboard__rank">{index + 1}</span>
+                    <div className="damn-leaderboard__body">
+                      <span className="damn-leaderboard__name">{entry.nickname}</span>
+                      <span className="damn-leaderboard__meta">{formatNumber(entry.payoutCount ?? 0)} wins</span>
+                    </div>
+                    <div className="damn-leaderboard__amount">
+                      <span className="damn-leaderboard__usd">{usdFormatter.format(entry.totalUsd)}</span>
+                      <span className="damn-leaderboard__sol">{entry.totalSol.toFixed(2)} SOL</span>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+              {winningsPriceHint ? <div className="damn-card__hint">{winningsPriceHint}</div> : null}
+            </section>
 
-              </div>
-            </aside>
+            <section className="damn-card damn-card--friends">
+              <header className="damn-card__header">
+                <h2 className="damn-card__title">Friends</h2>
+              </header>
+              <p className="damn-empty-text">No friends yet — invite your crew!</p>
+            </section>
 
-            <section className="lobby-column lobby-column-center">
-              {/*<div className="arena-card glass-card" style={arenaStyle}>*/}
-              {/*  <div className="arena-backdrop" />*/}
-              {/*  <div className="arena-halo" />*/}
-              {/*  <div className="arena-character" style={avatarStyle}>*/}
-              {/*    <div className="arena-character-core" />*/}
-              {/*  </div>*/}
-              {/*  <div className="arena-waves" />*/}
-              {/*</div>*/}
+            <div className="damn-side-actions">
+              <button
+                type="button"
+                className="damn-secondary-button"
+                onClick={() => (isAuthenticated ? setStatsModalOpen(true) : onStart())}
+              >
+                View Stats
+              </button>
+              <button
+                type="button"
+                className="damn-secondary-button"
+                onClick={() => setWinningsModalOpen(true)}
+              >
+                Top Winners
+              </button>
+            </div>
+          </div>
 
+          <form className="damn-column damn-column--center" onSubmit={handleSubmit}>
+            <section className="damn-card damn-card--join">
+              <header className="damn-card__header">
+                <div>
+                  <h2 className="damn-card__title">Join Game</h2>
+                  <p className="damn-card__subtitle">Choose your stake and jump in.</p>
+                </div>
+                <div className="damn-card__balance">
+                  <span className="damn-card__balance-label">Balance</span>
+                  <span className="damn-card__balance-value">{formatUsd(balance)}</span>
+                </div>
+              </header>
 
-              <div className="control-card glass-card">
-                <label className="field-label" htmlFor="nicknameInput">
-                  Никнейм
+              <div className="damn-field">
+                <label className="damn-field__label" htmlFor="nicknameInput">
+                  Nickname
                 </label>
                 <input
-                    id="nicknameInput"
-                    type="text"
-                    maxLength={16}
-                    placeholder="Ваш ник"
-                    autoComplete="off"
-                    value={nickname}
-                    onChange={(event) => {
-                      if (!nicknameLocked) {
-                        onNicknameChange(event.target.value)
-                      }
-                    }}
-                    disabled={nicknameLocked}
+                  id="nicknameInput"
+                  className="damn-field__input"
+                  type="text"
+                  maxLength={16}
+                  placeholder="Enter nickname"
+                  autoComplete="off"
+                  value={nickname}
+                  onChange={(event) => {
+                    if (!nicknameLocked) {
+                      onNicknameChange(event.target.value)
+                    }
+                  }}
+                  disabled={nicknameLocked}
                 />
-                {nicknameLocked ? <p className="nickname-note">Никнейм закреплён за аккаунтом.</p> : null}
+                {nicknameLocked ? <p className="damn-field__note">Nickname locked to your account.</p> : null}
               </div>
-              <div className="control-card glass-card">
-                <label className="field-label" id="betInputLabel" htmlFor="betInput">
-                  Ставка перед стартом
-                </label>
-                <div className="bet-options" role="group" aria-labelledby="betInputLabel">
+
+              <div className="damn-field">
+                <span className="damn-field__label">Select Bet</span>
+                <div className="damn-bet-options" role="group" aria-label="Select bet">
                   {betOptions.map((option) => {
                     const selected = option.value === selectedBetCents
                     return (
                       <button
                         type="button"
                         key={option.value}
-                        className={`bet-option${selected ? ' selected' : ''}`}
+                        className={`damn-bet-option${selected ? ' selected' : ''}`}
                         onClick={() => handleBetSelect(option.value)}
                         disabled={option.disabled}
                         aria-pressed={selected}
                       >
-                        <span className="bet-option-value">{option.label}</span>
+                        <span>{option.label}</span>
                       </button>
                     )
                   })}
                 </div>
                 <input id="betInput" type="hidden" value={betValue} readOnly />
-                <div className="bet-hint">
-                  Доступные ставки: <span className="bet-options-list">{betOptionsText}</span>. Баланс:
-                  {' '}
-                  <span id="betBalanceDisplay">{formatUsd(balance)}</span>
-                </div>
+                <div className="damn-bet-hint">Options: {betOptionsText} · Balance {formatUsd(balance)}</div>
               </div>
+
               <button
-                  id="startBtn"
-                  className="primary arena-start"
-                  type="submit"
-                  disabled={startDisabled}
-                  aria-disabled={startDisabled}
+                id="startBtn"
+                className="damn-primary-button damn-primary-button--full"
+                type="submit"
+                disabled={startDisabled}
+                aria-disabled={startDisabled}
               >
-                {startLabel ?? 'Играть'}
+                {startLabel ?? 'Join Game'}
               </button>
               {startDisabled && startDisabledHint ? (
-                  <p className="start-hint">{startDisabledHint}</p>
+                <p className="damn-start-hint">{startDisabledHint}</p>
               ) : null}
 
-
+              <div className="damn-join-stats">
+                <div className="damn-join-stat">
+                  <span className="damn-join-stat__value">{activePlayersDisplay}</span>
+                  <span className="damn-join-stat__label">Players online</span>
+                </div>
+                <div className="damn-join-stat">
+                  <span className="damn-join-stat__value">{totalPaidUsdDisplay}</span>
+                  <span className="damn-join-stat__label">Paid out · {rangeBadge}</span>
+                </div>
+                {totalPaidSolDisplay ? (
+                  <div className="damn-join-stat">
+                    <span className="damn-join-stat__value">{totalPaidSolDisplay}</span>
+                    <span className="damn-join-stat__label">Across winners</span>
+                  </div>
+                ) : null}
+              </div>
             </section>
 
-            <aside className="lobby-column lobby-column-right">
-
-              {lastResult ? (
-                  <div className={`control-card glass-card result-card result-${lastResult.variant}`}>
-                    <div className="result-title">{lastResult.title}</div>
-                    <ul className="result-details">
-                      {lastResult.details.map((line, index) => (
-                          <li key={index}>{line}</li>
-                      ))}
-                    </ul>
-                    {lastResult.showRetryControls ? (
-                        <div className="result-retry">
-                          <div className="bet-control">
-                          <label id="retryBetInputLabel" htmlFor="retryBetInput">Ставка для повтора</label>
-                            <div className="bet-options bet-options--compact" role="group" aria-labelledby="retryBetInputLabel">
-                              {betOptions.map((option) => {
-                                const selected = option.value === selectedRetryBetCents
-                                return (
-                                  <button
-                                    type="button"
-                                    key={`retry-${option.value}`}
-                                    className={`bet-option bet-option--compact${selected ? ' selected' : ''}`}
-                                    onClick={() => handleRetryBetSelect(option.value)}
-                                    disabled={option.disabled}
-                                    aria-pressed={selected}
-                                  >
-                                    <span className="bet-option-value">{option.label}</span>
-                                  </button>
-                                )
-                              })}
-                            </div>
-                            <input id="retryBetInput" type="hidden" value={retryBetValue} readOnly />
-                            <div className="bet-hint">
-                              Доступно: <span>{lastResult.retryBalance}</span>
-                            </div>
-                          </div>
-                          <button
+            {lastResult ? (
+              <section className={`damn-card damn-card--result result-${lastResult.variant}`}>
+                <div className="damn-result__title">{lastResult.title}</div>
+                <ul className="damn-result__details">
+                  {lastResult.details.map((line, index) => (
+                    <li key={index}>{line}</li>
+                  ))}
+                </ul>
+                {lastResult.showRetryControls ? (
+                  <div className="damn-result__retry">
+                    <div className="damn-field">
+                      <label className="damn-field__label" id="retryBetInputLabel" htmlFor="retryBetInput">
+                        Retry Bet
+                      </label>
+                      <div className="damn-bet-options damn-bet-options--compact" role="group" aria-labelledby="retryBetInputLabel">
+                        {betOptions.map((option) => {
+                          const selected = option.value === selectedRetryBetCents
+                          return (
+                            <button
                               type="button"
-                              className="primary retry-button"
-                              onClick={onRetry}
-                              disabled={retryDisabled}
-                          >
-                            Играть снова
-                          </button>
-                        </div>
-                    ) : null}
+                              key={`retry-${option.value}`}
+                              className={`damn-bet-option damn-bet-option--compact${selected ? ' selected' : ''}`}
+                              onClick={() => handleRetryBetSelect(option.value)}
+                              disabled={option.disabled}
+                              aria-pressed={selected}
+                            >
+                              <span>{option.label}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                      <input id="retryBetInput" type="hidden" value={retryBetValue} readOnly />
+                      <div className="damn-bet-hint">Available: {lastResult.retryBalance}</div>
+                    </div>
+                    <button
+                      type="button"
+                      className="damn-primary-button"
+                      onClick={onRetry}
+                      disabled={retryDisabled}
+                    >
+                      Play again
+                    </button>
                   </div>
-              ) : null}
-              <div className="control-card glass-card">
-                <div className="skin-picker">
-                  <div className="caption">
-                    <span>Скины</span>
-                    <span id="skinName">{skinName}</span>
-                  </div>
-                  <div id="skinList" className="skin-grid">
-                    {Object.entries(SKINS).map(([skin, colors]) => (
-                        <button
-                            type="button"
-                            key={skin}
-                            className={`skin-token${skin === selectedSkin ? ' selected' : ''}`}
-                            data-skin={skin}
-                            data-name={SKIN_LABELS[skin] || skin}
-                            style={{
-                              background: `radial-gradient(circle at 30% 30%, ${colors[0] ?? '#38bdf8'}, ${
-                                  colors[1] ?? colors[0] ?? '#8b5cf6'
-                              })`
-                            }}
-                            onClick={() => onSelectSkin(skin)}
-                            aria-label={SKIN_LABELS[skin] || skin}
-                        >
-                          <span className="skin-token-ring"/>
-                        </button>
-                    ))}
-                  </div>
-
-                </div>
-
-
-              </div>
-              <button
-                  type="button"
-                  className="utility-card glass-card"
-                  onClick={() => setWinningsModalOpen(true)}
-              >
-                <div className="utility-icon utility-icon--leaders" aria-hidden="true"/>
-                <div className="utility-content">
-                  <span className="utility-label">Лидеры</span>
-                  {topWinner ? (
-                      <span className="utility-value">{topWinner.nickname}</span>
-                  ) : (
-                      <span className="utility-value">Лучшие выигрыши</span>
-                  )}
-                </div>
-                {topWinner ? (
-                    <span className="utility-subvalue">{topWinner.totalSol.toFixed(2)} SOL</span>
                 ) : null}
-              </button>
-            </aside>
+              </section>
+            ) : null}
+
+            <button
+              type="button"
+              className="damn-secondary-button damn-secondary-button--accent"
+              onClick={handleManageAffiliate}
+            >
+              Manage Affiliate
+            </button>
+          </form>
+
+          <div className="damn-column damn-column--right">
+            <section className="damn-card damn-card--wallet">
+              <header className="damn-card__header">
+                <div>
+                  <h2 className="damn-card__title">Wallet</h2>
+                  <span className="damn-card__caption">{walletSubtitle}</span>
+                </div>
+                <button
+                  type="button"
+                  className="damn-link-button"
+                  onClick={handleCopyWallet}
+                  disabled={!walletAddress}
+                >
+                  {copyLabel}
+                </button>
+              </header>
+              <div className="damn-wallet__balance">
+                <span className="damn-wallet__label">Available</span>
+                <span className="damn-wallet__value">{formatUsd(balance)}</span>
+              </div>
+              <div className="damn-wallet__meta-row">
+                <span className="damn-wallet__meta-label">Current bet</span>
+                <span className="damn-wallet__meta-value">{formatUsd(currentBet)}</span>
+              </div>
+              {showWallet ? (
+                <div className="damn-wallet__meta">
+                  <div className="damn-wallet__meta-row">
+                    <span className="damn-wallet__meta-label">On-chain</span>
+                    <span className="damn-wallet__meta-value">{formattedSol} SOL</span>
+                  </div>
+                  {formattedUsd !== '—' ? (
+                    <div className="damn-wallet__meta-row">
+                      <span className="damn-wallet__meta-label">USD value</span>
+                      <span className="damn-wallet__meta-value">{formattedUsd}</span>
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="damn-empty-text">Log in to see your on-chain funds.</p>
+              )}
+              <div className="damn-wallet__actions">
+                <button
+                  type="button"
+                  className="damn-secondary-button"
+                  onClick={handleWalletOpen}
+                  disabled={walletLoading && isAuthenticated}
+                >
+                  {walletLoading && isAuthenticated ? 'Refreshing…' : 'Add Funds'}
+                </button>
+                <button
+                  type="button"
+                  className="damn-primary-button damn-primary-button--outline"
+                  onClick={handleWalletOpen}
+                  disabled={!isAuthenticated}
+                >
+                  Cash Out
+                </button>
+              </div>
+            </section>
+
+            <section className="damn-card damn-card--customize" style={customizeStyle}>
+              <header className="damn-card__header">
+                <div>
+                  <h2 className="damn-card__title">Customize</h2>
+                  <span className="damn-card__caption">{skinName}</span>
+                </div>
+                <button type="button" className="damn-link-button" onClick={handleCustomizeFocus}>
+                  Change appearance
+                </button>
+              </header>
+              <div className="damn-customize__preview" aria-hidden="true" />
+              {topWinner ? (
+                <div className="damn-customize__highlight">
+                  <span className="damn-customize__label">Top winner</span>
+                  <span className="damn-customize__name">{topWinner.nickname}</span>
+                  <span className="damn-customize__amount">{usdFormatter.format(topWinner.totalUsd)}</span>
+                </div>
+              ) : null}
+              <div id="skinList" ref={skinListRef} className="damn-skin-grid">
+                {Object.entries(SKINS).map(([skin, colors]) => (
+                  <button
+                    type="button"
+                    key={skin}
+                    className={`damn-skin${skin === selectedSkin ? ' selected' : ''}`}
+                    data-skin={skin}
+                    data-name={SKIN_LABELS[skin] || skin}
+                    style={{
+                      background: `radial-gradient(circle at 35% 35%, ${colors[0] ?? '#38bdf8'}, ${
+                        colors[1] ?? colors[0] ?? '#8b5cf6'
+                      })`
+                    }}
+                    onClick={() => onSelectSkin(skin)}
+                    aria-label={SKIN_LABELS[skin] || skin}
+                  >
+                    <span className="damn-skin__ring" />
+                  </button>
+                ))}
+              </div>
+            </section>
           </div>
-        </form>
+        </div>
+
+        <div className="damn-footer">
+          <button type="button" className="damn-secondary-button" onClick={handleDiscordClick}>
+            Join Discord!
+          </button>
+          <a className="damn-footer__link" href="https://damnbruh.com" target="_blank" rel="noreferrer">
+            damnbruh.com
+          </a>
+        </div>
       </div>
-      <Modal
-          open={walletModalOpen}
-          title="Кошелек"
-          onClose={() => setWalletModalOpen(false)}
-          width="520px"
-      >
+
+      <Modal open={walletModalOpen} title="Wallet" onClose={() => setWalletModalOpen(false)} width="520px">
         <div className="wallet-section wallet-modal-section">
           <div className="wallet-row">
-            <span className="wallet-label">Игровой баланс</span>
+            <span className="wallet-label">In-game balance</span>
             <span className="wallet-value">{formatUsd(balance)}</span>
           </div>
           {showWallet ? (
-              <>
-                <div className="wallet-row">
-                  <span className="wallet-label">SOL</span>
-                  <span className="wallet-value">{formattedSol}</span>
-                </div>
-                <div className="wallet-row">
-                  <span className="wallet-label">USD</span>
-                  <span className="wallet-value">{formattedUsd}</span>
+            <>
+              <div className="wallet-row">
+                <span className="wallet-label">SOL</span>
+                <span className="wallet-value">{formattedSol}</span>
+              </div>
+              <div className="wallet-row">
+                <span className="wallet-label">USD</span>
+                <span className="wallet-value">{formattedUsd}</span>
               </div>
               <div className="wallet-address" title={walletAddress ?? ''}>
                 <div className="wallet-address-text">
-                  <span className="wallet-label">Кошелек</span>
+                  <span className="wallet-label">Wallet</span>
                   <span className="wallet-hash">{walletAddress}</span>
                 </div>
                 <button type="button" className="wallet-copy-button" onClick={handleCopyWallet}>
-                  {copyStatus === 'copied' ? 'Скопировано' : copyStatus === 'error' ? 'Ошибка' : 'Скопировать'}
+                  {copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Error' : 'Copy'}
                 </button>
               </div>
               <div className="wallet-actions">
@@ -587,16 +756,16 @@ export function NicknameScreen({
                   onClick={onRefreshWallet}
                   disabled={walletLoading}
                 >
-                  {walletLoading ? 'Обновление...' : 'Обновить'}
+                  {walletLoading ? 'Refreshing…' : 'Refresh'}
                 </button>
               </div>
               <div className="wallet-withdraw">
-                <label htmlFor="withdrawAddress">Вывод баланса</label>
+                <label htmlFor="withdrawAddress">Withdraw balance</label>
                 <div className="wallet-withdraw-controls">
                   <input
                     id="withdrawAddress"
                     type="text"
-                    placeholder="Адрес кошелька Solana"
+                    placeholder="Solana wallet address"
                     value={withdrawAddress}
                     onChange={(event) => {
                       setWithdrawAddress(event.target.value)
@@ -615,7 +784,7 @@ export function NicknameScreen({
                     onClick={handleWithdraw}
                     disabled={withdrawPending || !onWithdraw}
                   >
-                    {withdrawPending ? 'Вывод...' : 'Вывести'}
+                    {withdrawPending ? 'Sending…' : 'Withdraw'}
                   </button>
                 </div>
                 {withdrawError ? (
@@ -628,13 +797,13 @@ export function NicknameScreen({
               </div>
             </>
           ) : (
-            <p className="wallet-placeholder">Авторизуйтесь, чтобы увидеть детали кошелька.</p>
+            <p className="wallet-placeholder">Sign in to see wallet details.</p>
           )}
         </div>
       </Modal>
       <Modal
         open={statsModalOpen}
-        title="Статистика выигрышей"
+        title="Winning stats"
         onClose={() => setStatsModalOpen(false)}
         width="580px"
       >
@@ -647,14 +816,14 @@ export function NicknameScreen({
           />
         ) : (
           <div className="stats-card stats-card-locked modal-placeholder">
-            <div className="stats-card-title">Статистика недоступна</div>
-            <div className="stats-card-body placeholder">Войдите в аккаунт, чтобы посмотреть историю игр</div>
+            <div className="stats-card-title">Stats unavailable</div>
+            <div className="stats-card-body placeholder">Sign in to view your game history.</div>
           </div>
         )}
       </Modal>
       <Modal
         open={winningsModalOpen}
-        title="Лидеры по выигрышу"
+        title="Top winners"
         onClose={() => setWinningsModalOpen(false)}
         width="520px"
       >
