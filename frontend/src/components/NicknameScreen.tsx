@@ -303,9 +303,8 @@ export function NicknameScreen({
         (valueCents: number) => {
             if (valueCents > spendableBalance) return
             onBetChange(centsToUsdInput(valueCents))
-            onBetBlur()
         },
-        [onBetBlur, onBetChange, spendableBalance]
+        [onBetChange, spendableBalance]
     )
 
     const handleOpenSkinModal = useCallback(() => {
