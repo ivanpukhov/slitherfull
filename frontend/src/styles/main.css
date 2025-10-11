@@ -304,6 +304,17 @@ canvas {
     line-height: 1.4;
 }
 
+.game-hud {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.game-hud > * {
+    pointer-events: auto;
+}
+
 #scorePanel .account {
     margin-top: 16px;
     display: flex;
@@ -3103,6 +3114,57 @@ body.is-touch #leaderboard {
 
 }
 
+@media (max-width: 768px) {
+    .game-hud {
+        pointer-events: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 12px;
+        padding: calc(var(--safe-top) + 16px) clamp(16px, 6vw, 32px) calc(var(--safe-bottom) + 132px);
+        overflow-y: auto;
+    }
+
+    .game-hud > .panel {
+        position: static;
+        width: 100%;
+        max-width: none;
+        left: auto;
+        right: auto;
+        top: auto;
+        bottom: auto;
+        transform: none;
+    }
+
+    .game-hud > #scorePanel,
+    .game-hud > #leaderboard {
+        min-width: 0;
+    }
+
+    #leaderboardList {
+        max-height: min(280px, 40vh);
+        overflow-y: auto;
+    }
+
+    #cashoutControl {
+        left: 50%;
+        bottom: calc(var(--safe-bottom) + 24px);
+        transform: translateX(-50%);
+        width: min(460px, calc(100% - 32px));
+        pointer-events: auto;
+    }
+
+    .cashout-button {
+        width: 100%;
+    }
+
+    .cashout-hint {
+        max-width: none;
+        text-align: center;
+    }
+}
+
 @media (max-width: 540px) {
     .panel {
         padding: 14px 16px;
@@ -3142,6 +3204,71 @@ body.is-touch #leaderboard {
     flex-direction: column;
     gap: clamp(24px, 4vw, 40px);
     color: var(--color-text-primary);
+}
+
+@media (max-width: 900px) {
+    .overlay--lobby {
+        align-items: flex-start;
+        padding: clamp(20px, 6vh, 36px) clamp(16px, 6vw, 28px);
+    }
+
+    .overlay--lobby .damn-lobby {
+        gap: clamp(20px, 5vw, 32px);
+    }
+
+    .damn-lobby__topbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .damn-topbar__welcome {
+        flex-wrap: wrap;
+    }
+
+    .damn-grid {
+        display: flex;
+        flex-direction: column;
+        gap: clamp(16px, 4vw, 24px);
+    }
+
+    .damn-card {
+        padding: clamp(18px, 5vw, 24px) !important;
+    }
+
+    .damn-side-actions,
+    .friends-actions-grid {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+}
+
+@media (max-width: 540px) {
+    .damn-hero__brand-main,
+    .damn-hero__brand-accent {
+        font-size: clamp(32px, 18vw, 44px);
+    }
+
+    .damn-hero__tagline {
+        font-size: clamp(14px, 4.5vw, 18px);
+    }
+
+    .damn-card__header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .damn-field__input {
+        font-size: 15px;
+        padding: 12px 14px;
+    }
+
+    .damn-side-actions button,
+    .friends-card-button {
+        width: 100%;
+    }
 }
 
 .damn-lobby__topbar {
