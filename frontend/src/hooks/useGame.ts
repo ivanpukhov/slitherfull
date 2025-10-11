@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { formatNumber, sanitizeBetValue, lerp, lerpAngle, formatUsd, centsToUsdInput, BET_AMOUNTS_CENTS } from '../utils/helpers'
+import { HEX_PATTERN_TILE_WIDTH } from '../utils/hexTheme'
 import { drawBackground, drawFoods, drawSnakes } from '../utils/drawing'
 
 export const SKINS: Record<string, string[]> = {
-  default: ['#38bdf8'],
+  default: ['#facc15'],
   emerald: ['#34d399'],
   crimson: ['#ef4444'],
   amber: ['#f59e0b'],
@@ -32,6 +33,8 @@ export const SEGMENT_SPACING = 4.6
 export const LENGTH_EPS = 1e-3
 export const CASHOUT_HOLD_MS = 2000
 export const RENDER_PATH_BLEND = 0.26
+const LOBBY_BACKGROUND_SPEED = 42
+const LOBBY_BACKGROUND_RETURN_SPEED = 3.2
 
 export interface AccountState {
   balance: number
@@ -188,6 +191,7 @@ interface InternalState {
     source: 'pointer' | 'keyboard' | null
   }
   ui: GameUIState
+  backgroundOffset: { x: number; y: number }
 }
 
 const initialAccount: AccountState = {
@@ -270,7 +274,8 @@ export class GameController {
       account: { ...initialAccount },
       pendingBet: null,
       cashoutHold: { start: null, frame: null, triggered: false, source: null },
-      ui: { ...initialUI }
+      ui: { ...initialUI },
+      backgroundOffset: { x: 0, y: 0 }
     }
   }
 
@@ -1017,6 +1022,21 @@ export class GameController {
     const smoothPos = Math.min(1, dt * POSITION_SMOOTH)
     const smoothAngle = Math.min(1, dt * ANGLE_SMOOTH)
     const now = performance.now()
+    const background = this.state.backgroundOffset
+    const tileWidth = Math.max(1, HEX_PATTERN_TILE_WIDTH)
+
+    if (this.state.ui.nicknameVisible) {
+      background.x = (background.x + LOBBY_BACKGROUND_SPEED * dt) % tileWidth
+    } else if (Math.abs(background.x) > 1e-2) {
+      const decay = Math.min(1, dt * LOBBY_BACKGROUND_RETURN_SPEED)
+      background.x = lerp(background.x, 0, decay)
+      if (Math.abs(background.x) < 0.1) {
+        background.x = 0
+      }
+    } else {
+      background.x = 0
+    }
+    background.y = 0
 
     for (const snake of this.state.snakes.values()) {
       // --- предсказание позиции головы ---
@@ -1138,7 +1158,17 @@ export class GameController {
     const width = canvas.width / dpr
     const height = canvas.height / dpr
     const zoom = camera.zoom
-    drawBackground({ ctx, camX: camera.x, camY: camera.y, width, height, zoom, pattern: this.hexPattern, world })
+    drawBackground({
+      ctx,
+      camX: camera.x,
+      camY: camera.y,
+      width,
+      height,
+      zoom,
+      pattern: this.hexPattern,
+      world,
+      backgroundOffset: this.state.backgroundOffset
+    })
     drawFoods({
       ctx,
       canvas,

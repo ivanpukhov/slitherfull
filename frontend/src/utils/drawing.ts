@@ -66,6 +66,7 @@ interface DrawBackgroundOptions {
   zoom: number
   pattern: CanvasPattern | null
   world: WorldState | null
+  backgroundOffset?: { x: number; y: number }
 }
 
 export function drawBackground({
@@ -76,7 +77,8 @@ export function drawBackground({
   height,
   zoom,
   pattern,
-  world
+  world,
+  backgroundOffset
 }: DrawBackgroundOptions): void {
   ctx.save()
   ctx.fillStyle = '#05070d'
@@ -90,9 +92,14 @@ export function drawBackground({
     ctx.arc(world.centerX, world.centerY, world.radius, 0, Math.PI * 2)
     ctx.clip()
   }
+  const offsetX = backgroundOffset?.x ?? 0
+  const offsetY = backgroundOffset?.y ?? 0
   if (pattern) {
     ctx.fillStyle = pattern
-    ctx.fillRect(camX - pad, camY - pad, pad * 2, pad * 2)
+    ctx.save()
+    ctx.translate(offsetX, offsetY)
+    ctx.fillRect(camX - pad - offsetX, camY - pad - offsetY, pad * 2, pad * 2)
+    ctx.restore()
   }
   ctx.restore()
 
