@@ -45,15 +45,14 @@ export function ResultModal({
 
   return (
     <Modal open={open} title={result.title} onClose={onClose} width="520px">
-      <div className={`damn-card damn-card--result result-${result.variant}`}>
-        <div className="damn-result__title">{result.title}</div>
-        <ul className="damn-result__details">
+      <div className={`result-modal result-modal--${result.variant}`}>
+        <ul className="result-modal__details">
           {result.details.map((line, index) => (
             <li key={index}>{line}</li>
           ))}
         </ul>
         {result.showRetryControls ? (
-          <div className="damn-result__retry">
+          <div className="result-modal__retry">
             <div className="damn-field">
               <label className="damn-field__label" id="retryBetInputLabel" htmlFor="retryBetInput">
                 Retry Bet

@@ -132,8 +132,9 @@ export function usePointerControls({ controller, canvasRef, cashoutButtonRef }: 
     }
   }, [controller, canvasRef])
 
+  const cashoutButton = cashoutButtonRef?.current
+
   useEffect(() => {
-    const cashoutButton = cashoutButtonRef?.current
     if (!cashoutButton) return
 
     const startHold = (event: PointerEvent) => {
@@ -189,5 +190,5 @@ export function usePointerControls({ controller, canvasRef, cashoutButtonRef }: 
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
     }
-  }, [controller, cashoutButtonRef])
+  }, [controller, cashoutButton])
 }
