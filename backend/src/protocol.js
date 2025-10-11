@@ -5,7 +5,7 @@ module.exports = {
     MSG_PONG: "pong",
     MSG_SNAPSHOT: "snapshot",
     MSG_WELCOME: "welcome",
-    MSG_DEATH: "death",   // 👈 вот это новое
+    MSG_DEATH: "death",   // 👈 this is new
     MSG_SET_BET: "set_bet",
     MSG_BALANCE: "balance",
     MSG_RESPAWN: "respawn",

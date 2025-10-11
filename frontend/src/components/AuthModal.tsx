@@ -22,7 +22,7 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
   const overlayClass = open ? 'overlay auth-overlay' : 'overlay hidden'
   const isLoading = status === 'checking' || submitting
 
-  const title = useMemo(() => (mode === 'login' ? 'Вход в аккаунт' : 'Регистрация'), [mode])
+  const title = useMemo(() => (mode === 'login' ? 'Sign in to your account' : 'Create an account'), [mode])
 
   const handleClose = () => {
     if (isLoading) return
@@ -37,7 +37,7 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
     const trimmedEmail = email.trim()
     const trimmedPassword = password.trim()
     if (!trimmedEmail || !trimmedPassword || (mode === 'register' && !nickname.trim())) {
-      setError('Пожалуйста, заполните все поля.')
+      setError('Please fill in all fields.')
       setSubmitting(false)
       return
     }
@@ -63,7 +63,7 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
             type="button"
             className="auth-close"
             onClick={handleClose}
-            aria-label="Закрыть окно авторизации"
+            aria-label="Close authentication window"
             disabled={isLoading}
           >
             ×
@@ -76,7 +76,7 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
             onClick={() => toggleMode('login')}
             disabled={submitting}
           >
-            Вход
+            Sign in
           </button>
           <button
             type="button"
@@ -84,12 +84,12 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
             onClick={() => toggleMode('register')}
             disabled={submitting}
           >
-            Регистрация
+            Sign up
           </button>
         </div>
         <h2>{title}</h2>
         <p className="auth-hint">
-          Войдите или создайте аккаунт, чтобы сохранять ник и баланс. На старте выдаётся 10 монет для ставок.
+          Sign in or create an account to save your nickname and balance. You start with 10 coins to place bets.
         </p>
         <form onSubmit={handleSubmit}>
           <label className="auth-label" htmlFor="authEmail">Email</label>
@@ -102,7 +102,7 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
             disabled={isLoading}
             required
           />
-          <label className="auth-label" htmlFor="authPassword">Пароль</label>
+          <label className="auth-label" htmlFor="authPassword">Password</label>
           <input
             id="authPassword"
             type="password"
@@ -115,7 +115,7 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
           />
           {mode === 'register' && (
             <>
-              <label className="auth-label" htmlFor="authNickname">Никнейм</label>
+              <label className="auth-label" htmlFor="authNickname">Nickname</label>
               <input
                 id="authNickname"
                 type="text"
@@ -130,10 +130,10 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
           )}
           {error && <div className="auth-error" role="alert">{error}</div>}
           <button className="primary" type="submit" disabled={isLoading}>
-            {submitting ? 'Отправка...' : mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
+            {submitting ? 'Submitting...' : mode === 'login' ? 'Sign in' : 'Sign up'}
           </button>
           {status === 'checking' && !submitting && (
-            <p className="auth-status">Проверяем сессию...</p>
+            <p className="auth-status">Checking session...</p>
           )}
         </form>
       </div>
@@ -142,14 +142,14 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
 }
 
 function mapError(code?: string | null) {
-  if (!code) return 'Не удалось обработать запрос.'
+  if (!code) return 'Failed to process the request.'
   const messages: Record<string, string> = {
-    invalid_payload: 'Проверьте корректность введённых данных.',
-    email_taken: 'Такой email уже зарегистрирован.',
-    nickname_taken: 'Выбранный никнейм занят.',
-    invalid_credentials: 'Неверный email или пароль.',
-    network_error: 'Не удалось подключиться к серверу.',
-    server_error: 'Произошла ошибка сервера. Повторите попытку позже.'
+    invalid_payload: 'Please check the information you entered.',
+    email_taken: 'This email is already registered.',
+    nickname_taken: 'The selected nickname is taken.',
+    invalid_credentials: 'Incorrect email or password.',
+    network_error: 'Unable to connect to the server.',
+    server_error: 'A server error occurred. Please try again later.'
   }
-  return messages[code] || 'Не удалось обработать запрос.'
+  return messages[code] || 'Failed to process the request.'
 }

@@ -21,7 +21,7 @@ export function Modal({ open, title, onClose, width, children }: PropsWithChildr
       <div className="modal-window" style={width ? { width } : undefined}>
         <div className="modal-header">
           <div className="modal-title">{title}</div>
-          <button type="button" className="modal-close" aria-label="Закрыть" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label="Close" onClick={onClose}>
             ×
           </button>
         </div>

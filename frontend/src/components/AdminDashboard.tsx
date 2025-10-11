@@ -22,14 +22,14 @@ interface AdminOverview {
 type TransferKind = 'game_to_user' | 'user_to_game' | 'user_to_user'
 
 const TRANSFER_ERROR_MESSAGES: Record<string, string> = {
-  invalid_amount: 'Некорректная сумма',
-  missing_destination_user_id: 'Выберите получателя',
-  missing_source_user_id: 'Выберите отправителя',
-  missing_user_id: 'Выберите отправителя и получателя',
-  insufficient_funds: 'Недостаточно средств на кошельке',
-  source_user_not_found: 'Отправитель не найден',
-  destination_user_not_found: 'Получатель не найден',
-  same_user_transfer: 'Нельзя переводить самому себе'
+  invalid_amount: 'Invalid amount',
+  missing_destination_user_id: 'Select a recipient',
+  missing_source_user_id: 'Select a sender',
+  missing_user_id: 'Select a sender and a recipient',
+  insufficient_funds: 'Not enough funds in the wallet',
+  source_user_not_found: 'Sender not found',
+  destination_user_not_found: 'Recipient not found',
+  same_user_transfer: 'You cannot transfer to yourself'
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
@@ -137,7 +137,7 @@ export function AdminDashboard() {
       if (!token) return
       const amountValue = Number(transferAmount)
       if (!Number.isFinite(amountValue) || amountValue <= 0) {
-        setTransferError('Введите корректную сумму')
+        setTransferError('Enter a valid amount')
         setTransferSuccess(null)
         return
       }
@@ -146,7 +146,7 @@ export function AdminDashboard() {
 
       if (transferKind === 'game_to_user') {
         if (!transferToUserId) {
-          setTransferError('Выберите получателя')
+          setTransferError('Select a recipient')
           setTransferSuccess(null)
           return
         }
@@ -155,7 +155,7 @@ export function AdminDashboard() {
         payload.toUserId = Number(transferToUserId)
       } else if (transferKind === 'user_to_game') {
         if (!transferFromUserId) {
-          setTransferError('Выберите отправителя')
+          setTransferError('Select a sender')
           setTransferSuccess(null)
           return
         }
@@ -164,12 +164,12 @@ export function AdminDashboard() {
         payload.fromUserId = Number(transferFromUserId)
       } else {
         if (!transferFromUserId || !transferToUserId) {
-          setTransferError('Выберите отправителя и получателя')
+          setTransferError('Select a sender and a recipient')
           setTransferSuccess(null)
           return
         }
         if (transferFromUserId === transferToUserId) {
-          setTransferError('Нельзя переводить самому себе')
+          setTransferError('You cannot transfer to yourself')
           setTransferSuccess(null)
           return
         }
@@ -196,7 +196,7 @@ export function AdminDashboard() {
           const message = data?.error || 'transfer_failed'
           throw new Error(message)
         }
-        setTransferSuccess('Перевод выполнен')
+        setTransferSuccess('Transfer completed')
         setTransferAmount('')
         await fetchOverview(token)
       } catch (err) {
@@ -220,7 +220,7 @@ export function AdminDashboard() {
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </label>
             <label>
-              Пароль
+              Password
               <input
                 type="password"
                 value={password}
@@ -229,9 +229,9 @@ export function AdminDashboard() {
               />
             </label>
             <button type="submit" disabled={loading}>
-              {loading ? 'Проверка...' : 'Войти'}
+              {loading ? 'Verifying...' : 'Sign in'}
             </button>
-            {error && <div className="admin-error">Ошибка: {error}</div>}
+            {error && <div className="admin-error">Error: {error}</div>}
           </form>
         </div>
       </div>
@@ -243,45 +243,45 @@ export function AdminDashboard() {
       <div className="admin-card">
         <div className="admin-header">
           <div>
-            <h1>Сводка кошельков</h1>
-            <p className="admin-subtitle">Обновлено автоматически при входе</p>
+            <h1>Wallet overview</h1>
+            <p className="admin-subtitle">Updated automatically after sign-in</p>
           </div>
           <div className="admin-actions">
             <button type="button" onClick={() => fetchOverview(token)} disabled={loading}>
-              {loading ? 'Обновление...' : 'Обновить'}
+              {loading ? 'Refreshing...' : 'Refresh'}
             </button>
             <button type="button" className="admin-secondary" onClick={handleLogout}>
-              Выйти
+              Sign out
             </button>
           </div>
         </div>
         <div className="admin-summary">
           <div>
-            <span className="summary-label">Игровой кошелек</span>
+            <span className="summary-label">Game wallet</span>
             <span className="summary-value">{overview.gameWallet.walletSol.toFixed(3)} SOL</span>
             <span className="summary-address">{overview.gameWallet.walletAddress}</span>
           </div>
           <div>
-            <span className="summary-label">Всего SOL</span>
+            <span className="summary-label">Total SOL</span>
             <span className="summary-value">{totalSol.toFixed(3)} SOL</span>
           </div>
         </div>
         <div className="admin-transfer">
-          <h2>Переводы</h2>
+          <h2>Transfers</h2>
           <form onSubmit={handleTransfer}>
             <label>
-              Тип перевода
+              Transfer type
               <select value={transferKind} onChange={(event) => setTransferKind(event.target.value as TransferKind)}>
-                <option value="game_to_user">Игровой кошелек → Пользователь</option>
-                <option value="user_to_game">Пользователь → Игровой кошелек</option>
-                <option value="user_to_user">Пользователь → Пользователь</option>
+                <option value="game_to_user">Game wallet → Player</option>
+                <option value="user_to_game">Player → Game wallet</option>
+                <option value="user_to_user">Player → Player</option>
               </select>
             </label>
             {(transferKind === 'user_to_game' || transferKind === 'user_to_user') && (
               <label>
-                Отправитель
+                Sender
                 <select value={transferFromUserId} onChange={(event) => setTransferFromUserId(event.target.value)}>
-                  <option value="">Выберите пользователя</option>
+                  <option value="">Select a user</option>
                   {userOptions.map((user) => (
                     <option key={user.id} value={user.id}>
                       #{user.id} · {user.email}
@@ -292,9 +292,9 @@ export function AdminDashboard() {
             )}
             {(transferKind === 'game_to_user' || transferKind === 'user_to_user') && (
               <label>
-                Получатель
+                Recipient
                 <select value={transferToUserId} onChange={(event) => setTransferToUserId(event.target.value)}>
-                  <option value="">Выберите пользователя</option>
+                  <option value="">Select a user</option>
                   {userOptions.map((user) => (
                     <option key={user.id} value={user.id}>
                       #{user.id} · {user.email}
@@ -304,7 +304,7 @@ export function AdminDashboard() {
               </label>
             )}
             <label>
-              Сумма (в условных единицах)
+              Amount (in credits)
               <input
                 type="number"
                 min="0"
@@ -315,9 +315,9 @@ export function AdminDashboard() {
               />
             </label>
             <button type="submit" disabled={transferLoading}>
-              {transferLoading ? 'Выполнение...' : 'Перевести'}
+              {transferLoading ? 'Processing...' : 'Transfer'}
             </button>
-            {transferError && <div className="admin-error">Ошибка: {transferError}</div>}
+            {transferError && <div className="admin-error">Error: {transferError}</div>}
             {transferSuccess && <div className="admin-success">{transferSuccess}</div>}
           </form>
         </div>
@@ -327,11 +327,11 @@ export function AdminDashboard() {
               <tr>
                 <th>ID</th>
                 <th>Email</th>
-                <th>Ник</th>
-                <th>Кошелек</th>
-                <th>Баланс (SOL)</th>
+                <th>Nickname</th>
+                <th>Wallet</th>
+                <th>Balance (SOL)</th>
                 <th>Lamports</th>
-                <th>Игровой баланс</th>
+                <th>In-game balance</th>
               </tr>
             </thead>
             <tbody>

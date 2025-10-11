@@ -296,7 +296,7 @@ class World {
             const turn = clamp(diff, -maxTurn, maxTurn)
             p.angle = normalizeAngle(p.angle + turn)
 
-            // скорость
+            // speed
             const growth = Math.max(0, p.length - this.cfg.baseLength)
             const slowRatio = Math.pow(
                 1 / (1 + growth / this.cfg.speedLengthSoftCap),
@@ -307,17 +307,17 @@ class World {
             const speed = p.boost ? baseSpeed * this.cfg.boostMultiplier : baseSpeed
             p.speed = speed
 
-            // обновляем позицию головы
+            // update head position
             p.x += Math.cos(p.angle) * speed * dt
             p.y += Math.sin(p.angle) * speed * dt
             p.dir = p.angle
 
-            // границы карты (круглый мир)
+            // map borders (wrap around)
             const border = projectToCircle(this.centerX, this.centerY, Math.max(0, this.radius - p.r), p.x, p.y)
             p.x = border.x
             p.y = border.y
 
-            // обновляем полилинию хвоста
+            // update tail polyline
             const spacing = this.cfg.segmentSpacing
             if (!Array.isArray(p.path) || p.path.length === 0) {
                 p.path = [{ x: p.x, y: p.y }]
@@ -365,22 +365,22 @@ class World {
                 }
             }
 
-            // обрезаем хвост по целевой длине
+            // trim tail to target length
             const desiredPathLength = Math.max(spacing * 2, p.length)
             trimPathToLength(p, desiredPathLength)
 
-            // ограничитель (безопасность, если что-то пошло не так)
+            // guard rail (safety if something goes wrong)
             if (p.path.length > this.cfg.maxPathPoints) {
                 p.path = p.path.slice(p.path.length - this.cfg.maxPathPoints)
                 p.pathLen = computePathLength(p.path)
             }
 
-            // буст — только ускоряет змею, без потери длины и выброса еды
+            // boost only increases speed without losing length or dropping food
             if (p.boost && p.length <= this.cfg.minLength + 1e-3) {
                 p.boost = false
             }
 
-            // радиус головы
+            // head radius
             p.r =
                 this.cfg.headRadius +
                 Math.min(12, Math.sqrt(p.length) * 0.3)

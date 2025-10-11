@@ -114,7 +114,7 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
             if (pendingBet !== null && ws.readyState === WebSocket.OPEN) {
               const desired = sanitizeBetValue(pendingBet, controller.getAccount().balance)
               if (desired > 0) {
-                controller.setTransferState(true, 'Перевод средств…')
+                controller.setTransferState(true, 'Transferring funds…')
                 ws.send(JSON.stringify({ type: 'set_bet', amount: desired }))
               }
               controller.setPendingBet(null)
@@ -192,7 +192,7 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
   const requestRespawn = useCallback((betAmount: number) => {
     const ws = wsRef.current
     if (!ws || ws.readyState !== WebSocket.OPEN) return
-    controller.setTransferState(true, 'Перевод средств…')
+    controller.setTransferState(true, 'Transferring funds…')
     ws.send(JSON.stringify({ type: 'set_bet', amount: betAmount }))
     ws.send(JSON.stringify({ type: 'respawn' }))
   }, [])

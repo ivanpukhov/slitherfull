@@ -54,8 +54,8 @@ export function PlayerStatsChart({ series, loading, totalUsd = 0, totalSol = 0 }
   if (loading) {
     return (
       <div className="stats-card">
-        <div className="stats-card-title">Статистика выигрышей</div>
-        <div className="stats-card-body placeholder">Загрузка…</div>
+        <div className="stats-card-title">Winnings statistics</div>
+        <div className="stats-card-body placeholder">Loading…</div>
       </div>
     )
   }
@@ -63,15 +63,15 @@ export function PlayerStatsChart({ series, loading, totalUsd = 0, totalSol = 0 }
   if (!chart.hasData) {
     return (
       <div className="stats-card">
-        <div className="stats-card-title">Статистика выигрышей</div>
-        <div className="stats-card-body placeholder">Нет данных для отображения</div>
+        <div className="stats-card-title">Winnings statistics</div>
+        <div className="stats-card-body placeholder">No data to display</div>
       </div>
     )
   }
 
   return (
     <div className="stats-card">
-      <div className="stats-card-title">Статистика выигрышей</div>
+      <div className="stats-card-title">Winnings statistics</div>
       <div className="stats-card-summary">
         <span>{formatUsd(totalUsd)}</span>
         <span>{totalSol.toFixed(3)} SOL</span>

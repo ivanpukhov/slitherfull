@@ -296,7 +296,7 @@ export function drawSnakes({
       ctx.textBaseline = 'bottom'
       const labelParts = [snake.name]
       if (typeof snake.bet === 'number' && snake.bet > 0) {
-        labelParts.push(`ставка ${formatNumber(Math.floor(snake.bet))}`)
+        labelParts.push(`bet ${formatNumber(Math.floor(snake.bet))}`)
       }
       ctx.fillText(labelParts.join(' · '), head.x, head.y - headRadius - 10)
     }

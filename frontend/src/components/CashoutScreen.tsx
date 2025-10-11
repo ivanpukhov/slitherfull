@@ -10,13 +10,13 @@ export function CashoutScreen({ state, onClose }: CashoutScreenProps) {
     <div id="cashoutScreen" className={state.visible ? 'overlay' : 'overlay hidden'}>
       <div className="card">
         <div className="summary" id="cashoutTitle">
-          Баланс выведен
+          Balance cashed out
         </div>
         <div className="summary" id="cashoutSummary">
           {state.summary}
         </div>
         <button className="primary" id="cashoutCloseBtn" type="button" onClick={onClose}>
-          Готово
+          Done
         </button>
       </div>
     </div>

@@ -1,16 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
 const TRANSLATIONS = {
-  ru: {
-    balanceTitle: 'Баланс',
-    walletButtonTitle: 'Кошелек',
-    walletButtonCaption: 'Управление средствами',
-    walletButtonAriaLabel: 'Открыть кошелек',
-    walletButtonLabel: 'Кошелек',
-    currentBetLabel: 'Текущая ставка',
-    skinLabel: 'Скин',
-    authPrompt: 'Авторизоваться'
-  },
   en: {
     balanceTitle: 'Balance',
     walletButtonTitle: 'Wallet',
@@ -25,18 +15,11 @@ const TRANSLATIONS = {
 
 type Locale = keyof typeof TRANSLATIONS
 
-type TranslationKey = keyof (typeof TRANSLATIONS)['ru']
+type TranslationKey = keyof (typeof TRANSLATIONS)['en']
 
-const DEFAULT_LOCALE: Locale = 'ru'
+const DEFAULT_LOCALE: Locale = 'en'
 
 function detectLocale(): Locale {
-  if (typeof navigator === 'undefined') {
-    return DEFAULT_LOCALE
-  }
-  const language = navigator.language?.toLowerCase() ?? ''
-  if (language.startsWith('en')) {
-    return 'en'
-  }
   return DEFAULT_LOCALE
 }
 

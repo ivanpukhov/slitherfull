@@ -128,7 +128,7 @@ function GameView() {
   const handleWithdraw = useCallback(
     async (destination: string) => {
       if (typeof wallet.withdrawAll !== 'function') {
-        throw new Error('Функция вывода недоступна')
+        throw new Error('Cashout feature is unavailable')
       }
       setWithdrawPending(true)
       setWithdrawStatus(null)
@@ -136,12 +136,12 @@ function GameView() {
         const result = await wallet.withdrawAll(destination)
         setWithdrawStatus({
           type: 'success',
-          message: result?.message ?? 'Баланс отправлен на указанный адрес.'
+          message: result?.message ?? 'Balance sent to the specified address.'
         })
         await wallet.refresh()
         refreshPlayerStats()
       } catch (error) {
-        const message = (error as Error)?.message || 'Не удалось выполнить вывод'
+        const message = (error as Error)?.message || 'Failed to complete the cashout'
         setWithdrawStatus({ type: 'error', message })
         throw error
       } finally {
@@ -316,9 +316,9 @@ function GameView() {
     }
   }, [isAuthenticated])
   const startLabel = useMemo(() => {
-    if (game.cashout.pending) return 'Ожидание вывода'
-    if (game.transfer.pending) return 'Обработка...'
-    if (auth.status === 'checking') return 'Загрузка...'
+    if (game.cashout.pending) return 'Awaiting cashout'
+    if (game.transfer.pending) return 'Processing...'
+    if (auth.status === 'checking') return 'Loading...'
     return isAuthenticated ? 'Play' : 'Login'
   }, [auth.status, game.cashout.pending, game.transfer.pending, isAuthenticated])
 
@@ -328,10 +328,10 @@ function GameView() {
     game.transfer.pending ||
     (isAuthenticated && game.account.balance < BET_AMOUNTS_CENTS[0])
   const startHint = useMemo(() => {
-    if (game.cashout.pending) return 'Дождитесь подтверждения вывода средств.'
-    if (game.transfer.pending) return 'Проводим транзакцию с вашим балансом.'
+    if (game.cashout.pending) return 'Please wait for the cashout confirmation.'
+    if (game.transfer.pending) return 'We are processing a transaction with your balance.'
     if (isAuthenticated && game.account.balance < BET_AMOUNTS_CENTS[0])
-      return 'Недостаточно средств для минимальной ставки ($1).'
+      return 'Not enough funds for the minimum $1 bet.'
     return undefined
   }, [game.cashout.pending, game.transfer.pending, isAuthenticated, game.account.balance])
 
@@ -413,7 +413,7 @@ function GameView() {
         <div className="transfer-overlay">
           <div className="transfer-modal">
             <div className="transfer-spinner" />
-            <div className="transfer-text">{game.transfer.message || 'Перевод средств…'}</div>
+            <div className="transfer-text">{game.transfer.message || 'Transferring funds…'}</div>
           </div>
         </div>
       )}
