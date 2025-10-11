@@ -3023,21 +3023,38 @@ body.is-touch #leaderboard {
 
 /* DamnBruh lobby redesign */
 .overlay--lobby {
-    align-items: stretch;
+    position: relative;
+    display: flex;
+    align-items: center;
     justify-content: center;
+    min-height: 100vh;
     padding: clamp(24px, 5vh, 72px) clamp(18px, 7vw, 88px);
     background: radial-gradient(circle at center, #030200, #000000);
+    overflow: hidden;
 }
-
 
 .overlay--lobby .damn-lobby {
     position: relative;
+    z-index: 1;
     width: min(1180px, 100%);
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     gap: clamp(24px, 4vw, 40px);
     color: var(--color-text-primary);
+}
+
+.lobby-background {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.lobby-background canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 .damn-lobby__topbar {
@@ -3189,12 +3206,21 @@ body.is-touch #leaderboard {
 .damn-grid {
     display: grid;
     gap: clamp(18px, 3vw, 28px);
+    margin: 0 auto;
+    width: 100%;
+}
+
+.damn-join-form {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(18px, 3vw, 28px);
 }
 
 @media (min-width: 1024px) {
     .damn-grid {
         grid-template-columns: minmax(260px, 1fr) minmax(340px, 1.15fr) minmax(280px, 1fr);
         align-items: start;
+        justify-items: stretch;
     }
 }
 
@@ -3230,6 +3256,13 @@ body.is-touch #leaderboard {
     position: relative;
     z-index: 1;
     align-items: center;
+}
+
+.damn-card__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .damn-card__header > div:first-child {
@@ -3411,6 +3444,17 @@ body.is-touch #leaderboard {
     margin-bottom: clamp(14px, 2.4vw, 22px);
 }
 
+.damn-field__row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.damn-field__row .damn-field__input {
+    flex: 1;
+    margin-bottom: 0;
+}
+
 .damn-field__label {
     font-size: 12px;
     text-transform: uppercase;
@@ -3436,6 +3480,66 @@ body.is-touch #leaderboard {
 .damn-field__note {
     margin: -4px 0 0;
     font-size: 12px;
+    color: var(--color-text-soft);
+}
+
+.damn-field__actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.damn-field__error {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: #f87171;
+}
+
+.damn-field__success {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: #34d399;
+}
+
+.damn-inline-button {
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(15, 23, 42, 0.6);
+    color: var(--color-text-primary);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.damn-inline-button:hover:not(:disabled),
+.damn-inline-button:focus-visible:not(:disabled) {
+    border-color: rgba(250, 204, 21, 0.4);
+    color: #facc15;
+}
+
+.damn-inline-button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.35);
+}
+
+.damn-inline-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.damn-inline-button--primary {
+    border-color: rgba(250, 204, 21, 0.6);
+    background: rgba(250, 204, 21, 0.18);
+    color: var(--color-accent);
+}
+
+.damn-inline-button--muted {
+    border-color: rgba(148, 163, 184, 0.2);
+    background: rgba(15, 23, 42, 0.35);
     color: var(--color-text-soft);
 }
 

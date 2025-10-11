@@ -29,6 +29,9 @@ function GameView() {
   const [withdrawPending, setWithdrawPending] = useState(false)
   const [withdrawStatus, setWithdrawStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [authModalOpen, setAuthModalOpen] = useState(false)
+  const [nicknameSaving, setNicknameSaving] = useState(false)
+  const [nicknameError, setNicknameError] = useState<string | null>(null)
+  const [nicknameMessage, setNicknameMessage] = useState<string | null>(null)
   const connection = useConnection({
     controller: game.controller,
     token: auth.token,
@@ -58,6 +61,21 @@ function GameView() {
     }).format((priceUsd as number) || 0)}`
   }, [winningsLeaderboard.data?.priceUsd])
   const accountStateSyncedRef = useRef(false)
+
+  const getNicknameErrorMessage = useCallback((code?: string | null) => {
+    switch (code) {
+      case 'nickname_taken':
+        return 'Этот никнейм уже занят.'
+      case 'invalid_nickname':
+        return 'Никнейм должен содержать 3–16 символов и только буквы, цифры или подчёркивания.'
+      case 'unauthorized':
+        return 'Авторизуйтесь, чтобы изменить никнейм.'
+      case 'network_error':
+        return 'Не удалось связаться с сервером. Попробуйте позже.'
+      default:
+        return 'Не удалось обновить никнейм.'
+    }
+  }, [])
 
   useCanvas({ canvasRef, controller: game.controller })
   usePointerControls({ controller: game.controller, canvasRef, cashoutButtonRef })
@@ -178,6 +196,26 @@ function GameView() {
   }, [auth.status])
 
   useEffect(() => {
+    if (!game.nicknameLocked) {
+      setNicknameError(null)
+    }
+  }, [game.nickname, game.nicknameLocked])
+
+  useEffect(() => {
+    if (!game.nicknameLocked) {
+      setNicknameMessage(null)
+    }
+  }, [game.nicknameLocked])
+
+  useEffect(() => {
+    if (auth.status !== 'authenticated') {
+      setNicknameSaving(false)
+      setNicknameError(null)
+      setNicknameMessage(null)
+    }
+  }, [auth.status])
+
+  useEffect(() => {
     if (wallet.profile && auth.status === 'authenticated') {
       auth.syncBalance(wallet.profile.inGameBalance)
     }
@@ -259,6 +297,81 @@ function GameView() {
   const handleWalletRefresh = useCallback(() => {
     wallet.refresh()
   }, [wallet])
+
+  const handleRequestNicknameEdit = useCallback(() => {
+    setNicknameSaving(false)
+    setNicknameError(null)
+    setNicknameMessage(null)
+    controller.setNicknameLock(false)
+  }, [controller])
+
+  const handleCancelNicknameEdit = useCallback(() => {
+    const fallback = auth.user?.nickname ?? ''
+    setNickname(fallback)
+    setNicknameSaving(false)
+    setNicknameError(null)
+    setNicknameMessage(null)
+    controller.setNicknameLock(true)
+  }, [auth.user, controller, setNickname])
+
+  const handleSubmitNicknameChange = useCallback(async () => {
+    if (auth.status !== 'authenticated' || !auth.user) {
+      setNicknameError(getNicknameErrorMessage('unauthorized'))
+      return
+    }
+    const next = game.nickname.trim()
+    if (!next) {
+      setNicknameError('Введите никнейм')
+      return
+    }
+    if (next.length < 3) {
+      setNicknameError('Никнейм должен содержать минимум 3 символа.')
+      return
+    }
+    if (next.length > 16) {
+      setNicknameError('Никнейм не может быть длиннее 16 символов.')
+      return
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(next)) {
+      setNicknameError('Допустимы только латинские буквы, цифры и подчёркивания.')
+      return
+    }
+    if (next === auth.user.nickname) {
+      setNicknameMessage('Никнейм без изменений')
+      controller.setNicknameLock(true)
+      return
+    }
+    if (typeof auth.changeNickname !== 'function') {
+      setNicknameError(getNicknameErrorMessage())
+      return
+    }
+    setNicknameSaving(true)
+    setNicknameError(null)
+    setNicknameMessage(null)
+    try {
+      const result = await auth.changeNickname(next)
+      if (!result.ok) {
+        setNicknameError(getNicknameErrorMessage(result.error))
+        return
+      }
+      const updatedName = result.user?.nickname ?? next
+      setNickname(updatedName)
+      setNicknameMessage('Никнейм обновлён!')
+      controller.setNicknameLock(true)
+    } catch (error) {
+      setNicknameError(getNicknameErrorMessage('network_error'))
+    } finally {
+      setNicknameSaving(false)
+    }
+  }, [
+    auth.changeNickname,
+    auth.status,
+    auth.user,
+    controller,
+    game.nickname,
+    getNicknameErrorMessage,
+    setNickname
+  ])
 
   const isAuthenticated = auth.status === 'authenticated' && Boolean(auth.user)
   useEffect(() => {
@@ -345,6 +458,13 @@ function GameView() {
         totalWinningsUsd={totalWinningsUsd}
         totalWinningsSol={totalWinningsSol}
         authToken={auth.token}
+        profileNickname={auth.user?.nickname ?? null}
+        onRequestNicknameEdit={handleRequestNicknameEdit}
+        onCancelNicknameEdit={handleCancelNicknameEdit}
+        onSubmitNicknameChange={handleSubmitNicknameChange}
+        nicknamePending={nicknameSaving}
+        nicknameError={nicknameError}
+        nicknameMessage={nicknameMessage}
       />
       <ResultModal
         open={Boolean(game.lastResult)}

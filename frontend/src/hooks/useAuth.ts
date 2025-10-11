@@ -138,6 +138,41 @@ export function useAuth() {
     setProfileLoaded(true)
   }, [])
 
+  const changeNickname = useCallback(
+    async (nickname: string): Promise<AuthResult & { user?: AuthUser }> => {
+      if (!token) {
+        return { ok: false, error: 'unauthorized' }
+      }
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/profile/nickname`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ nickname })
+        })
+        if (!response.ok) {
+          const error = await safeError(response)
+          if (response.status === 401) {
+            setToken(null)
+            setUser(null)
+            setStatus('unauthenticated')
+          }
+          return { ok: false, error }
+        }
+        const data = await response.json()
+        if (data?.user) {
+          setUser(data.user)
+        }
+        return { ok: true, user: data?.user }
+      } catch (err) {
+        return { ok: false, error: 'network_error' }
+      }
+    },
+    [token]
+  )
+
   const syncBalance = useCallback((balance: number) => {
     setUser((prev) => (prev ? { ...prev, balance } : prev))
   }, [])
@@ -152,6 +187,7 @@ export function useAuth() {
     login,
     register,
     logout,
+    changeNickname,
     syncBalance
   }
 }

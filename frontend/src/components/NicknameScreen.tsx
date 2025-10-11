@@ -9,6 +9,7 @@ import {WinningsLeaderboardCard} from './Leaderboard'
 import {Modal} from './Modal'
 import {FriendsModal} from './FriendsModal'
 import {SnakePreview} from './SnakePreview'
+import {LobbyBackground} from './LobbyBackground'
 import wallet from './../assets/wallet.svg'
 import castom from './../assets/castomize.svg'
 import leader from './../assets/leader.svg'
@@ -55,6 +56,13 @@ interface NicknameScreenProps {
     totalWinningsUsd?: number
     totalWinningsSol?: number
     authToken?: string | null
+    profileNickname?: string | null
+    onRequestNicknameEdit?: () => void
+    onCancelNicknameEdit?: () => void
+    onSubmitNicknameChange?: () => void
+    nicknamePending?: boolean
+    nicknameError?: string | null
+    nicknameMessage?: string | null
 }
 
 export function NicknameScreen({
@@ -97,7 +105,14 @@ export function NicknameScreen({
                                    activePlayers,
                                    totalWinningsUsd,
                                    totalWinningsSol,
-                                   authToken
+                                   authToken,
+                                   profileNickname,
+                                   onRequestNicknameEdit,
+                                   onCancelNicknameEdit,
+                                   onSubmitNicknameChange,
+                                   nicknamePending,
+                                   nicknameError,
+                                   nicknameMessage
                                }: NicknameScreenProps) {
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault()
@@ -151,6 +166,7 @@ export function NicknameScreen({
     const [friendsModalOpen, setFriendsModalOpen] = useState(false)
     const [skinModalOpen, setSkinModalOpen] = useState(false)
     const skinListRef = useRef<HTMLDivElement>(null)
+    const nicknameInputRef = useRef<HTMLInputElement>(null)
     const friendsController = useFriends(authToken ?? null)
 
     useEffect(() => {
@@ -202,6 +218,18 @@ export function NicknameScreen({
             window.cancelAnimationFrame(handle)
         }
     }, [skinModalOpen, selectedSkin])
+
+    useEffect(() => {
+        if (nicknameLocked) return
+        const handle = window.requestAnimationFrame(() => {
+            const target = nicknameInputRef.current
+            target?.focus()
+            target?.select()
+        })
+        return () => {
+            window.cancelAnimationFrame(handle)
+        }
+    }, [nicknameLocked])
 
     const resetCopyStatus = () => {
         if (copyResetTimer.current) {
@@ -279,7 +307,8 @@ export function NicknameScreen({
         [primaryColor, secondaryColor]
     )
     const sanitizedNickname = nickname?.trim() || ''
-    const profileName = sanitizedNickname || (isAuthenticated ? 'Player' : 'New player')
+    const fallbackName = profileNickname?.trim() || (isAuthenticated ? 'Player' : 'New player')
+    const profileName = sanitizedNickname || fallbackName
     const profileInitial = profileName.trim().charAt(0).toUpperCase() || 'D'
     const spendableBalance = typeof bettingBalance === 'number' ? bettingBalance : balance
     const selectedBetCents = useMemo(() => {
@@ -367,7 +396,6 @@ export function NicknameScreen({
     const leaderboardLoading = Boolean(winningsLoading && leaderboardEntries.length === 0)
     const leaderboardRefreshing = Boolean(winningsLoading && leaderboardEntries.length > 0)
     const leaderboardHasError = !winningsLoading && Boolean(winningsError)
-    const rangeBadge = 'All time'
     const activePlayersDisplay = formatNumber(Math.max(0, activePlayers ?? 0))
     const totalPaidUsdDisplay = Number.isFinite(totalWinningsUsd ?? NaN)
         ? usdFormatter.format(totalWinningsUsd ?? 0)
@@ -379,6 +407,7 @@ export function NicknameScreen({
 
     return (
         <div id="nicknameScreen" className={visible ? 'overlay overlay--lobby' : 'overlay overlay--lobby hidden'}>
+            <LobbyBackground/>
             <div className="damn-lobby">
                 <div className="damn-lobby__topbar">
                     <div className="damn-topbar__welcome">
@@ -387,31 +416,6 @@ export function NicknameScreen({
                     </div>
 
                 </div>
-
-                <div className="damn-hero">
-                    <div className="damn-hero__brand">
-                        <span className="damn-hero__brand-main">SNAKE</span>
-                        <span className="damn-hero__brand-accent">FANS</span>
-                    </div>
-                    <div className="damn-hero__tagline">Skill-Based Betting</div>
-                </div>
-
-                {(cashoutPending || transferPending) && (
-                    <div className={`damn-status${cashoutPending ? ' damn-status--cashout' : ''}`}>
-                        <div className="damn-status__indicator"/>
-                        <div className="damn-status__body">
-                            <div className="damn-status__title">
-                                {cashoutPending ? 'Cash out in progress' : 'Processing transaction'}
-                            </div>
-                            <p className="damn-status__text">
-                                {transferMessage ||
-                                    (cashoutPending
-                                        ? 'We are finalising your payout.'
-                                        : 'Please wait a moment, we are syncing your balance.')}
-                            </p>
-                        </div>
-                    </div>
-                )}
 
                 <div className="damn-grid">
                     <div className="damn-column damn-column--left">
@@ -504,28 +508,96 @@ export function NicknameScreen({
 
                     </div>
 
-                    <form className="damn-column damn-column--center" onSubmit={handleSubmit}>
-                        <section className="damn-card damn-card--join">
-
-
-                            <div className="damn-field">
-
-                                <input
-                                    id="nicknameInput"
-                                    className="damn-field__input"
-                                    type="text"
-                                    maxLength={16}
-                                    placeholder="Enter nickname"
-                                    autoComplete="off"
-                                    value={nickname}
-                                    onChange={(event) => {
-                                        if (!nicknameLocked) {
-                                            onNicknameChange(event.target.value)
-                                        }
-                                    }}
-                                    disabled={nicknameLocked}
-                                />
+                    <div className="damn-column damn-column--center">
+                        <section className="damn-hero">
+                            <div className="damn-hero__brand">
+                                <span className="damn-hero__brand-main">SNAKE</span>
+                                <span className="damn-hero__brand-accent">FANS</span>
                             </div>
+                            <div className="damn-hero__tagline">Skill-Based Betting</div>
+                        </section>
+
+                        {(cashoutPending || transferPending) && (
+                            <div className={`damn-status${cashoutPending ? ' damn-status--cashout' : ''}`}>
+                                <div className="damn-status__indicator"/>
+                                <div className="damn-status__body">
+                                    <div className="damn-status__title">
+                                        {cashoutPending ? 'Cash out in progress' : 'Processing transaction'}
+                                    </div>
+                                    <p className="damn-status__text">
+                                        {transferMessage ||
+                                            (cashoutPending
+                                                ? 'We are finalising your payout.'
+                                                : 'Please wait a moment, we are syncing your balance.')}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        <form className="damn-join-form" onSubmit={handleSubmit}>
+                            <section className="damn-card damn-card--join">
+
+
+                                <div className="damn-field">
+                                    <div className="damn-field__row">
+                                        <input
+                                            id="nicknameInput"
+                                            ref={nicknameInputRef}
+                                            className="damn-field__input"
+                                            type="text"
+                                            maxLength={16}
+                                            placeholder="Enter nickname"
+                                            autoComplete="off"
+                                            value={nickname}
+                                            onChange={(event) => {
+                                                if (!nicknameLocked) {
+                                                    onNicknameChange(event.target.value)
+                                                }
+                                            }}
+                                            disabled={nicknameLocked}
+                                        />
+                                        {nicknameLocked ? (
+                                            onRequestNicknameEdit ? (
+                                                <button
+                                                    type="button"
+                                                    className="damn-inline-button"
+                                                    onClick={onRequestNicknameEdit}
+                                                    disabled={nicknamePending}
+                                                >
+                                                    Change
+                                                </button>
+                                            ) : null
+                                        ) : (
+                                            <div className="damn-field__actions">
+                                                {onSubmitNicknameChange ? (
+                                                    <button
+                                                        type="button"
+                                                        className="damn-inline-button damn-inline-button--primary"
+                                                        onClick={onSubmitNicknameChange}
+                                                        disabled={nicknamePending}
+                                                    >
+                                                        {nicknamePending ? 'Saving…' : 'Save'}
+                                                    </button>
+                                                ) : null}
+                                                {onCancelNicknameEdit ? (
+                                                    <button
+                                                        type="button"
+                                                        className="damn-inline-button damn-inline-button--muted"
+                                                        onClick={onCancelNicknameEdit}
+                                                        disabled={nicknamePending}
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                ) : null}
+                                            </div>
+                                        )}
+                                    </div>
+                                    {nicknameError ? (
+                                        <p className="damn-field__error">{nicknameError}</p>
+                                    ) : nicknameMessage ? (
+                                        <p className="damn-field__success">{nicknameMessage}</p>
+                                    ) : null}
+                                </div>
 
                             <div className="damn-field">
                                 <div className="damn-bet-options" role="group" aria-label="Select bet">
@@ -578,7 +650,8 @@ export function NicknameScreen({
                                 onClick={() => (isAuthenticated ? setStatsModalOpen(true) : onStart())}> View
                             Stats
                         </button>
-                    </form>
+                        </form>
+                    </div>
 
                     <div className="damn-column damn-column--right">
                         <section className="damn-card damn-card--wallet">
@@ -587,14 +660,26 @@ export function NicknameScreen({
                                     <img src={wallet} alt=""/>
                                     <h2 className="damn-card__title">Wallet</h2>
                                 </div>
-                                <button
-                                    type="button"
-                                    className="damn-link-button"
-                                    onClick={handleCopyWallet}
-                                    disabled={!walletAddress}
-                                >
-                                    {copyLabel}
-                                </button>
+                                <div className="damn-card__actions">
+                                    <button
+                                        type="button"
+                                        className="damn-link-button"
+                                        onClick={handleCopyWallet}
+                                        disabled={!walletAddress}
+                                    >
+                                        {copyLabel}
+                                    </button>
+                                    {onRefreshWallet ? (
+                                        <button
+                                            type="button"
+                                            className="damn-link-button"
+                                            onClick={onRefreshWallet}
+                                            disabled={walletLoading}
+                                        >
+                                            {walletLoading ? 'Refreshing…' : 'Refresh'}
+                                        </button>
+                                    ) : null}
+                                </div>
                             </header>
                             <div className="damn-wallet__balance">
                                 <span className="damn-wallet__value">{formatUsd(balance)}</span>
