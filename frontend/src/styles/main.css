@@ -3040,13 +3040,40 @@ button.primary[aria-disabled="true"] {
 body.is-touch #scorePanel {
     top: calc(var(--layout-vertical-tight) + var(--safe-top));
     left: calc(var(--layout-horizontal-tight) + var(--safe-left));
+    right: auto;
     bottom: auto;
+    min-width: 0;
+    width: auto;
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: rgba(10, 10, 18, 0.88);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(244, 197, 66, 0.12);
+    pointer-events: none;
+}
+
+body.is-touch #scorePanel::before,
+body.is-touch #scorePanel::after {
+    display: none;
+}
+
+body.is-touch #scorePanel .label {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: rgba(244, 197, 66, 0.7);
+}
+
+body.is-touch #scoreValue {
+    margin-top: 4px;
+    font-size: clamp(24px, 12vw, 34px);
+    text-shadow: 0 0 14px rgba(244, 197, 66, 0.35);
+}
+
+body.is-touch #scoreMeta {
+    display: none;
 }
 
 body.is-touch #leaderboard {
-    top: calc(var(--layout-vertical-tight) + var(--safe-top));
-    right: calc(var(--layout-horizontal-tight) + var(--safe-right));
-    bottom: auto;
+    display: none !important;
 }
 
 #deathScreen .card {
@@ -3163,6 +3190,20 @@ body.is-touch #leaderboard {
         max-width: none;
         text-align: center;
     }
+
+    body.is-touch .game-hud {
+        pointer-events: none;
+        display: block;
+        padding: 0;
+        overflow: visible;
+    }
+
+    body.is-touch .game-hud > #scorePanel {
+        position: fixed;
+        width: auto;
+        max-width: none;
+        transform: none;
+    }
 }
 
 @media (max-width: 540px) {
@@ -3180,9 +3221,8 @@ body.is-touch #leaderboard {
         width: clamp(180px, 40vw, 220px);
     }
 
-    body.is-touch #leaderboard,
     body.is-touch #scorePanel {
-        width: clamp(170px, 48vw, 220px);
+        width: auto;
     }
 }
 

@@ -8,10 +8,26 @@ interface UseCanvasOptions {
   controller: GameController
 }
 
-const DPR_LIMIT = 2.5
+const DEFAULT_DPR_LIMIT = 2.5
+const TOUCH_DPR_LIMIT = 1.5
 
 function getDpr() {
-  return Math.max(1, Math.min(DPR_LIMIT, typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1))
+  if (typeof window === 'undefined') {
+    return 1
+  }
+
+  const base = window.devicePixelRatio || 1
+  let limit = DEFAULT_DPR_LIMIT
+
+  try {
+    if (window.matchMedia('(pointer: coarse)').matches) {
+      limit = TOUCH_DPR_LIMIT
+    }
+  } catch (error) {
+    // matchMedia might be unavailable in rare environments; ignore and use default limit.
+  }
+
+  return Math.max(1, Math.min(limit, base))
 }
 
 function buildHexPattern(ctx: CanvasRenderingContext2D) {
