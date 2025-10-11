@@ -844,8 +844,8 @@ canvas {
     align-items: center;
     justify-content: center;
     padding: clamp(16px, var(--layout-vertical-tight), 48px) clamp(16px, var(--layout-horizontal-tight), 64px);
-    background: rgba(2, 6, 23, 0.78);
-    backdrop-filter: blur(38px);
+    /*background: rgba(2, 6, 23, 0.78);*/
+    /*backdrop-filter: blur(38px);*/
     z-index: 10;
     min-height: 100vh;
     min-height: 100dvh;
@@ -3026,7 +3026,7 @@ body.is-touch #leaderboard {
     align-items: stretch;
     justify-content: center;
     padding: clamp(24px, 5vh, 72px) clamp(18px, 7vw, 88px);
-    background: radial-gradient(circle at center, #030200, #000000);
+    /*background: radial-gradient(circle at center, #030200, #000000);*/
 }
 
 
