@@ -15,6 +15,7 @@ import { NicknameScreen } from './components/NicknameScreen'
 import { AuthModal } from './components/AuthModal'
 import { AdminDashboard } from './components/AdminDashboard'
 import { ResultModal } from './components/ResultModal'
+import { LobbyBackdrop } from './components/LobbyBackdrop'
 
 function GameView() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -288,6 +289,7 @@ function GameView() {
   }, [game.cashout.pending, game.transfer.pending, isAuthenticated, game.account.balance])
 
   const handlePrimaryAction = isAuthenticated ? handleStart : () => setAuthModalOpen(true)
+  const inLobby = game.nicknameScreenVisible
 
   return (
     <div className="game-root">
@@ -299,11 +301,12 @@ function GameView() {
         onClose={() => setAuthModalOpen(false)}
       />
       <canvas id="canvas" ref={canvasRef} />
-      <ScorePanel score={game.score} scoreMeta={game.scoreMeta} />
-      {!game.nicknameScreenVisible ? (
+      <LobbyBackdrop visible={inLobby} />
+      {!inLobby ? <ScorePanel score={game.score} scoreMeta={game.scoreMeta} /> : null}
+      {!inLobby ? (
         <GameLeaderboard entries={game.leaderboard} meName={game.controller.state.meName} />
       ) : null}
-      <CashoutControl state={game.cashout} buttonRef={cashoutButtonRef} />
+      {!inLobby ? <CashoutControl state={game.cashout} buttonRef={cashoutButtonRef} /> : null}
       <NicknameScreen
         visible={game.nicknameScreenVisible}
         nickname={game.nickname}

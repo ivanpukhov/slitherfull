@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react'
 import type { LeaderboardEntry } from '../hooks/useGame'
 import type { WinningsLeaderboardEntry } from '../hooks/useWinningsLeaderboard'
 import { formatNumber, formatUsd } from '../utils/helpers'
@@ -81,7 +82,7 @@ export function WinningsLeaderboardCard({
               <div className="winnings-item-meta">Выигрышей: {formatNumber(entry.payoutCount ?? 0)}</div>
             </div>
             <div className="winnings-item-amount">
-              <span className="winnings-item-usd">{currencyFormatter.format(entry.totalUsd)}</span>
+              <AnimatedCurrencyAmount amount={entry.totalUsd} />
               <span className="winnings-item-sol">{entry.totalSol.toFixed(3)} SOL</span>
             </div>
           </li>
@@ -89,4 +90,37 @@ export function WinningsLeaderboardCard({
       </ol>
     </div>
   )
+}
+
+function AnimatedCurrencyAmount({ amount }: { amount: number }) {
+  const [displayValue, setDisplayValue] = useState(0)
+
+  useEffect(() => {
+    let frame: number | null = null
+    let start: number | null = null
+    const duration = 1200
+
+    const step = (timestamp: number) => {
+      if (start === null) {
+        start = timestamp
+      }
+      const progress = Math.min(1, (timestamp - start) / duration)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      setDisplayValue(amount * eased)
+      if (progress < 1) {
+        frame = requestAnimationFrame(step)
+      }
+    }
+
+    setDisplayValue(0)
+    frame = requestAnimationFrame(step)
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame)
+    }
+  }, [amount])
+
+  const formatted = useMemo(() => currencyFormatter.format(displayValue), [displayValue])
+
+  return <span className="winnings-item-usd">{formatted}</span>
 }

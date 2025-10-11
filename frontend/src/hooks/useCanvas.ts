@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { CAMERA_ZOOM } from './useGame'
 import type { GameController } from './useGame'
-import { HEX_PATTERN_THEME } from '../utils/hexTheme'
+import { HEX_PATTERN_RADIUS, HEX_PATTERN_THEME, HEX_PATTERN_TILE_HEIGHT, HEX_PATTERN_TILE_WIDTH } from '../utils/hexTheme'
 
 interface UseCanvasOptions {
   canvasRef: React.RefObject<HTMLCanvasElement>
@@ -15,9 +15,9 @@ function getDpr() {
 }
 
 function buildHexPattern(ctx: CanvasRenderingContext2D) {
-  const r = 35
-  const W = Math.round(3 * r)
-  const H = Math.round(Math.sqrt(3) * r)
+  const r = HEX_PATTERN_RADIUS
+  const W = HEX_PATTERN_TILE_WIDTH
+  const H = HEX_PATTERN_TILE_HEIGHT
   const off = document.createElement('canvas')
   off.width = W
   off.height = H

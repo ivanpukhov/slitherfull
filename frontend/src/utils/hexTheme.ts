@@ -13,6 +13,10 @@ export type HexPatternTheme = {
   outline: string
 }
 
+export const HEX_PATTERN_RADIUS = 35
+export const HEX_PATTERN_TILE_WIDTH = Math.round(3 * HEX_PATTERN_RADIUS)
+export const HEX_PATTERN_TILE_HEIGHT = Math.round(Math.sqrt(3) * HEX_PATTERN_RADIUS)
+
 export const HEX_PATTERN_THEME: HexPatternTheme = {
   baseGradient: [
     { offset: 0, color: '#050505' },
