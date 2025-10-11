@@ -9,6 +9,10 @@ import {WinningsLeaderboardCard} from './Leaderboard'
 import {Modal} from './Modal'
 import {FriendsModal} from './FriendsModal'
 import {SnakePreview} from './SnakePreview'
+import wallet from './../assets/wallet.svg'
+import castom from './../assets/castomize.svg'
+import leader from './../assets/leader.svg'
+import friend from './../assets/friend.svg'
 
 interface NicknameScreenProps {
     visible: boolean
@@ -413,8 +417,17 @@ export function NicknameScreen({
                     <div className="damn-column damn-column--left">
                         <section className="damn-card damn-card--leaderboard" aria-live="polite">
                             <header className="damn-card__header">
+
                                 <div>
-                                    <h2 className="damn-card__title">Leaderboard</h2>
+                                    <img src={leader} alt=""/>
+                                    <h2 className="damn-card__title">
+                                        Leaderboard
+                                    </h2>
+                                </div>
+                                <div className="leaderboard__live">
+                                    <div className="leaderboard__live-rounded"></div>
+                                    <div className="leaderboard__live-text">Live</div>
+
                                 </div>
                             </header>
                             <ol className={`damn-leaderboard${leaderboardRefreshing ? ' loading' : ''}`}>
@@ -450,7 +463,10 @@ export function NicknameScreen({
 
                         <section className="damn-card damn-card--friends">
                             <header className="damn-card__header">
-                                <h2 className="damn-card__title">Friends</h2>
+                                <div>
+                                    <img src={friend} alt=""/>
+                                    <h2 className="damn-card__title">Friends</h2>
+                                </div>
                             </header>
                             {isAuthenticated ? (
                                 <>
@@ -494,7 +510,7 @@ export function NicknameScreen({
 
                             <div className="damn-field">
 
-                            <input
+                                <input
                                     id="nicknameInput"
                                     className="damn-field__input"
                                     type="text"
@@ -567,7 +583,8 @@ export function NicknameScreen({
                     <div className="damn-column damn-column--right">
                         <section className="damn-card damn-card--wallet">
                             <header className="damn-card__header">
-                            <div>
+                                <div>
+                                    <img src={wallet} alt=""/>
                                     <h2 className="damn-card__title">Wallet</h2>
                                 </div>
                                 <button
@@ -580,8 +597,9 @@ export function NicknameScreen({
                                 </button>
                             </header>
                             <div className="damn-wallet__balance">
-                                <span className="damn-wallet__label">Available</span>
                                 <span className="damn-wallet__value">{formatUsd(balance)}</span>
+                                <span className="damn-wallet__meta-value">{formattedSol} SOL</span>
+
                             </div>
 
                             <div className="damn-wallet__actions">
@@ -650,6 +668,7 @@ export function NicknameScreen({
                         <section className="damn-card damn-card--customize" style={customizeStyle}>
                             <header className="damn-card__header">
                                 <div>
+                                    <img src={castom} alt=""/>
                                     <h2 className="damn-card__title ">Customize</h2>
                                 </div>
                             </header>
@@ -658,9 +677,10 @@ export function NicknameScreen({
                             </div>
                             <button
                                 type="button"
-                                className="damn-secondary-button damn-primary-button--full skin-change-button "
+                                className="friends-card-button gray damn-primary-button--full skin-change-button "
                                 onClick={handleOpenSkinModal}
                             >
+
                                 Change Appearance
                             </button>
 
@@ -728,7 +748,9 @@ export function NicknameScreen({
                             </div>
                             <div className="wallet-address" title={walletAddress ?? ''}>
                                 <div className="wallet-address-text">
-                                    <span className="wallet-label">Wallet</span>
+                                    <span className="wallet-label">
+                                        Wallet
+                                    </span>
                                     <span className="wallet-hash">{walletAddress}</span>
                                 </div>
                                 <button type="button" className="wallet-copy-button" onClick={handleCopyWallet}>
