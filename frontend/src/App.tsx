@@ -63,6 +63,53 @@ function GameView() {
   useCanvas({ canvasRef, controller: game.controller })
   usePointerControls({ controller: game.controller, canvasRef, cashoutButtonRef })
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const { classList } = document.body
+    const applyTouchClass = (isTouch: boolean) => {
+      classList.toggle('is-touch', isTouch)
+      classList.toggle('is-pointer', !isTouch)
+    }
+
+    const mediaQuery = window.matchMedia('(pointer: coarse)')
+    const handleMediaChange = (event: MediaQueryListEvent | MediaQueryList) => {
+      applyTouchClass(event.matches)
+    }
+
+    applyTouchClass(mediaQuery.matches)
+
+    const handleFirstTouch = () => {
+      applyTouchClass(true)
+    }
+
+    const addMediaListener = () => {
+      if (typeof mediaQuery.addEventListener === 'function') {
+        mediaQuery.addEventListener('change', handleMediaChange)
+      } else if (typeof mediaQuery.addListener === 'function') {
+        mediaQuery.addListener(handleMediaChange)
+      }
+    }
+
+    const removeMediaListener = () => {
+      if (typeof mediaQuery.removeEventListener === 'function') {
+        mediaQuery.removeEventListener('change', handleMediaChange)
+      } else if (typeof mediaQuery.removeListener === 'function') {
+        mediaQuery.removeListener(handleMediaChange)
+      }
+    }
+
+    addMediaListener()
+    window.addEventListener('touchstart', handleFirstTouch, { once: true })
+
+    return () => {
+      removeMediaListener()
+      window.removeEventListener('touchstart', handleFirstTouch)
+      classList.remove('is-touch')
+      classList.remove('is-pointer')
+    }
+  }, [])
+
   const effectiveBetBalance = useMemo(
     () =>
       Math.max(
@@ -302,9 +349,11 @@ function GameView() {
       />
       <canvas id="canvas" ref={canvasRef} />
       <LobbyBackdrop visible={inLobby} />
-      {!inLobby ? <ScorePanel score={game.score} scoreMeta={game.scoreMeta} /> : null}
       {!inLobby ? (
-        <GameLeaderboard entries={game.leaderboard} meName={game.controller.state.meName} />
+        <div className="game-hud">
+          <ScorePanel score={game.score} scoreMeta={game.scoreMeta} />
+          <GameLeaderboard entries={game.leaderboard} meName={game.controller.state.meName} />
+        </div>
       ) : null}
       {!inLobby ? <CashoutControl state={game.cashout} buttonRef={cashoutButtonRef} /> : null}
       <NicknameScreen
