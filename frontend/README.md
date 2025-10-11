@@ -20,3 +20,8 @@ The dev server reads API/WS endpoints from the root `.env` file (`VITE_API_BASE_
 - If the token becomes invalid the connection hook logs the user out and reopens the auth modal.
 - Successful cashouts trigger a `cashout_confirmed` event which updates both the in-game HUD and the persisted balance via the backend.
 - Users with insufficient balance cannot start a new match; the lobby explains the reason below the start button.
+
+## Настройка фона сот
+- Раскраска гексагонального поля задаётся в `src/utils/hexTheme.ts`. Там собраны все цвета и градиенты, которые использует `buildHexPattern` в хуке `useCanvas`.
+- Чтобы поменять фон, скорректируйте значения в объекте `HEX_PATTERN_THEME` (например, замените цвета градиентов или цвет обводки).
+- После сохранения изменений перезапускать dev-сервер не нужно — фон обновится при перерисовке канваса.

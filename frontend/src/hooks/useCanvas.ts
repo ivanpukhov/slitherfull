@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { CAMERA_ZOOM } from './useGame'
 import type { GameController } from './useGame'
+import { HEX_PATTERN_THEME } from '../utils/hexTheme'
 
 interface UseCanvasOptions {
   canvasRef: React.RefObject<HTMLCanvasElement>
@@ -24,8 +25,7 @@ function buildHexPattern(ctx: CanvasRenderingContext2D) {
   if (!c) return null
 
   const base = c.createLinearGradient(0, 0, W, H)
-  base.addColorStop(0, '#0b0f16')
-  base.addColorStop(1, '#151a24')
+  HEX_PATTERN_THEME.baseGradient.forEach(({ offset, color }) => base.addColorStop(offset, color))
   c.fillStyle = base
   c.fillRect(0, 0, W, H)
 
@@ -45,22 +45,18 @@ function buildHexPattern(ctx: CanvasRenderingContext2D) {
   const drawHex = (cx: number, cy: number) => {
     const path = hexPath(cx, cy)
     c.save()
-    c.fillStyle = '#111722'
+    c.fillStyle = HEX_PATTERN_THEME.hexFill
     c.fill(path)
 
     c.save()
     c.clip(path)
     const inner = c.createRadialGradient(cx, cy, r * 0.2, cx, cy, r)
-    inner.addColorStop(0, '#131a26')
-    inner.addColorStop(0.65, '#0e1420')
-    inner.addColorStop(1, '#0a0f18')
+    HEX_PATTERN_THEME.innerGradient.forEach(({ offset, color }) => inner.addColorStop(offset, color))
     c.fillStyle = inner
     c.fillRect(cx - r, cy - r, 2 * r, 2 * r)
 
     const topLight = c.createLinearGradient(cx - r, cy - r, cx + r, cy + r)
-    topLight.addColorStop(0, 'rgba(97,123,163,0.22)')
-    topLight.addColorStop(0.4, 'rgba(61,82,113,0.15)')
-    topLight.addColorStop(1, 'rgba(0,0,0,0)')
+    HEX_PATTERN_THEME.topLightStops.forEach(({ offset, color }) => topLight.addColorStop(offset, color))
     c.globalCompositeOperation = 'lighter'
     c.fillStyle = topLight
     c.fillRect(cx - r, cy - r, 2 * r, 2 * r)
@@ -70,9 +66,7 @@ function buildHexPattern(ctx: CanvasRenderingContext2D) {
     c.lineJoin = 'round'
     c.lineWidth = Math.max(2, r * 0.1)
     const rim = c.createLinearGradient(cx - r, cy - r, cx + r, cy + r)
-    rim.addColorStop(0, '#27384f')
-    rim.addColorStop(0.5, '#1d2735')
-    rim.addColorStop(1, '#121925')
+    HEX_PATTERN_THEME.rimGradient.forEach(({ offset, color }) => rim.addColorStop(offset, color))
     c.strokeStyle = rim
     c.stroke(path)
 
@@ -80,14 +74,13 @@ function buildHexPattern(ctx: CanvasRenderingContext2D) {
     c.clip(path)
     c.lineWidth = Math.max(1.2, r * 0.06)
     const innerRim = c.createLinearGradient(cx + r, cy - r, cx - r, cy + r)
-    innerRim.addColorStop(0, 'rgba(59,130,246,0.24)')
-    innerRim.addColorStop(1, 'rgba(12,23,38,0.42)')
+    HEX_PATTERN_THEME.innerRimGradient.forEach(({ offset, color }) => innerRim.addColorStop(offset, color))
     c.strokeStyle = innerRim
     c.stroke(path)
     c.restore()
 
     c.lineWidth = 10
-    c.strokeStyle = '#0a0e14'
+    c.strokeStyle = HEX_PATTERN_THEME.outline
     c.stroke(path)
 
     c.restore()
