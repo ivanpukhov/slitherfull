@@ -71,8 +71,8 @@ router.post('/withdraw', async (req, res) => {
     const profile = await walletService.getWalletProfile(req.user.id)
     const solAmount = result?.sol ? Number(result.sol) : 0
     const message = Number.isFinite(solAmount) && solAmount > 0
-      ? `Отправлено ${solAmount.toFixed(4)} SOL`
-      : 'Вывод выполнен успешно'
+      ? `Sent ${solAmount.toFixed(4)} SOL`
+      : 'Withdrawal completed successfully'
     res.json({ status: 'ok', result: { ...result, message }, balance: profile })
   } catch (err) {
     const message = err?.message || 'withdraw_failed'

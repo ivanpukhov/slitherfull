@@ -470,7 +470,7 @@ export function NicknameScreen({
                             {isAuthenticated ? (
                                 <>
                                     {friendsLoading ? (
-                                        <div className="friends-preview-empty">Загрузка друзей…</div>
+                                        <div className="friends-preview-empty">Loading friends…</div>
                                     ) : friendsPreview.length > 0 ? (
                                         <ul className="friends-preview-grid">
                                             {friendsPreview.map((friend, index) => (
@@ -484,13 +484,13 @@ export function NicknameScreen({
                                         </ul>
                                     ) : (
                                         <div className="friends-preview-empty">
-                                            {friendsError ? 'Не удалось загрузить друзей.' : 'Добавьте друзей, чтобы видеть их здесь.'}
+                                            {friendsError ? 'Failed to load friends.' : 'Add friends to see them here.'}
                                         </div>
                                     )}
                                     <div className="friends-actions-grid ">
                                         <button type="button" className="friends-card-button gray"
                                                 onClick={handleOpenFriends}>
-                                            Все друзья
+                                            All friends
                                         </button>
 
                                     </div>
@@ -699,12 +699,12 @@ export function NicknameScreen({
 
             <Modal
                 open={skinModalOpen}
-                title="Выбор скина"
+                title="Skin selection"
                 onClose={handleSkinModalClose}
                 width="520px"
             >
                 <div className="skin-modal">
-                    <p className="skin-modal__hint">Подберите внешний вид и цвет вашей змейки.</p>
+                    <p className="skin-modal__hint">Pick the look and color of your snake.</p>
                     <div id="skinList" ref={skinListRef} className="damn-skin-grid">
                         {Object.entries(SKINS).map(([skin, colors]) => (
                             <button

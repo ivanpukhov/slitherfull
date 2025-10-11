@@ -39,7 +39,7 @@ export function DeathScreen({ state, onBetChange, onBetBlur, onRetry }: DeathScr
         {state.showBetControl ? (
           <div className="bet-control" id="deathBetControl">
             <label id="deathRetryBetLabel" htmlFor="retryBetInput">
-              Новая ставка
+              New bet
             </label>
             <div className="bet-options bet-options--compact" role="group" aria-labelledby="deathRetryBetLabel">
               {betOptions.map((option) => {
@@ -60,13 +60,13 @@ export function DeathScreen({ state, onBetChange, onBetBlur, onRetry }: DeathScr
             </div>
             <input id="retryBetInput" type="hidden" value={state.betValue} readOnly />
             <div className="bet-hint">
-              Ставки: <span className="bet-options-list">{betOptionsText}</span>. Доступно:{' '}
+              Bets: <span className="bet-options-list">{betOptionsText}</span>. Available:{' '}
               <span id="deathBetBalance">{state.betBalance}</span>
             </div>
           </div>
         ) : null}
         <button className="primary" id="retryBtn" type="button" onClick={onRetry} disabled={!state.canRetry}>
-          Играть снова
+          Play again
         </button>
       </div>
     </div>

@@ -21,7 +21,7 @@ async function getAllTimeLeaderboard(limit = 20, priceUsdOverride = null) {
       {
         model: User,
         as: 'user',
-        attributes: ['nickname'] // ⚡️ только никнейм (id не нужен, он уже есть)
+        attributes: ['nickname'] // ⚡️ nickname only (id already included)
       }
     ],
     group: ['GamePayout.userId', 'user.id', 'user.nickname'],
@@ -32,14 +32,14 @@ async function getAllTimeLeaderboard(limit = 20, priceUsdOverride = null) {
   const priceUsd = priceUsdOverride
 
   return rows.map((row) => {
-    const plain = row.get({ plain: true }) // превращаем в объект
+    const plain = row.get({ plain: true }) // convert to object
     const totalSol = normalizeNumber(plain.totalSol)
     const recordedUsd = normalizeNumber(plain.totalUsd)
     const displayUsd = priceUsd ? totalSol * priceUsd : recordedUsd
 
     return {
       userId: plain.userId,
-      nickname: plain.user?.nickname || 'Игрок',
+      nickname: plain.user?.nickname || 'Player',
       totalSol,
       totalUsd: displayUsd,
       recordedUsd,

@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 
 interface SnakePreviewProps {
   colors: string[]
-  /** «Длина» визуального хвоста в пикселях */
+  /** "Length" of the visual tail in pixels */
   length?: number
   width?: number
   height?: number
@@ -13,14 +13,14 @@ const DEFAULT_LENGTH = 100
 const DEFAULT_WIDTH = 360
 const DEFAULT_HEIGHT = 160
 
-// === mini-utils как в drawing.ts ===
+// === mini-utils as in drawing.ts ===
 function withAlpha(hex: string, a: number) {
   const { r, g, b } = hexToRgb(hex)
   return `rgba(${r}, ${g}, ${b}, ${Math.max(0, Math.min(1, a))})`
 }
 
 function shadeColor(hex: string, amount: number) {
-  // amount в диапазоне [-1..1]: <0 — темнее, >0 — светлее
+  // amount in range [-1..1]: <0 — darker, >0 — lighter
   const { r, g, b } = hexToRgb(hex)
   if (amount >= 0) {
     const nr = r + (255 - r) * amount
@@ -28,7 +28,7 @@ function shadeColor(hex: string, amount: number) {
     const nb = b + (255 - b) * amount
     return rgbToHex(nr, ng, nb)
   } else {
-    const k = 1 + amount // amount отрицательный
+    const k = 1 + amount // amount is negative
     return rgbToHex(r * k, g * k, b * k)
   }
 }
@@ -48,7 +48,7 @@ function rgbToHex(r: number, g: number, b: number) {
   return `#${to(r)}${to(g)}${to(b)}`
 }
 
-// Та же сглаженная обводка (Catmull-Rom -> Bezier), что и в drawSnakes
+// Same smooth outline (Catmull-Rom -> Bezier) as in drawSnakes
 function strokeSmoothPath(ctx: CanvasRenderingContext2D, points: { x: number; y: number }[]) {
   if (!points || points.length < 2) return
   ctx.beginPath()
@@ -69,7 +69,7 @@ function strokeSmoothPath(ctx: CanvasRenderingContext2D, points: { x: number; y:
 
 export function SnakePreview({
                                colors,
-                               length = DEFAULT_LENGTH, // будет 100 по умолчанию
+                               length = DEFAULT_LENGTH, // defaults to 100
                                width = DEFAULT_WIDTH,
                                height = DEFAULT_HEIGHT
                              }: SnakePreviewProps) {
@@ -102,21 +102,21 @@ export function SnakePreview({
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       ctx.clearRect(0, 0, logicalWidth, logicalHeight)
 
-      // === Центрируем змейку ===
+      // === Center the snake ===
       const centerX = logicalWidth / 2
       const centerY = logicalHeight / 2
 
-      // === Геометрия как в игре ===
-      const displayLength = Math.max(1, length) // «длина змеи»
+      // === Geometry matches the game ===
+      const displayLength = Math.max(1, length) // "snake length"
       const bodyRadius = Math.max(7.2, Math.min(30, 6.4 + Math.pow(displayLength, 0.42)))
       const headRadius = bodyRadius * 1.02
 
-      // spacing как в движке (SEGMENT_SPACING ~ 4.6)
+      // spacing same as the engine (SEGMENT_SPACING ~ 4.6)
       const spacing = 4.6
-      const totalLenPx = displayLength // «визуальная длина» в превью = length
+      const totalLenPx = displayLength // "visual length" in the preview equals length
       const segments = Math.max(3, Math.floor(totalLenPx / spacing) + 11)
 
-      // Построим синусоидальный путь длиной totalLenPx вокруг центра, чтобы ВСЁ было по центру
+      // Build a sinusoidal path of length totalLenPx around the center so everything stays centered
       const half = (segments - 1) * spacing * 0.5
       const amplitude = Math.min(logicalHeight * 0.12, bodyRadius * 2.2)
       const speed = 0.0028
@@ -129,26 +129,26 @@ export function SnakePreview({
         path.push({ x, y })
       }
 
-      // Вычисляем направление головы по двум последним точкам
+      // Compute head direction from the last two points
       const pA = path[path.length - 2]
       const pB = path[path.length - 1]
       const dir = Math.atan2(pB.y - pA.y, pB.x - pA.x)
 
-      // === Палитра, как в drawSnakes ===
+      // === Palette as in drawSnakes ===
       const palette = colors && colors.length ? colors : [DEFAULT_COLOR]
       const baseColor = palette[0] || DEFAULT_COLOR
 
-      // === Контур (тёмный) ===
+      // === Outline (dark) ===
       ctx.save()
       ctx.lineJoin = 'round'
       ctx.lineCap = 'round'
-      ctx.strokeStyle = shadeColor(baseColor, -0.55) // как там
+      ctx.strokeStyle = shadeColor(baseColor, -0.55) // same as there
       ctx.lineWidth = bodyRadius * 2 + 6
       strokeSmoothPath(ctx, path)
       ctx.restore()
 
-      // === Основное тело со свечением ===
-      // Линейный градиент вдоль тела
+      // === Main body with glow ===
+      // Linear gradient along the body
       const grad = ctx.createLinearGradient(path[0].x, path[0].y, pB.x, pB.y)
       if (palette.length === 1) {
         grad.addColorStop(0, baseColor)
@@ -168,7 +168,7 @@ export function SnakePreview({
       strokeSmoothPath(ctx, path)
       ctx.restore()
 
-      // === Лёгкий хайлайт на «головных» сегментах ===
+      // === Light highlight on the head segments ===
       const highlight = path.slice(Math.max(0, path.length - 18))
       if (highlight.length >= 2) {
         ctx.save()
@@ -181,7 +181,7 @@ export function SnakePreview({
         ctx.restore()
       }
 
-      // === Голова (радиальный градиент) ===
+      // === Head (radial gradient) ===
       ctx.save()
       const head = pB
       const headGradient = ctx.createRadialGradient(
@@ -197,7 +197,7 @@ export function SnakePreview({
       ctx.fill()
       ctx.restore()
 
-      // === Глаза (как в drawSnakes — по направлению dir) ===
+      // === Eyes (as in drawSnakes — aligned with dir) ===
       const eyeOffset = headRadius * 0.58
       const sideOffset = headRadius * 0.32
       const pupilOffset = headRadius * 0.18
@@ -209,7 +209,7 @@ export function SnakePreview({
       const ex2 = pB.x + Math.cos(dir) * eyeOffset + Math.sin(dir) * sideOffset
       const ey2 = pB.y + Math.sin(dir) * eyeOffset - Math.cos(dir) * sideOffset
 
-      // белки
+      // whites
       ctx.save()
       ctx.fillStyle = '#f8fafc'
       ctx.beginPath()
@@ -218,7 +218,7 @@ export function SnakePreview({
       ctx.beginPath()
       ctx.arc(ex2, ey2, eyeRadius, 0, Math.PI * 2)
       ctx.fill()
-      // зрачки
+      // pupils
       ctx.fillStyle = '#0f172a'
       ctx.beginPath()
       ctx.arc(ex1 + Math.cos(dir) * pupilOffset, ey1 + Math.sin(dir) * pupilOffset, pupilRadius, 0, Math.PI * 2)

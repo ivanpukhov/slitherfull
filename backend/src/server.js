@@ -33,12 +33,12 @@ const walletService = require('./services/walletService')
 const cfg = {
     port: process.env.PORT ? parseInt(process.env.PORT) : 8080,
 
-    // размеры карты
+    // map dimensions
     width: 2688,
     height: 2688,
     sectorSize: 128,
 
-    // еда
+    // food
     initialFood: 450,
     targetFood: 700,
     foodSpawnChance: 0.55,
@@ -47,7 +47,7 @@ const cfg = {
     deathFoodChunkValue: 14,
     bigFoodThreshold: 12,
 
-    // змея
+    // snake
     headRadius: 8,
     bodyRadius: 6,
     baseLength: 100,
@@ -60,24 +60,24 @@ const cfg = {
     boostLengthDrain: 3,
     boostDropIntervalMs: 120,
 
-    // хвост
+    // tail
     pathPointSpacing: 6,
     maxPathPoints: 1200,
-    segmentSpacing: 6, // ✨ расстояние между сегментами
+    segmentSpacing: 6, // ✨ distance between segments
     collisionQueryRadius: 300,
     segmentSampleStep: 3,
 
-    // видимость
+    // visibility
     viewRadius: 900,
 
-    // геймплей
+    // gameplay
     tickRate: 40,
     snapshotRate: 15,
     maxTurn: 0.18,
     maxTurnRate: 7.2,
     inputMinIntervalMs: 10,
 
-    // анти-спам и пинг
+    // anti-spam & ping
     maxMsgsPerSec: 60,
     heartbeatIntervalMs: 10000,
     joinThrottleMs: 2000
@@ -268,7 +268,7 @@ setInterval(() => {
 }, Math.floor(1000 / cfg.tickRate))
 
 setInterval(() => {
-    // считаем топ по длине
+    // compute leaderboard by length
     const leaderboard = Array.from(world.players.values())
         .filter(p => p.alive)
         .sort((a, b) => b.length - a.length)
@@ -297,7 +297,7 @@ setInterval(() => {
             },
             players: aoi.players,
             foods: aoi.foods,
-            leaderboard // 👈 добавили сюда
+            leaderboard // 👈 added here
         })
     }
 }, Math.floor(1000 / cfg.snapshotRate))

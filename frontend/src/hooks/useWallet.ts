@@ -138,11 +138,11 @@ export function useWallet({ token }: UseWalletOptions) {
   const withdrawAll = useCallback(
     async (destination: string) => {
       if (!token) {
-        throw new Error('Требуется авторизация')
+        throw new Error('Authentication required')
       }
       const normalized = typeof destination === 'string' ? destination.trim() : ''
       if (!normalized) {
-        throw new Error('Введите адрес кошелька')
+        throw new Error('Enter a wallet address')
       }
       setLoading(true)
       setError(null)
@@ -159,10 +159,10 @@ export function useWallet({ token }: UseWalletOptions) {
         if (!res.ok) {
           const code = data?.error || 'withdraw_failed'
           const messages: Record<string, string> = {
-            invalid_destination: 'Неверный адрес кошелька',
-            insufficient_funds: 'Недостаточно средств на кошельке',
-            unauthorized: 'Требуется авторизация',
-            withdraw_failed: 'Не удалось выполнить вывод'
+            invalid_destination: 'Invalid wallet address',
+            insufficient_funds: 'Not enough funds in the wallet',
+            unauthorized: 'Authentication required',
+            withdraw_failed: 'Failed to complete the cashout'
           }
           throw new Error(messages[code] || code)
         }
@@ -185,7 +185,7 @@ export function useWallet({ token }: UseWalletOptions) {
           signature: data.result?.signature ?? null,
           message:
             data.result?.message ||
-            (solAmount > 0 ? `Отправлено ${solAmount.toFixed(4)} SOL` : 'Вывод выполнен успешно')
+            (solAmount > 0 ? `Sent ${solAmount.toFixed(4)} SOL` : 'Withdrawal completed successfully')
         }
       } catch (err) {
         const message = (err as Error).message || 'withdraw_failed'

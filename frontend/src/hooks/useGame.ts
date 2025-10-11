@@ -212,10 +212,10 @@ const initialCamera: CameraState = {
 
 const initialUI: GameUIState = {
   score: 0,
-  scoreMeta: 'Ранг: —',
+  scoreMeta: 'Rank: —',
   cashout: {
-    label: 'Вывод',
-    hint: 'Удерживайте кнопку 2 секунды или нажмите Q',
+    label: 'Cashout',
+    hint: 'Hold the button for 2 seconds or press Q',
     disabled: true,
     holding: false,
     pending: false
@@ -329,7 +329,7 @@ export class GameController {
   setTransferState(pending: boolean, message?: string) {
     this.state.ui.transfer = {
       pending,
-      message: message ?? (pending ? 'Перевод средств…' : '')
+      message: message ?? (pending ? 'Transferring funds…' : '')
     }
     this.notify()
   }
@@ -381,12 +381,12 @@ export class GameController {
     const canCashOut =
       !this.state.account.cashedOut && !this.state.ui.cashout.pending && total > 0 && this.state.alive
     this.state.ui.cashout = {
-      label: options?.label ?? (this.state.account.cashedOut ? 'Баланс выведен' : this.state.ui.cashout.label),
+      label: options?.label ?? (this.state.account.cashedOut ? 'Balance cashed out' : this.state.ui.cashout.label),
       hint: this.state.account.cashedOut
-        ? 'Баланс зафиксирован'
+        ? 'Balance locked in'
         : this.state.ui.cashout.pending
-          ? 'Запрос обрабатывается'
-          : options?.hint ?? 'Удерживайте кнопку 2 секунды или нажмите Q',
+          ? 'Request in progress'
+          : options?.hint ?? 'Hold the button for 2 seconds or press Q',
       disabled: options?.disabled ?? !canCashOut,
       holding: options?.holding ?? this.state.ui.cashout.holding,
       pending: options?.pending ?? this.state.ui.cashout.pending
@@ -415,7 +415,7 @@ export class GameController {
     const remaining = Math.max(0, CASHOUT_HOLD_MS - elapsed)
     if (!this.state.account.cashedOut) {
       this.state.ui.cashout.label =
-        remaining > 0 ? `Удерживайте ещё ${(remaining / 1000).toFixed(1)} с` : 'Запрос вывода...'
+        remaining > 0 ? `Hold for another ${(remaining / 1000).toFixed(1)} s` : 'Cashout request...'
       this.notify()
     }
     if (elapsed >= CASHOUT_HOLD_MS && !hold.triggered) {
@@ -434,7 +434,7 @@ export class GameController {
     this.state.ui.cashout = {
       ...this.state.ui.cashout,
       holding: false,
-      label: options?.preserveLabel ? this.state.ui.cashout.label : 'Вывод'
+      label: options?.preserveLabel ? this.state.ui.cashout.label : 'Cashout'
     }
     this.refreshCashoutState()
     this.notify()
@@ -452,21 +452,21 @@ export class GameController {
     this.state.alive = false
     this.state.ui.nicknameVisible = true
     this.state.ui.cashout = {
-      label: 'Запрос вывода...',
-      hint: 'Запрос обрабатывается',
+      label: 'Cashout request...',
+      hint: 'Request in progress',
       disabled: true,
       holding: false,
       pending: true
     }
     this.state.ui.transfer = {
       pending: true,
-      message: 'Вывод средств обрабатывается...'
+      message: 'Withdrawal is being processed...'
     }
     this.state.ui.lastResult = {
-      title: 'Запрос на вывод отправлен',
+      title: 'Cashout request sent',
       details: [
-        'Вы возвращены в лобби, игра завершена.',
-        'Мы зафиксировали ваш баланс и завершим перевод автоматически.'
+        'You were returned to the lobby, the match has ended.',
+        'We locked in your balance and will finish the transfer automatically.'
       ],
       showRetryControls: false,
       retryBalance: formatUsd(pendingBalance),
@@ -612,12 +612,12 @@ export class GameController {
     const meSnake = this.getMeSnake()
     const speed = meSnake && meSnake.speed ? Math.max(0, Math.round(meSnake.speed)) : null
     const boostStatus = this.refreshBoostState()
-    const boostLabel = boostStatus.allowed ? (boostStatus.active ? 'Буст: вкл.' : 'Буст: готов') : 'Буст: нет'
+    const boostLabel = boostStatus.allowed ? (boostStatus.active ? 'Boost: on' : 'Boost: ready') : 'Boost: off'
     const rank = this.getRank()
     this.state.ui.score = score
     this.state.ui.scoreMeta = speed
-      ? `Ранг: ${rank} · Скорость: ${speed} · ${boostLabel}`
-      : `Ранг: ${rank} · ${boostLabel}`
+      ? `Rank: ${rank} · Speed: ${speed} · ${boostLabel}`
+      : `Rank: ${rank} · ${boostLabel}`
     this.notify()
   }
 
@@ -633,17 +633,17 @@ export class GameController {
     this.state.ui.cashout.pending = false
     this.resetBoostIntent()
     this.resetCashoutHold()
-    const killerName = payload?.killerName ? payload.killerName : 'неизвестный'
+    const killerName = payload?.killerName ? payload.killerName : 'unknown'
     const score = typeof payload?.yourScore === 'number' ? payload.yourScore : 0
     const balance = Math.max(0, Math.floor(this.state.account.balance || 0))
     const betValue = balance > 0 ? this.sanitizeBet(this.state.ui.retryBetValue || balance, balance) : 0
-    const details: string[] = [`Счёт: ${formatNumber(score)}`]
-    details.push(balance > 0 ? `На счету осталось ${formatUsd(balance)}` : 'Баланс обнулён')
+    const details: string[] = [`Score: ${formatNumber(score)}`]
+    details.push(balance > 0 ? `Balance remaining ${formatUsd(balance)}` : 'Balance depleted')
     this.state.ui.death = {
       visible: false,
-      summary: `Вас победил ${killerName}`,
-      score: `Счёт: ${formatNumber(score)}`,
-      balance: balance > 0 ? `На счету осталось ${formatUsd(balance)}` : 'Баланс обнулён',
+      summary: `You were defeated by ${killerName}`,
+      score: `Score: ${formatNumber(score)}`,
+      balance: balance > 0 ? `Balance remaining ${formatUsd(balance)}` : 'Balance depleted',
       showBetControl: balance > 0,
       betValue: balance > 0 ? centsToUsdInput(betValue) : '',
       betBalance: formatUsd(balance),
@@ -652,14 +652,14 @@ export class GameController {
     }
     this.state.ui.retryBetValue = balance > 0 ? centsToUsdInput(betValue) : ''
     this.state.ui.lastResult = {
-      title: `Вас победил ${killerName}`,
+      title: `You were defeated by ${killerName}`,
       details,
       showRetryControls: balance > 0,
       retryBalance: formatUsd(balance),
       variant: 'death'
     }
     this.updateScoreHUD(0)
-    this.refreshCashoutState({ label: 'Вывод', pending: false, holding: false })
+    this.refreshCashoutState({ label: 'Cashout', pending: false, holding: false })
     this.setNicknameVisible(true)
     this.notify()
   }
@@ -672,21 +672,21 @@ export class GameController {
     const safeBalance = Math.max(0, Math.floor(typeof finalBalance === 'number' ? finalBalance : this.state.account.total))
     this.applyBalanceUpdate({ balance: safeBalance, currentBet: 0, total: safeBalance, cashedOut: true })
     this.state.ui.cashout = {
-      label: 'Баланс выведен',
-      hint: 'Баланс зафиксирован',
+      label: 'Balance cashed out',
+      hint: 'Balance locked in',
       disabled: true,
       holding: false,
       pending: false
     }
     this.state.ui.cashoutScreen = {
       visible: false,
-      summary: `Ваш баланс теперь ${formatUsd(safeBalance)}.`
+      summary: `Your balance is now ${formatUsd(safeBalance)}.`
     }
     this.state.ui.death.visible = false
     this.state.ui.retryBetValue = ''
     this.state.ui.lastResult = {
-      title: 'Баланс выведен',
-      details: [`Ваш баланс теперь ${formatUsd(safeBalance)}.`],
+      title: 'Balance cashed out',
+      details: [`Your balance is now ${formatUsd(safeBalance)}.`],
       showRetryControls: false,
       retryBalance: formatUsd(safeBalance),
       variant: 'cashout'
@@ -1039,7 +1039,7 @@ export class GameController {
     background.y = 0
 
     for (const snake of this.state.snakes.values()) {
-      // --- предсказание позиции головы ---
+      // --- predict head position ---
       if (typeof snake.serverX === 'number' && typeof snake.serverY === 'number') {
         const elapsed = Math.max(
             0,
@@ -1059,7 +1059,7 @@ export class GameController {
         }
       }
 
-      // --- сглаживаем позицию головы ---
+      // --- smooth head position ---
       if (typeof snake.targetX === 'number' && typeof snake.targetY === 'number') {
         snake.displayX =
             typeof snake.displayX === 'number'
@@ -1071,7 +1071,7 @@ export class GameController {
                 : snake.targetY
       }
 
-      // --- сглаживаем направление ---
+      // --- smooth heading ---
       if (typeof snake.targetDir === 'number') {
         snake.displayDir =
             typeof snake.displayDir === 'number'
@@ -1079,14 +1079,14 @@ export class GameController {
                 : snake.targetDir
       }
 
-      // --- сглаживаем длину ---
+      // --- smooth length ---
       snake.displayLength = lerp(
           snake.displayLength || snake.length || 20,
           snake.length || 20,
           smoothPos
       )
 
-      // --- записываем историю головы ---
+      // --- record head history ---
       const headX = typeof snake.displayX === 'number' ? snake.displayX : snake.targetX
       const headY = typeof snake.displayY === 'number' ? snake.displayY : snake.targetY
       if (Number.isFinite(headX) && Number.isFinite(headY)) {
@@ -1097,7 +1097,7 @@ export class GameController {
         }
       }
 
-      // --- строим хвост из истории ---
+      // --- build tail from history ---
       if (snake.headHistory && snake.headHistory.length > 1) {
         const output: SnakePoint[] = []
         let remaining = Math.max(SEGMENT_SPACING * 2, snake.length || 0)
@@ -1121,7 +1121,7 @@ export class GameController {
       }
     }
 
-    // --- еда ---
+    // --- food ---
     for (const food of this.state.foods.values()) {
       food.displayX =
           typeof food.displayX === 'number'
@@ -1133,7 +1133,7 @@ export class GameController {
               : food.targetY
     }
 
-    // --- камера ---
+    // --- camera ---
     if (this.state.alive) {
       const me = this.getMeSnake()
       if (me && typeof me.displayX === 'number' && typeof me.displayY === 'number') {
