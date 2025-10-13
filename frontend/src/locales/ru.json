@@ -1,0 +1,276 @@
+{
+  "scorePanel": {
+    "lengthLabel": "Длина"
+  },
+  "leaderboard": {
+    "game": {
+      "title": "Лидеры арены",
+      "empty": "В арене пока никого",
+      "bet": "Ставка: {{amount}}",
+      "lengthLabel": "длина"
+    },
+    "winnings": {
+      "title": "Топ победителей",
+      "loading": "Загрузка…",
+      "error": "Не удалось загрузить данные",
+      "empty": "Нет данных",
+      "wins": "Побед: {{count}}",
+      "solAmount": "{{amount}} SOL"
+    }
+  },
+  "app": {
+    "errors": {
+      "cashoutUnavailable": "Функция вывода временно недоступна"
+    },
+    "withdraw": {
+      "successFallback": "Баланс отправлен на указанный адрес.",
+      "errorFallback": "Не удалось завершить вывод"
+    },
+    "startLabel": {
+      "cashoutPending": "Ожидание вывода",
+      "transferPending": "Обработка…",
+      "checking": "Загрузка…",
+      "play": "Играть",
+      "login": "Войти"
+    },
+    "startHint": {
+      "cashoutPending": "Дождитесь подтверждения вывода.",
+      "transferPending": "Мы обрабатываем транзакцию с вашим балансом.",
+      "insufficientFunds": "Недостаточно средств для минимальной ставки $1."
+    },
+    "transferFallback": "Переводим средства…"
+  },
+  "lobby": {
+    "wallet": {
+      "copyCommandFailed": "Не удалось скопировать",
+      "clipboardUnavailable": "Буфер обмена недоступен",
+      "copyStatus": {
+        "copied": "Скопировано!",
+        "error": "Повторите",
+        "default": "Копировать адрес"
+      },
+      "title": "Кошелёк",
+      "refreshing": "Обновляем…",
+      "refresh": "Обновить",
+      "addFunds": "Пополнить",
+      "hideWithdraw": "Скрыть вывод",
+      "cashOut": "Вывести",
+      "solAmount": "{{amount}} SOL",
+      "modalTitle": "Кошелёк",
+      "inGameBalance": "Баланс в игре",
+      "solLabel": "SOL",
+      "usdLabel": "USD",
+      "addressLabel": "Адрес кошелька",
+      "copyButton": {
+        "copied": "Скопировано",
+        "error": "Ошибка",
+        "default": "Копировать"
+      },
+      "withdrawHint": "Используйте панель вывода на экране лобби, чтобы вывести баланс.",
+      "signInHint": "Войдите, чтобы увидеть детали кошелька."
+    },
+    "withdraw": {
+      "label": "Вывести баланс",
+      "placeholder": "Адрес кошелька Solana",
+      "enterAddress": "Введите адрес Solana",
+      "sending": "Отправляем…",
+      "submit": "Вывести"
+    },
+    "profile": {
+      "authenticatedFallback": "Игрок",
+      "guestFallback": "Новый игрок",
+      "initialFallback": "И"
+    },
+    "leaderboard": {
+      "rangeBadge": "За всё время",
+      "title": "Таблица лидеров",
+      "liveBadge": "Live",
+      "loading": "Загрузка…",
+      "error": "Не удалось загрузить таблицу",
+      "empty": "Победителей пока нет"
+    },
+    "welcome": {
+      "label": "Добро пожаловать,"
+    },
+    "hero": {
+      "tagline": "Ставки на мастерство"
+    },
+    "status": {
+      "cashoutTitle": "Идёт вывод",
+      "transferTitle": "Обрабатываем транзакцию",
+      "cashoutMessage": "Мы завершаем ваш вывод.",
+      "transferMessage": "Подождите немного, баланс синхронизируется."
+    },
+    "friends": {
+      "title": "Друзья",
+      "loading": "Загружаем друзей…",
+      "error": "Не удалось загрузить друзей.",
+      "empty": "Добавьте друзей, чтобы видеть их здесь.",
+      "actions": {
+        "all": "Все друзья"
+      },
+      "guestHint": "Войдите, чтобы находить и добавлять друзей из арены."
+    },
+    "form": {
+      "nicknamePlaceholder": "Введите ник",
+      "selectBet": "Выберите ставку",
+      "startDefault": "Присоединиться к игре"
+    },
+    "stats": {
+      "playersOnline": "Игроков онлайн",
+      "globalWinnings": "Глобальные выигрыши игроков"
+    },
+    "actions": {
+      "title": "Управление балансом",
+      "deposit": "Пополнить",
+      "withdraw": "Вывести",
+      "transfer": "Перевести",
+      "airdrop": "Получить airdrop",
+      "cashout": "Запросить вывод",
+      "transferTitle": "Перевод между игроками",
+      "sender": "Отправитель",
+      "recipient": "Получатель",
+      "amount": "Сумма",
+      "send": "Отправить",
+      "airdropHint": "Доступно только на тестовом окружении.",
+      "validation": {
+        "invalidAmount": "Введите корректную сумму",
+        "selectRecipient": "Выберите получателя",
+        "selectSender": "Выберите отправителя",
+        "selectBoth": "Выберите отправителя и получателя",
+        "sameUser": "Нельзя перевести самому себе"
+      },
+      "errors": {
+        "invalidAmount": "Некорректная сумма",
+        "missingRecipient": "Выберите получателя",
+        "missingSender": "Выберите отправителя",
+        "missingBoth": "Выберите отправителя и получателя",
+        "insufficientFunds": "Недостаточно средств в кошельке",
+        "senderNotFound": "Отправитель не найден",
+        "recipientNotFound": "Получатель не найден",
+        "sameUser": "Нельзя перевести самому себе"
+      }
+    },
+    "table": {
+      "id": "ID",
+      "email": "Email",
+      "nickname": "Ник",
+      "wallet": "Кошелёк",
+      "sol": "Баланс (SOL)",
+      "lamports": "Лампортов",
+      "inGameBalance": "Баланс в игре"
+    },
+    "footer": {
+      "joinDiscord": "Присоединиться к Discord",
+      "website": "snakefans.com"
+    },
+    "customize": {
+      "title": "Внешний вид",
+      "changeAppearance": "Изменить скин"
+    },
+    "walletSummary": {
+      "balance": "Баланс",
+      "betting": "Игровой счёт",
+      "available": "Доступно"
+    },
+    "skinModal": {
+      "title": "Выбор скина",
+      "hint": "Выберите оформление змейки"
+    }
+  },
+  "deathScreen": {
+    "newBetLabel": "Новая ставка",
+    "betHint": {
+      "prefix": "Ставки:",
+      "available": "Доступно:"
+    },
+    "retryButton": "Играть снова"
+  },
+  "cashoutScreen": {
+    "title": "Баланс выведен",
+    "close": "Готово"
+  },
+  "resultModal": {
+    "retryLabel": "Повторить ставку",
+    "available": "Доступно: {{amount}}",
+    "retryButton": "Играть снова"
+  },
+  "stats": {
+    "chart": {
+      "title": "Статистика выигрышей",
+      "loading": "Загрузка…",
+      "empty": "Нет данных для отображения",
+      "solAmount": "{{amount}} SOL"
+    }
+  },
+  "modal": {
+    "close": "Закрыть"
+  },
+  "game": {
+    "skins": {
+      "sky": "Небо",
+      "emerald": "Изумруд",
+      "crimson": "Багряный",
+      "amber": "Янтарь",
+      "violet": "Фиолет",
+      "obsidian": "Обсидиан",
+      "mint": "Мята"
+    },
+    "score": {
+      "defaultMeta": "Ранг: —",
+      "metaWithSpeed": "Ранг: {{rank}} · Скорость: {{speed}} · {{boost}}",
+      "meta": "Ранг: {{rank}} · {{boost}}"
+    },
+    "cashout": {
+      "label": "Вывод",
+      "hint": "Удерживайте кнопку 2 секунды или нажмите Q",
+      "requestLabel": "Запрос на вывод…",
+      "requestHint": "Идёт запрос",
+      "cashedOutLabel": "Баланс выведен",
+      "cashedOutHint": "Баланс зафиксирован",
+      "transferMessage": "Вывод обрабатывается…",
+      "result": {
+        "title": "Запрос на вывод отправлен",
+        "line1": "Вы вернулись в лобби, матч завершён.",
+        "line2": "Мы зафиксировали ваш баланс и завершим перевод автоматически."
+      },
+      "countdown": "Держите ещё {{seconds}} с",
+      "balanceSummary": "Ваш баланс теперь {{amount}}."
+    },
+    "transfer": {
+      "pendingMessage": "Переводим средства…"
+    },
+    "boost": {
+      "on": "Буст: активен",
+      "ready": "Буст: готов",
+      "off": "Буст: выключен"
+    },
+    "death": {
+      "unknown": "неизвестно",
+      "summary": "Вас победил {{name}}",
+      "scoreLine": "Счёт: {{score}}",
+      "balanceRemaining": "Осталось {{amount}}",
+      "balanceDepleted": "Баланс исчерпан"
+    },
+    "snake": {
+      "anonymous": "Анон"
+    }
+  },
+  "wallet": {
+    "errors": {
+      "authRequired": "Требуется авторизация",
+      "enterAddress": "Введите адрес кошелька",
+      "invalidDestination": "Некорректный адрес кошелька",
+      "insufficientFunds": "Недостаточно средств в кошельке",
+      "withdrawFailed": "Не удалось завершить вывод",
+      "profileFailed": "Не удалось загрузить данные кошелька.",
+      "refreshFailed": "Не удалось обновить данные кошелька.",
+      "airdropFailed": "Не удалось запросить airdrop.",
+      "generic": "Не удалось обработать запрос. Попробуйте ещё раз."
+    },
+    "withdraw": {
+      "sent": "Отправлено {{amount}} SOL",
+      "success": "Вывод успешно завершён"
+    }
+  }
+}

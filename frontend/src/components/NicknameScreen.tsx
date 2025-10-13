@@ -10,6 +10,7 @@ import { WinningsLeaderboardCard } from './Leaderboard'
 import { Modal } from './Modal'
 import { FriendsModal } from './FriendsModal'
 import { SnakePreview } from './SnakePreview'
+import { LanguageSelector } from './LanguageSelector'
 import wallet from './../assets/wallet.svg'
 import castom from './../assets/castomize.svg'
 import leader from './../assets/leader.svg'
@@ -392,7 +393,7 @@ export function NicknameScreen({
                         <span className="damn-topbar__label">{t('lobby.welcome.label')}</span>
                         <span className="damn-topbar__name">{profileName}</span>
                     </div>
-
+                    <LanguageSelector/>
                 </div>
 
                 <div className="damn-hero">

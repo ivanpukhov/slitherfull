@@ -1,23 +1,37 @@
 import { useCallback, useEffect, useState } from 'react'
 import en from '../locales/en.json'
+import ru from '../locales/ru.json'
 
 type TranslationPrimitive = string
 interface TranslationMap {
   [key: string]: TranslationPrimitive | TranslationMap
 }
 
-type Locale = 'en'
+type Locale = 'en' | 'ru'
 
 type TranslateParams = Record<string, string | number | undefined>
 
 type Listener = (locale: Locale) => void
 
 const dictionaries: Record<Locale, TranslationMap> = {
-  en: en as TranslationMap
+  en: en as TranslationMap,
+  ru: ru as TranslationMap
 }
 
 const DEFAULT_LOCALE: Locale = 'en'
+const LOCALE_STORAGE_KEY = 'snakefans.locale'
 let currentLocale: Locale = DEFAULT_LOCALE
+
+if (typeof window !== 'undefined') {
+  try {
+    const storedLocale = window.localStorage.getItem(LOCALE_STORAGE_KEY) as Locale | null
+    if (storedLocale && dictionaries[storedLocale]) {
+      currentLocale = storedLocale
+    }
+  } catch (error) {
+    console.warn('Failed to read locale from storage', error)
+  }
+}
 const listeners = new Set<Listener>()
 
 function resolvePath(dictionary: TranslationMap | TranslationPrimitive, path: string[]): TranslationPrimitive | null {
@@ -69,6 +83,13 @@ export function setLocale(locale: Locale) {
   }
   if (currentLocale !== locale) {
     currentLocale = locale
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(LOCALE_STORAGE_KEY, locale)
+      } catch (error) {
+        console.warn('Failed to persist locale', error)
+      }
+    }
     listeners.forEach((listener) => listener(currentLocale))
   }
 }
@@ -93,7 +114,11 @@ export function useTranslation() {
 
   const t = useCallback((key: string, params?: TranslateParams) => translate(key, params), [])
 
-  return { locale, t }
+  const changeLocale = useCallback((nextLocale: Locale) => {
+    setLocale(nextLocale)
+  }, [])
+
+  return { locale, t, setLocale: changeLocale }
 }
 
 export type { Locale }
