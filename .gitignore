@@ -1,1 +1,3 @@
 frontend/.yarn/install-state.gz
+patch.diff
+backend/data/*.sqlite
