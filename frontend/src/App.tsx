@@ -8,7 +8,7 @@ import { useAuth } from './hooks/useAuth'
 import { useWallet } from './hooks/useWallet'
 import { useWinningsLeaderboard } from './hooks/useWinningsLeaderboard'
 import { usePlayerStats } from './hooks/usePlayerStats'
-import { useTranslation } from './hooks/useTranslation'
+import { getIntlLocale, useTranslation } from './hooks/useTranslation'
 import { ScorePanel } from './components/ScorePanel'
 import { GameLeaderboard } from './components/Leaderboard'
 import { CashoutControl } from './components/CashoutControl'
@@ -24,7 +24,7 @@ function GameView() {
 
   const game = useGame()
   const auth = useAuth()
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const wallet = useWallet({ token: auth.token })
   const winningsLeaderboard = useWinningsLeaderboard()
   const playerStats = usePlayerStats({ token: auth.token, days: 30 })
@@ -53,13 +53,13 @@ function GameView() {
   const winningsPriceHint = useMemo(() => {
     const priceUsd = winningsLeaderboard.data?.priceUsd ?? null
     if (!Number.isFinite(priceUsd || NaN)) return null
-    return `1 SOL ≈ ${new Intl.NumberFormat('ru-RU', {
+    return `1 SOL ≈ ${new Intl.NumberFormat(getIntlLocale(locale), {
       style: 'currency',
       currency: 'USD',
       maximumFractionDigits: 2,
       minimumFractionDigits: 2
     }).format((priceUsd as number) || 0)}`
-  }, [winningsLeaderboard.data?.priceUsd])
+  }, [locale, winningsLeaderboard.data?.priceUsd])
   const accountStateSyncedRef = useRef(false)
 
   useCanvas({ canvasRef, controller: game.controller })

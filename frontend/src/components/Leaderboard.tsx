@@ -1,15 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { LeaderboardEntry } from '../hooks/useGame'
 import type { WinningsLeaderboardEntry } from '../hooks/useWinningsLeaderboard'
-import { useTranslation } from '../hooks/useTranslation'
+import { getIntlLocale, useTranslation } from '../hooks/useTranslation'
 import { formatNumber, formatUsd } from '../utils/helpers'
-
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2
-})
 
 interface GameLeaderboardProps {
   entries: LeaderboardEntry[]
@@ -105,6 +98,7 @@ export function WinningsLeaderboardCard({
 
 function AnimatedCurrencyAmount({ amount }: { amount: number }) {
   const [displayValue, setDisplayValue] = useState(0)
+  const { locale } = useTranslation()
 
   useEffect(() => {
     let frame: number | null = null
@@ -131,7 +125,16 @@ function AnimatedCurrencyAmount({ amount }: { amount: number }) {
     }
   }, [amount])
 
-  const formatted = useMemo(() => currencyFormatter.format(displayValue), [displayValue])
+  const formatted = useMemo(
+    () =>
+      new Intl.NumberFormat(getIntlLocale(locale), {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 2,
+        minimumFractionDigits: 2
+      }).format(displayValue),
+    [displayValue, locale]
+  )
 
   return <span className="winnings-item-usd">{formatted}</span>
 }
