@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { PlayerStatsPoint } from '../hooks/usePlayerStats'
-import { useTranslation } from '../hooks/useTranslation'
+import { getIntlLocale, useTranslation } from '../hooks/useTranslation'
 
 interface PlayerStatsChartProps {
   series: PlayerStatsPoint[]
@@ -9,23 +9,19 @@ interface PlayerStatsChartProps {
   totalSol?: number
 }
 
-function formatDateLabel(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })
-}
-
-function formatUsd(value: number) {
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(value)
-}
-
 export function PlayerStatsChart({ series, loading, totalUsd = 0, totalSol = 0 }: PlayerStatsChartProps) {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
+  const intlLocale = getIntlLocale(locale)
+  const currencyFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat(intlLocale, {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }),
+    [intlLocale]
+  )
   const chart = useMemo(() => {
     if (!Array.isArray(series) || series.length === 0) {
       return { path: '', fill: '', labels: null, hasData: false }
@@ -46,12 +42,17 @@ export function PlayerStatsChart({ series, loading, totalUsd = 0, totalSol = 0 }
     })
     const line = points.map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x},${point.y}`).join(' ')
     const area = `M0,${height} ${points.map((point) => `L${point.x},${point.y}`).join(' ')} L${width},${height} Z`
+    const formatDateLabel = (value: string) => {
+      const date = new Date(value)
+      if (Number.isNaN(date.getTime())) return value
+      return date.toLocaleDateString(intlLocale, { day: '2-digit', month: '2-digit' })
+    }
     const labels = {
       start: formatDateLabel(series[0].date),
       end: formatDateLabel(series[series.length - 1].date)
     }
     return { path: line, fill: area, labels, hasData: true }
-  }, [series])
+  }, [intlLocale, series])
 
   if (loading) {
     return (
@@ -75,7 +76,7 @@ export function PlayerStatsChart({ series, loading, totalUsd = 0, totalSol = 0 }
     <div className="stats-card">
       <div className="stats-card-title">{t('stats.chart.title')}</div>
       <div className="stats-card-summary">
-        <span>{formatUsd(totalUsd)}</span>
+        <span>{currencyFormatter.format(totalUsd)}</span>
         <span>{t('stats.chart.solAmount', { amount: totalSol.toFixed(3) })}</span>
       </div>
       <div className="stats-card-body">

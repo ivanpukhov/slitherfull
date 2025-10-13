@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
-import { useTranslation } from '../hooks/useTranslation'
+import { getIntlLocale, useTranslation } from '../hooks/useTranslation'
 
 interface AdminUser {
   id: number
@@ -53,7 +53,7 @@ export function AdminDashboard() {
   const [transferLoading, setTransferLoading] = useState(false)
   const [transferError, setTransferError] = useState<string | null>(null)
   const [transferSuccess, setTransferSuccess] = useState<string | null>(null)
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
 
   const fetchOverview = useCallback(
     async (basicToken: string) => {
@@ -344,7 +344,7 @@ export function AdminDashboard() {
                   <td>{user.nickname}</td>
                   <td className="mono">{user.walletAddress}</td>
                   <td>{user.walletSol.toFixed(3)}</td>
-                  <td>{user.walletLamports.toLocaleString('en-US')}</td>
+                  <td>{user.walletLamports.toLocaleString(getIntlLocale(locale))}</td>
                   <td>{user.inGameBalance}</td>
                 </tr>
               ))}

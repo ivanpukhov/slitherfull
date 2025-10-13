@@ -2,7 +2,7 @@ import { type CSSProperties, FormEvent, useCallback, useEffect, useMemo, useRef,
 import { BET_AMOUNTS_CENTS, centsToUsdInput, formatNumber, formatUsd, sanitizeBetValue } from '../utils/helpers'
 import { SKIN_LABELS, SKINS } from '../hooks/useGame'
 import { useFriends } from '../hooks/useFriends'
-import { useTranslation } from '../hooks/useTranslation'
+import { getIntlLocale, useTranslation } from '../hooks/useTranslation'
 import type { PlayerStatsData } from '../hooks/usePlayerStats'
 import type { WinningsLeaderboardEntry } from '../hooks/useWinningsLeaderboard'
 import { PlayerStatsChart } from './PlayerStatsChart'
@@ -101,7 +101,7 @@ export function NicknameScreen({
                                    totalWinningsSol,
                                    authToken
                                }: NicknameScreenProps) {
-    const { t } = useTranslation()
+    const { t, locale } = useTranslation()
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault()
         if (startDisabled) return
@@ -110,13 +110,13 @@ export function NicknameScreen({
 
     const usdFormatter = useMemo(
         () =>
-            new Intl.NumberFormat('en-US', {
+            new Intl.NumberFormat(getIntlLocale(locale), {
                 style: 'currency',
                 currency: 'USD',
                 maximumFractionDigits: 2,
                 minimumFractionDigits: 2
             }),
-        []
+        [locale]
     )
 
     const derivedUsd = useMemo(() => {

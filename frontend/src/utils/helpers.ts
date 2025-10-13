@@ -1,13 +1,15 @@
+import { getIntlLocale } from '../hooks/useTranslation'
+
 export function formatNumber(value: number | null | undefined): string {
   const safe = Math.max(0, Math.floor(Number.isFinite(value as number) ? (value as number) : 0))
-  return safe.toLocaleString('ru-RU')
+  return safe.toLocaleString(getIntlLocale())
 }
 
 export const BET_AMOUNTS_CENTS = [100, 500, 2000]
 
 export function formatUsd(valueCents: number | null | undefined): string {
   const cents = Math.max(0, Math.floor(Number.isFinite(valueCents as number) ? (valueCents as number) : 0))
-  const formatter = new Intl.NumberFormat('ru-RU', {
+  const formatter = new Intl.NumberFormat(getIntlLocale(), {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,

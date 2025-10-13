@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import en from '../locales/en.json'
+import es from '../locales/es.json'
+import pl from '../locales/pl.json'
 import ru from '../locales/ru.json'
 
 type TranslationPrimitive = string
@@ -7,7 +9,7 @@ interface TranslationMap {
   [key: string]: TranslationPrimitive | TranslationMap
 }
 
-type Locale = 'en' | 'ru'
+type Locale = 'en' | 'ru' | 'es' | 'pl'
 
 type TranslateParams = Record<string, string | number | undefined>
 
@@ -15,7 +17,16 @@ type Listener = (locale: Locale) => void
 
 const dictionaries: Record<Locale, TranslationMap> = {
   en: en as TranslationMap,
-  ru: ru as TranslationMap
+  ru: ru as TranslationMap,
+  es: es as TranslationMap,
+  pl: pl as TranslationMap
+}
+
+const localeFormats: Record<Locale, string> = {
+  en: 'en-US',
+  ru: 'ru-RU',
+  es: 'es-ES',
+  pl: 'pl-PL'
 }
 
 const DEFAULT_LOCALE: Locale = 'en'
@@ -96,6 +107,10 @@ export function setLocale(locale: Locale) {
 
 export function getLocale(): Locale {
   return currentLocale
+}
+
+export function getIntlLocale(locale: Locale = getLocale()): string {
+  return localeFormats[locale] ?? localeFormats[DEFAULT_LOCALE]
 }
 
 export function subscribeToLocaleChanges(listener: Listener) {

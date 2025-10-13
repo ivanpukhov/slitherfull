@@ -9,7 +9,9 @@ interface LanguageOption {
 
 const LANGUAGE_OPTIONS: LanguageOption[] = [
   { locale: 'en', label: 'English', emoji: '🇬🇧' },
-  { locale: 'ru', label: 'Русский', emoji: '🇷🇺' }
+  { locale: 'ru', label: 'Русский', emoji: '🇷🇺' },
+  { locale: 'es', label: 'Español', emoji: '🇪🇸' },
+  { locale: 'pl', label: 'Polski', emoji: '🇵🇱' }
 ]
 
 export function LanguageSelector() {
