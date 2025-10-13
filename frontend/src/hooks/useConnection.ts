@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { sanitizeBetValue, safeParse } from '../utils/helpers'
 import type { GameController } from './useGame'
+import { translate } from './useTranslation'
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080'
 
@@ -114,7 +115,7 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
             if (pendingBet !== null && ws.readyState === WebSocket.OPEN) {
               const desired = sanitizeBetValue(pendingBet, controller.getAccount().balance)
               if (desired > 0) {
-                controller.setTransferState(true, 'Transferring funds…')
+                controller.setTransferState(true, translate('game.transfer.pendingMessage'))
                 ws.send(JSON.stringify({ type: 'set_bet', amount: desired }))
               }
               controller.setPendingBet(null)
@@ -192,7 +193,7 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
   const requestRespawn = useCallback((betAmount: number) => {
     const ws = wsRef.current
     if (!ws || ws.readyState !== WebSocket.OPEN) return
-    controller.setTransferState(true, 'Transferring funds…')
+    controller.setTransferState(true, translate('game.transfer.pendingMessage'))
     ws.send(JSON.stringify({ type: 'set_bet', amount: betAmount }))
     ws.send(JSON.stringify({ type: 'respawn' }))
   }, [])

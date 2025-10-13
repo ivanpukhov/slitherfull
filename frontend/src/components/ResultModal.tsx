@@ -1,6 +1,7 @@
 import type { LastResultState } from '../hooks/useGame'
 import { BET_AMOUNTS_CENTS, centsToUsdInput, sanitizeBetValue } from '../utils/helpers'
 import { Modal } from './Modal'
+import { useTranslation } from '../hooks/useTranslation'
 
 interface ResultModalProps {
   open: boolean
@@ -25,6 +26,7 @@ export function ResultModal({
   onClose,
   retryDisabled
 }: ResultModalProps) {
+  const { t } = useTranslation()
   if (!open || !result) {
     return null
   }
@@ -55,7 +57,7 @@ export function ResultModal({
           <div className="result-modal__retry">
             <div className="damn-field">
               <label className="damn-field__label" id="retryBetInputLabel" htmlFor="retryBetInput">
-                Retry Bet
+                {t('resultModal.retryLabel')}
               </label>
               <div className="damn-bet-options damn-bet-options--compact" role="group" aria-labelledby="retryBetInputLabel">
                 {betOptions.map((option) => {
@@ -75,10 +77,10 @@ export function ResultModal({
                 })}
               </div>
               <input id="retryBetInput" type="hidden" value={retryBetValue} readOnly />
-              <div className="damn-bet-hint">Available: {result.retryBalance}</div>
+              <div className="damn-bet-hint">{t('resultModal.available', { amount: result.retryBalance })}</div>
             </div>
             <button type="button" className="damn-primary-button" onClick={onRetry} disabled={retryDisabled}>
-              Play again
+              {t('resultModal.retryButton')}
             </button>
           </div>
         ) : null}

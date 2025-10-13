@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
-import { formatNumber, sanitizeBetValue, lerp, lerpAngle, formatUsd, centsToUsdInput, BET_AMOUNTS_CENTS } from '../utils/helpers'
+import {
+  formatNumber,
+  sanitizeBetValue,
+  lerp,
+  lerpAngle,
+  formatUsd,
+  centsToUsdInput,
+  BET_AMOUNTS_CENTS
+} from '../utils/helpers'
 import { HEX_PATTERN_TILE_WIDTH } from '../utils/hexTheme'
 import { drawBackground, drawFoods, drawSnakes } from '../utils/drawing'
+import { translate, useTranslation } from '../hooks/useTranslation'
 
 export const SKINS: Record<string, string[]> = {
   default: ['#facc15'],
@@ -14,13 +23,13 @@ export const SKINS: Record<string, string[]> = {
 }
 
 export const SKIN_LABELS: Record<string, string> = {
-  default: 'Sky',
-  emerald: 'Emerald',
-  crimson: 'Crimson',
-  amber: 'Amber',
-  violet: 'Violet',
-  obsidian: 'Obsidian',
-  mint: 'Mint'
+  default: 'game.skins.sky',
+  emerald: 'game.skins.emerald',
+  crimson: 'game.skins.crimson',
+  amber: 'game.skins.amber',
+  violet: 'game.skins.violet',
+  obsidian: 'game.skins.obsidian',
+  mint: 'game.skins.mint'
 }
 
 export const FOOD_PULSE_SPEED = 4.4
@@ -212,10 +221,10 @@ const initialCamera: CameraState = {
 
 const initialUI: GameUIState = {
   score: 0,
-  scoreMeta: 'Rank: —',
+  scoreMeta: translate('game.score.defaultMeta'),
   cashout: {
-    label: 'Cashout',
-    hint: 'Hold the button for 2 seconds or press Q',
+    label: translate('game.cashout.label'),
+    hint: translate('game.cashout.hint'),
     disabled: true,
     holding: false,
     pending: false
@@ -329,7 +338,7 @@ export class GameController {
   setTransferState(pending: boolean, message?: string) {
     this.state.ui.transfer = {
       pending,
-      message: message ?? (pending ? 'Transferring funds…' : '')
+      message: message ?? (pending ? translate('game.transfer.pendingMessage') : '')
     }
     this.notify()
   }
@@ -381,12 +390,16 @@ export class GameController {
     const canCashOut =
       !this.state.account.cashedOut && !this.state.ui.cashout.pending && total > 0 && this.state.alive
     this.state.ui.cashout = {
-      label: options?.label ?? (this.state.account.cashedOut ? 'Balance cashed out' : this.state.ui.cashout.label),
+      label:
+        options?.label ??
+        (this.state.account.cashedOut
+          ? translate('game.cashout.cashedOutLabel')
+          : this.state.ui.cashout.label || translate('game.cashout.label')),
       hint: this.state.account.cashedOut
-        ? 'Balance locked in'
+        ? translate('game.cashout.cashedOutHint')
         : this.state.ui.cashout.pending
-          ? 'Request in progress'
-          : options?.hint ?? 'Hold the button for 2 seconds or press Q',
+          ? translate('game.cashout.requestHint')
+          : options?.hint ?? translate('game.cashout.hint'),
       disabled: options?.disabled ?? !canCashOut,
       holding: options?.holding ?? this.state.ui.cashout.holding,
       pending: options?.pending ?? this.state.ui.cashout.pending
@@ -415,7 +428,9 @@ export class GameController {
     const remaining = Math.max(0, CASHOUT_HOLD_MS - elapsed)
     if (!this.state.account.cashedOut) {
       this.state.ui.cashout.label =
-        remaining > 0 ? `Hold for another ${(remaining / 1000).toFixed(1)} s` : 'Cashout request...'
+        remaining > 0
+          ? translate('game.cashout.countdown', { seconds: (remaining / 1000).toFixed(1) })
+          : translate('game.cashout.requestLabel')
       this.notify()
     }
     if (elapsed >= CASHOUT_HOLD_MS && !hold.triggered) {
@@ -434,7 +449,9 @@ export class GameController {
     this.state.ui.cashout = {
       ...this.state.ui.cashout,
       holding: false,
-      label: options?.preserveLabel ? this.state.ui.cashout.label : 'Cashout'
+      label: options?.preserveLabel
+        ? this.state.ui.cashout.label
+        : translate('game.cashout.label')
     }
     this.refreshCashoutState()
     this.notify()
@@ -452,21 +469,21 @@ export class GameController {
     this.state.alive = false
     this.state.ui.nicknameVisible = true
     this.state.ui.cashout = {
-      label: 'Cashout request...',
-      hint: 'Request in progress',
+      label: translate('game.cashout.requestLabel'),
+      hint: translate('game.cashout.requestHint'),
       disabled: true,
       holding: false,
       pending: true
     }
     this.state.ui.transfer = {
       pending: true,
-      message: 'Withdrawal is being processed...'
+      message: translate('game.cashout.transferMessage')
     }
     this.state.ui.lastResult = {
-      title: 'Cashout request sent',
+      title: translate('game.cashout.result.title'),
       details: [
-        'You were returned to the lobby, the match has ended.',
-        'We locked in your balance and will finish the transfer automatically.'
+        translate('game.cashout.result.line1'),
+        translate('game.cashout.result.line2')
       ],
       showRetryControls: false,
       retryBalance: formatUsd(pendingBalance),
@@ -612,12 +629,16 @@ export class GameController {
     const meSnake = this.getMeSnake()
     const speed = meSnake && meSnake.speed ? Math.max(0, Math.round(meSnake.speed)) : null
     const boostStatus = this.refreshBoostState()
-    const boostLabel = boostStatus.allowed ? (boostStatus.active ? 'Boost: on' : 'Boost: ready') : 'Boost: off'
+    const boostLabel = boostStatus.allowed
+      ? boostStatus.active
+        ? translate('game.boost.on')
+        : translate('game.boost.ready')
+      : translate('game.boost.off')
     const rank = this.getRank()
     this.state.ui.score = score
     this.state.ui.scoreMeta = speed
-      ? `Rank: ${rank} · Speed: ${speed} · ${boostLabel}`
-      : `Rank: ${rank} · ${boostLabel}`
+      ? translate('game.score.metaWithSpeed', { rank, speed, boost: boostLabel })
+      : translate('game.score.meta', { rank, boost: boostLabel })
     this.notify()
   }
 
@@ -633,17 +654,24 @@ export class GameController {
     this.state.ui.cashout.pending = false
     this.resetBoostIntent()
     this.resetCashoutHold()
-    const killerName = payload?.killerName ? payload.killerName : 'unknown'
+    const killerName = payload?.killerName ? payload.killerName : translate('game.death.unknown')
     const score = typeof payload?.yourScore === 'number' ? payload.yourScore : 0
     const balance = Math.max(0, Math.floor(this.state.account.balance || 0))
     const betValue = balance > 0 ? this.sanitizeBet(this.state.ui.retryBetValue || balance, balance) : 0
-    const details: string[] = [`Score: ${formatNumber(score)}`]
-    details.push(balance > 0 ? `Balance remaining ${formatUsd(balance)}` : 'Balance depleted')
+    const details: string[] = [translate('game.death.scoreLine', { score: formatNumber(score) })]
+    details.push(
+      balance > 0
+        ? translate('game.death.balanceRemaining', { amount: formatUsd(balance) })
+        : translate('game.death.balanceDepleted')
+    )
     this.state.ui.death = {
       visible: false,
-      summary: `You were defeated by ${killerName}`,
-      score: `Score: ${formatNumber(score)}`,
-      balance: balance > 0 ? `Balance remaining ${formatUsd(balance)}` : 'Balance depleted',
+      summary: translate('game.death.summary', { name: killerName }),
+      score: translate('game.death.scoreLine', { score: formatNumber(score) }),
+      balance:
+        balance > 0
+          ? translate('game.death.balanceRemaining', { amount: formatUsd(balance) })
+          : translate('game.death.balanceDepleted'),
       showBetControl: balance > 0,
       betValue: balance > 0 ? centsToUsdInput(betValue) : '',
       betBalance: formatUsd(balance),
@@ -652,14 +680,14 @@ export class GameController {
     }
     this.state.ui.retryBetValue = balance > 0 ? centsToUsdInput(betValue) : ''
     this.state.ui.lastResult = {
-      title: `You were defeated by ${killerName}`,
+      title: translate('game.death.summary', { name: killerName }),
       details,
       showRetryControls: balance > 0,
       retryBalance: formatUsd(balance),
       variant: 'death'
     }
     this.updateScoreHUD(0)
-    this.refreshCashoutState({ label: 'Cashout', pending: false, holding: false })
+    this.refreshCashoutState({ label: translate('game.cashout.label'), pending: false, holding: false })
     this.setNicknameVisible(true)
     this.notify()
   }
@@ -672,21 +700,21 @@ export class GameController {
     const safeBalance = Math.max(0, Math.floor(typeof finalBalance === 'number' ? finalBalance : this.state.account.total))
     this.applyBalanceUpdate({ balance: safeBalance, currentBet: 0, total: safeBalance, cashedOut: true })
     this.state.ui.cashout = {
-      label: 'Balance cashed out',
-      hint: 'Balance locked in',
+      label: translate('game.cashout.cashedOutLabel'),
+      hint: translate('game.cashout.cashedOutHint'),
       disabled: true,
       holding: false,
       pending: false
     }
     this.state.ui.cashoutScreen = {
       visible: false,
-      summary: `Your balance is now ${formatUsd(safeBalance)}.`
+      summary: translate('game.cashout.balanceSummary', { amount: formatUsd(safeBalance) })
     }
     this.state.ui.death.visible = false
     this.state.ui.retryBetValue = ''
     this.state.ui.lastResult = {
-      title: 'Balance cashed out',
-      details: [`Your balance is now ${formatUsd(safeBalance)}.`],
+      title: translate('game.cashout.cashedOutLabel'),
+      details: [translate('game.cashout.balanceSummary', { amount: formatUsd(safeBalance) })],
       showRetryControls: false,
       retryBalance: formatUsd(safeBalance),
       variant: 'cashout'
@@ -805,7 +833,7 @@ export class GameController {
       ? { ...existing }
       : {
           id,
-          name: payload.name || existing?.name || 'Anon',
+          name: payload.name || existing?.name || translate('game.snake.anonymous'),
           alive: Boolean(payload.alive ?? existing?.alive ?? true),
           length: payload.length || existing?.length || 20,
           displayLength: existing?.displayLength || payload.length || 20,
@@ -1200,6 +1228,7 @@ export class GameController {
 const controller = new GameController()
 
 export function useGame() {
+  const { t } = useTranslation()
   const [account, setAccount] = useState<AccountState>({ ...controller.getAccount() })
   const [snakes, setSnakes] = useState<Map<string, SnakeState>>(new Map(controller.getSnakes()))
   const [foods, setFoods] = useState<Map<string, FoodState>>(new Map(controller.getFoods()))
@@ -1216,7 +1245,10 @@ export function useGame() {
     })
   }, [])
 
-  const skinName = useMemo(() => SKIN_LABELS[ui.selectedSkin] || ui.selectedSkin, [ui.selectedSkin])
+  const skinName = useMemo(
+    () => t(SKIN_LABELS[ui.selectedSkin] || 'game.skins.sky'),
+    [t, ui.selectedSkin]
+  )
 
   return {
     controller,

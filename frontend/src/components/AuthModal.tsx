@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useState } from 'react'
 import type { AuthResult } from '../hooks/useAuth'
+import { useTranslation } from '../hooks/useTranslation'
 
 interface AuthModalProps {
   open: boolean
@@ -18,11 +19,15 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
   const [nickname, setNickname] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { t } = useTranslation()
 
   const overlayClass = open ? 'overlay auth-overlay' : 'overlay hidden'
   const isLoading = status === 'checking' || submitting
 
-  const title = useMemo(() => (mode === 'login' ? 'Sign in to your account' : 'Create an account'), [mode])
+  const title = useMemo(
+    () => (mode === 'login' ? t('auth.modal.loginTitle') : t('auth.modal.registerTitle')),
+    [mode, t]
+  )
 
   const handleClose = () => {
     if (isLoading) return
@@ -37,7 +42,7 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
     const trimmedEmail = email.trim()
     const trimmedPassword = password.trim()
     if (!trimmedEmail || !trimmedPassword || (mode === 'register' && !nickname.trim())) {
-      setError('Please fill in all fields.')
+      setError(t('auth.modal.validation.missingFields'))
       setSubmitting(false)
       return
     }
@@ -45,7 +50,7 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
       ? await onLogin(trimmedEmail, trimmedPassword)
       : await onRegister(trimmedEmail, trimmedPassword, nickname.trim())
     if (!result.ok) {
-      setError(mapError(result.error))
+      setError(mapError(result.error, t))
     }
     setSubmitting(false)
   }
@@ -63,7 +68,7 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
             type="button"
             className="auth-close"
             onClick={handleClose}
-            aria-label="Close authentication window"
+            aria-label={t('auth.modal.closeAria')}
             disabled={isLoading}
           >
             ×
@@ -76,7 +81,7 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
             onClick={() => toggleMode('login')}
             disabled={submitting}
           >
-            Sign in
+            {t('auth.modal.loginTab')}
           </button>
           <button
             type="button"
@@ -84,15 +89,13 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
             onClick={() => toggleMode('register')}
             disabled={submitting}
           >
-            Sign up
+            {t('auth.modal.registerTab')}
           </button>
         </div>
         <h2>{title}</h2>
-        <p className="auth-hint">
-          Sign in or create an account to save your nickname and balance. You start with 10 coins to place bets.
-        </p>
+        <p className="auth-hint">{t('auth.modal.hint')}</p>
         <form onSubmit={handleSubmit}>
-          <label className="auth-label" htmlFor="authEmail">Email</label>
+          <label className="auth-label" htmlFor="authEmail">{t('auth.fields.email')}</label>
           <input
             id="authEmail"
             type="email"
@@ -102,7 +105,7 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
             disabled={isLoading}
             required
           />
-          <label className="auth-label" htmlFor="authPassword">Password</label>
+          <label className="auth-label" htmlFor="authPassword">{t('auth.fields.password')}</label>
           <input
             id="authPassword"
             type="password"
@@ -115,7 +118,7 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
           />
           {mode === 'register' && (
             <>
-              <label className="auth-label" htmlFor="authNickname">Nickname</label>
+              <label className="auth-label" htmlFor="authNickname">{t('auth.fields.nickname')}</label>
               <input
                 id="authNickname"
                 type="text"
@@ -130,10 +133,14 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
           )}
           {error && <div className="auth-error" role="alert">{error}</div>}
           <button className="primary" type="submit" disabled={isLoading}>
-            {submitting ? 'Submitting...' : mode === 'login' ? 'Sign in' : 'Sign up'}
+            {submitting
+              ? t('auth.modal.submitting')
+              : mode === 'login'
+                ? t('auth.modal.loginAction')
+                : t('auth.modal.registerAction')}
           </button>
           {status === 'checking' && !submitting && (
-            <p className="auth-status">Checking session...</p>
+            <p className="auth-status">{t('auth.modal.checkingSession')}</p>
           )}
         </form>
       </div>
@@ -141,15 +148,15 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
   )
 }
 
-function mapError(code?: string | null) {
-  if (!code) return 'Failed to process the request.'
+function mapError(code: string | null | undefined, t: ReturnType<typeof useTranslation>['t']) {
+  if (!code) return t('auth.errors.generic')
   const messages: Record<string, string> = {
-    invalid_payload: 'Please check the information you entered.',
-    email_taken: 'This email is already registered.',
-    nickname_taken: 'The selected nickname is taken.',
-    invalid_credentials: 'Incorrect email or password.',
-    network_error: 'Unable to connect to the server.',
-    server_error: 'A server error occurred. Please try again later.'
+    invalid_payload: t('auth.errors.invalidPayload'),
+    email_taken: t('auth.errors.emailTaken'),
+    nickname_taken: t('auth.errors.nicknameTaken'),
+    invalid_credentials: t('auth.errors.invalidCredentials'),
+    network_error: t('auth.errors.network'),
+    server_error: t('auth.errors.server')
   }
-  return messages[code] || 'Failed to process the request.'
+  return messages[code] || t('auth.errors.generic')
 }

@@ -1,4 +1,5 @@
 import type { MouseEvent, PropsWithChildren } from 'react'
+import { useTranslation } from '../hooks/useTranslation'
 
 interface ModalProps {
   open: boolean
@@ -9,6 +10,7 @@ interface ModalProps {
 
 export function Modal({ open, title, onClose, width, children }: PropsWithChildren<ModalProps>) {
   if (!open) return null
+  const { t } = useTranslation()
 
   const handleBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
@@ -21,7 +23,7 @@ export function Modal({ open, title, onClose, width, children }: PropsWithChildr
       <div className="modal-window" style={width ? { width } : undefined}>
         <div className="modal-header">
           <div className="modal-title">{title}</div>
-          <button type="button" className="modal-close" aria-label="Close" onClick={onClose}>
+          <button type="button" className="modal-close" aria-label={t('modal.close')} onClick={onClose}>
             ×
           </button>
         </div>

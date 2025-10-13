@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { translate } from './useTranslation'
 
 export interface WalletProfile {
   walletAddress: string
@@ -46,7 +47,8 @@ export function useWallet({ token }: UseWalletOptions) {
         inGameBalance: data.inGameBalance
       })
     } catch (err) {
-      setError((err as Error).message)
+      const code = (err as Error).message || 'wallet_profile_failed'
+      setError(mapWalletError(code))
     } finally {
       setLoading(false)
     }
@@ -88,7 +90,8 @@ export function useWallet({ token }: UseWalletOptions) {
       setProfile(next)
       return next
     } catch (err) {
-      setError((err as Error).message)
+      const code = (err as Error).message || 'wallet_refresh_failed'
+      setError(mapWalletError(code))
       return null
     } finally {
       setLoading(false)
@@ -126,7 +129,8 @@ export function useWallet({ token }: UseWalletOptions) {
         setProfile(next)
         return next
       } catch (err) {
-        setError((err as Error).message)
+        const code = (err as Error).message || 'airdrop_failed'
+        setError(mapWalletError(code))
         return null
       } finally {
         setLoading(false)
@@ -138,11 +142,11 @@ export function useWallet({ token }: UseWalletOptions) {
   const withdrawAll = useCallback(
     async (destination: string) => {
       if (!token) {
-        throw new Error('Authentication required')
+        throw new Error(translate('wallet.errors.authRequired'))
       }
       const normalized = typeof destination === 'string' ? destination.trim() : ''
       if (!normalized) {
-        throw new Error('Enter a wallet address')
+        throw new Error(translate('wallet.errors.enterAddress'))
       }
       setLoading(true)
       setError(null)
@@ -158,13 +162,8 @@ export function useWallet({ token }: UseWalletOptions) {
         const data = await res.json().catch(() => ({}))
         if (!res.ok) {
           const code = data?.error || 'withdraw_failed'
-          const messages: Record<string, string> = {
-            invalid_destination: 'Invalid wallet address',
-            insufficient_funds: 'Not enough funds in the wallet',
-            unauthorized: 'Authentication required',
-            withdraw_failed: 'Failed to complete the cashout'
-          }
-          throw new Error(messages[code] || code)
+          const message = getWithdrawErrorMessage(code)
+          throw new Error(message)
         }
         const balance = data.balance ?? {}
         const next: WalletProfile = {
@@ -185,12 +184,15 @@ export function useWallet({ token }: UseWalletOptions) {
           signature: data.result?.signature ?? null,
           message:
             data.result?.message ||
-            (solAmount > 0 ? `Sent ${solAmount.toFixed(4)} SOL` : 'Withdrawal completed successfully')
+            (solAmount > 0
+              ? translate('wallet.withdraw.sent', { amount: solAmount.toFixed(4) })
+              : translate('wallet.withdraw.success'))
         }
       } catch (err) {
-        const message = (err as Error).message || 'withdraw_failed'
-        setError(message)
-        throw err
+        const code = (err as Error).message || 'withdraw_failed'
+        const friendly = getWithdrawErrorMessage(code)
+        setError(friendly)
+        throw new Error(friendly)
       } finally {
         setLoading(false)
       }
@@ -207,4 +209,29 @@ export function useWallet({ token }: UseWalletOptions) {
     fetchProfile,
     withdrawAll
   }
+}
+
+function getWithdrawErrorMessage(code: string) {
+  const keyMap: Record<string, string> = {
+    invalid_destination: 'wallet.errors.invalidDestination',
+    insufficient_funds: 'wallet.errors.insufficientFunds',
+    unauthorized: 'wallet.errors.authRequired',
+    withdraw_failed: 'wallet.errors.withdrawFailed'
+  }
+  const key = keyMap[code] ?? 'wallet.errors.withdrawFailed'
+  return translate(key)
+}
+
+function mapWalletError(code: string) {
+  const keyMap: Record<string, string> = {
+    unauthorized: 'wallet.errors.authRequired',
+    wallet_profile_failed: 'wallet.errors.profileFailed',
+    wallet_refresh_failed: 'wallet.errors.refreshFailed',
+    airdrop_failed: 'wallet.errors.airdropFailed',
+    invalid_destination: 'wallet.errors.invalidDestination',
+    insufficient_funds: 'wallet.errors.insufficientFunds',
+    withdraw_failed: 'wallet.errors.withdrawFailed'
+  }
+  const key = keyMap[code] ?? 'wallet.errors.generic'
+  return translate(key)
 }

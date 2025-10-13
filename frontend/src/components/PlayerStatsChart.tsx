@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import type { PlayerStatsPoint } from '../hooks/usePlayerStats'
+import { useTranslation } from '../hooks/useTranslation'
 
 interface PlayerStatsChartProps {
   series: PlayerStatsPoint[]
@@ -24,6 +25,7 @@ function formatUsd(value: number) {
 }
 
 export function PlayerStatsChart({ series, loading, totalUsd = 0, totalSol = 0 }: PlayerStatsChartProps) {
+  const { t } = useTranslation()
   const chart = useMemo(() => {
     if (!Array.isArray(series) || series.length === 0) {
       return { path: '', fill: '', labels: null, hasData: false }
@@ -54,8 +56,8 @@ export function PlayerStatsChart({ series, loading, totalUsd = 0, totalSol = 0 }
   if (loading) {
     return (
       <div className="stats-card">
-        <div className="stats-card-title">Winnings statistics</div>
-        <div className="stats-card-body placeholder">Loading…</div>
+        <div className="stats-card-title">{t('stats.chart.title')}</div>
+        <div className="stats-card-body placeholder">{t('stats.chart.loading')}</div>
       </div>
     )
   }
@@ -63,18 +65,18 @@ export function PlayerStatsChart({ series, loading, totalUsd = 0, totalSol = 0 }
   if (!chart.hasData) {
     return (
       <div className="stats-card">
-        <div className="stats-card-title">Winnings statistics</div>
-        <div className="stats-card-body placeholder">No data to display</div>
+        <div className="stats-card-title">{t('stats.chart.title')}</div>
+        <div className="stats-card-body placeholder">{t('stats.chart.empty')}</div>
       </div>
     )
   }
 
   return (
     <div className="stats-card">
-      <div className="stats-card-title">Winnings statistics</div>
+      <div className="stats-card-title">{t('stats.chart.title')}</div>
       <div className="stats-card-summary">
         <span>{formatUsd(totalUsd)}</span>
-        <span>{totalSol.toFixed(3)} SOL</span>
+        <span>{t('stats.chart.solAmount', { amount: totalSol.toFixed(3) })}</span>
       </div>
       <div className="stats-card-body">
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="stats-chart">

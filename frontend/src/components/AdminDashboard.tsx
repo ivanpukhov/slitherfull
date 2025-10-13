@@ -1,4 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from '../hooks/useTranslation'
 
 interface AdminUser {
   id: number
@@ -21,15 +22,15 @@ interface AdminOverview {
 
 type TransferKind = 'game_to_user' | 'user_to_game' | 'user_to_user'
 
-const TRANSFER_ERROR_MESSAGES: Record<string, string> = {
-  invalid_amount: 'Invalid amount',
-  missing_destination_user_id: 'Select a recipient',
-  missing_source_user_id: 'Select a sender',
-  missing_user_id: 'Select a sender and a recipient',
-  insufficient_funds: 'Not enough funds in the wallet',
-  source_user_not_found: 'Sender not found',
-  destination_user_not_found: 'Recipient not found',
-  same_user_transfer: 'You cannot transfer to yourself'
+const TRANSFER_ERROR_MESSAGE_KEYS: Record<string, string> = {
+  invalid_amount: 'admin.transfers.errors.invalidAmount',
+  missing_destination_user_id: 'admin.transfers.errors.missingRecipient',
+  missing_source_user_id: 'admin.transfers.errors.missingSender',
+  missing_user_id: 'admin.transfers.errors.missingBoth',
+  insufficient_funds: 'admin.transfers.errors.insufficientFunds',
+  source_user_not_found: 'admin.transfers.errors.senderNotFound',
+  destination_user_not_found: 'admin.transfers.errors.recipientNotFound',
+  same_user_transfer: 'admin.transfers.errors.sameUser'
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
@@ -52,6 +53,7 @@ export function AdminDashboard() {
   const [transferLoading, setTransferLoading] = useState(false)
   const [transferError, setTransferError] = useState<string | null>(null)
   const [transferSuccess, setTransferSuccess] = useState<string | null>(null)
+  const { t } = useTranslation()
 
   const fetchOverview = useCallback(
     async (basicToken: string) => {
@@ -137,7 +139,7 @@ export function AdminDashboard() {
       if (!token) return
       const amountValue = Number(transferAmount)
       if (!Number.isFinite(amountValue) || amountValue <= 0) {
-        setTransferError('Enter a valid amount')
+        setTransferError(t('admin.transfers.validation.invalidAmount'))
         setTransferSuccess(null)
         return
       }
@@ -146,7 +148,7 @@ export function AdminDashboard() {
 
       if (transferKind === 'game_to_user') {
         if (!transferToUserId) {
-          setTransferError('Select a recipient')
+          setTransferError(t('admin.transfers.validation.selectRecipient'))
           setTransferSuccess(null)
           return
         }
@@ -155,7 +157,7 @@ export function AdminDashboard() {
         payload.toUserId = Number(transferToUserId)
       } else if (transferKind === 'user_to_game') {
         if (!transferFromUserId) {
-          setTransferError('Select a sender')
+          setTransferError(t('admin.transfers.validation.selectSender'))
           setTransferSuccess(null)
           return
         }
@@ -164,12 +166,12 @@ export function AdminDashboard() {
         payload.fromUserId = Number(transferFromUserId)
       } else {
         if (!transferFromUserId || !transferToUserId) {
-          setTransferError('Select a sender and a recipient')
+          setTransferError(t('admin.transfers.validation.selectBoth'))
           setTransferSuccess(null)
           return
         }
         if (transferFromUserId === transferToUserId) {
-          setTransferError('You cannot transfer to yourself')
+          setTransferError(t('admin.transfers.validation.sameUser'))
           setTransferSuccess(null)
           return
         }
@@ -196,31 +198,31 @@ export function AdminDashboard() {
           const message = data?.error || 'transfer_failed'
           throw new Error(message)
         }
-        setTransferSuccess('Transfer completed')
+        setTransferSuccess(t('admin.transfers.success'))
         setTransferAmount('')
         await fetchOverview(token)
       } catch (err) {
         const code = (err as Error).message || 'transfer_failed'
-        setTransferError(TRANSFER_ERROR_MESSAGES[code] || code)
+        setTransferError(getTransferErrorMessage(code, t) || code)
       } finally {
         setTransferLoading(false)
       }
     },
-    [fetchOverview, token, transferAmount, transferFromUserId, transferKind, transferToUserId]
+    [fetchOverview, t, token, transferAmount, transferFromUserId, transferKind, transferToUserId]
   )
 
   if (!token || !overview) {
     return (
       <div className="admin-wrapper">
         <div className="admin-card">
-          <h1>Admin Portal</h1>
+          <h1>{t('admin.portal.title')}</h1>
           <form onSubmit={handleSubmit} className="admin-form">
             <label>
-              Email
+              {t('admin.portal.fields.email')}
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </label>
             <label>
-              Password
+              {t('admin.portal.fields.password')}
               <input
                 type="password"
                 value={password}
@@ -229,9 +231,9 @@ export function AdminDashboard() {
               />
             </label>
             <button type="submit" disabled={loading}>
-              {loading ? 'Verifying...' : 'Sign in'}
+              {loading ? t('admin.portal.verifying') : t('admin.portal.signIn')}
             </button>
-            {error && <div className="admin-error">Error: {error}</div>}
+            {error && <div className="admin-error">{t('admin.portal.error', { message: error })}</div>}
           </form>
         </div>
       </div>
@@ -243,45 +245,45 @@ export function AdminDashboard() {
       <div className="admin-card">
         <div className="admin-header">
           <div>
-            <h1>Wallet overview</h1>
-            <p className="admin-subtitle">Updated automatically after sign-in</p>
+            <h1>{t('admin.dashboard.title')}</h1>
+            <p className="admin-subtitle">{t('admin.dashboard.subtitle')}</p>
           </div>
           <div className="admin-actions">
             <button type="button" onClick={() => fetchOverview(token)} disabled={loading}>
-              {loading ? 'Refreshing...' : 'Refresh'}
+              {loading ? t('admin.common.refreshing') : t('admin.common.refresh')}
             </button>
             <button type="button" className="admin-secondary" onClick={handleLogout}>
-              Sign out
+              {t('admin.portal.signOut')}
             </button>
           </div>
         </div>
         <div className="admin-summary">
           <div>
-            <span className="summary-label">Game wallet</span>
+            <span className="summary-label">{t('admin.dashboard.gameWallet')}</span>
             <span className="summary-value">{overview.gameWallet.walletSol.toFixed(3)} SOL</span>
             <span className="summary-address">{overview.gameWallet.walletAddress}</span>
           </div>
           <div>
-            <span className="summary-label">Total SOL</span>
+            <span className="summary-label">{t('admin.dashboard.totalSol')}</span>
             <span className="summary-value">{totalSol.toFixed(3)} SOL</span>
           </div>
         </div>
         <div className="admin-transfer">
-          <h2>Transfers</h2>
+          <h2>{t('admin.transfers.title')}</h2>
           <form onSubmit={handleTransfer}>
             <label>
-              Transfer type
+              {t('admin.transfers.typeLabel')}
               <select value={transferKind} onChange={(event) => setTransferKind(event.target.value as TransferKind)}>
-                <option value="game_to_user">Game wallet → Player</option>
-                <option value="user_to_game">Player → Game wallet</option>
-                <option value="user_to_user">Player → Player</option>
+                <option value="game_to_user">{t('admin.transfers.types.gameToUser')}</option>
+                <option value="user_to_game">{t('admin.transfers.types.userToGame')}</option>
+                <option value="user_to_user">{t('admin.transfers.types.userToUser')}</option>
               </select>
             </label>
             {(transferKind === 'user_to_game' || transferKind === 'user_to_user') && (
               <label>
-                Sender
+                {t('admin.transfers.senderLabel')}
                 <select value={transferFromUserId} onChange={(event) => setTransferFromUserId(event.target.value)}>
-                  <option value="">Select a user</option>
+                  <option value="">{t('admin.transfers.selectUser')}</option>
                   {userOptions.map((user) => (
                     <option key={user.id} value={user.id}>
                       #{user.id} · {user.email}
@@ -292,9 +294,9 @@ export function AdminDashboard() {
             )}
             {(transferKind === 'game_to_user' || transferKind === 'user_to_user') && (
               <label>
-                Recipient
+                {t('admin.transfers.recipientLabel')}
                 <select value={transferToUserId} onChange={(event) => setTransferToUserId(event.target.value)}>
-                  <option value="">Select a user</option>
+                  <option value="">{t('admin.transfers.selectUser')}</option>
                   {userOptions.map((user) => (
                     <option key={user.id} value={user.id}>
                       #{user.id} · {user.email}
@@ -304,7 +306,7 @@ export function AdminDashboard() {
               </label>
             )}
             <label>
-              Amount (in credits)
+              {t('admin.transfers.amountLabel')}
               <input
                 type="number"
                 min="0"
@@ -315,9 +317,9 @@ export function AdminDashboard() {
               />
             </label>
             <button type="submit" disabled={transferLoading}>
-              {transferLoading ? 'Processing...' : 'Transfer'}
+              {transferLoading ? t('admin.transfers.processing') : t('admin.transfers.submit')}
             </button>
-            {transferError && <div className="admin-error">Error: {transferError}</div>}
+            {transferError && <div className="admin-error">{transferError}</div>}
             {transferSuccess && <div className="admin-success">{transferSuccess}</div>}
           </form>
         </div>
@@ -325,13 +327,13 @@ export function AdminDashboard() {
           <table>
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Email</th>
-                <th>Nickname</th>
-                <th>Wallet</th>
-                <th>Balance (SOL)</th>
-                <th>Lamports</th>
-                <th>In-game balance</th>
+                <th>{t('admin.table.id')}</th>
+                <th>{t('admin.table.email')}</th>
+                <th>{t('admin.table.nickname')}</th>
+                <th>{t('admin.table.wallet')}</th>
+                <th>{t('admin.table.sol')}</th>
+                <th>{t('admin.table.lamports')}</th>
+                <th>{t('admin.table.inGameBalance')}</th>
               </tr>
             </thead>
             <tbody>
@@ -352,4 +354,9 @@ export function AdminDashboard() {
       </div>
     </div>
   )
+}
+
+function getTransferErrorMessage(code: string, t: ReturnType<typeof useTranslation>['t']) {
+  const key = TRANSFER_ERROR_MESSAGE_KEYS[code]
+  return key ? t(key) : null
 }

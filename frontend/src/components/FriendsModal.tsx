@@ -6,24 +6,26 @@ import {
   type FriendSummary,
   type UseFriendsResult
 } from '../hooks/useFriends'
+import { useTranslation } from '../hooks/useTranslation'
 
 type TabKey = 'friends' | 'outgoing' | 'incoming'
 
-const TAB_LABELS: Record<TabKey, string> = {
-  friends: 'My friends',
-  outgoing: 'Outgoing requests',
-  incoming: 'Incoming requests'
+const TAB_LABEL_KEYS: Record<TabKey, string> = {
+  friends: 'friends.tabs.friends',
+  outgoing: 'friends.tabs.outgoing',
+  incoming: 'friends.tabs.incoming'
 }
 
-const ERROR_MESSAGES: Record<string, string> = {
-  unauthorized: 'Sign in to manage friends.',
-  invalid_payload: 'Something went wrong. Try again.',
-  cannot_friend_self: 'You cannot add yourself.',
-  user_not_found: 'User not found.',
-  already_friends: 'You are already friends.',
-  already_requested: 'Request already sent.',
-  request_failed: 'Unable to send request.',
-  friends_unavailable: 'Unable to load friends right now.'
+const ERROR_MESSAGE_KEYS: Record<string, string> = {
+  unauthorized: 'friends.errors.unauthorized',
+  invalid_payload: 'friends.errors.invalidPayload',
+  cannot_friend_self: 'friends.errors.cannotSelf',
+  user_not_found: 'friends.errors.userNotFound',
+  already_friends: 'friends.errors.alreadyFriends',
+  already_requested: 'friends.errors.alreadyRequested',
+  request_failed: 'friends.errors.requestFailed',
+  friends_unavailable: 'friends.errors.unavailable',
+  search_failed: 'friends.errors.searchFailed'
 }
 
 interface FriendsModalProps {
@@ -41,6 +43,7 @@ export function FriendsModal({ open, controller, onClose }: FriendsModalProps) {
   const [searchError, setSearchError] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const debounceRef = useRef<number | null>(null)
+  const { t } = useTranslation()
 
   useEffect(() => {
     if (!open) return
@@ -71,7 +74,7 @@ export function FriendsModal({ open, controller, onClose }: FriendsModalProps) {
         })
         .catch((err: Error) => {
           setResults([])
-          setSearchError(ERROR_MESSAGES[err.message] || 'Search failed.')
+          setSearchError(getErrorMessage(err.message, t) || t('friends.feedback.searchFailed'))
         })
         .finally(() => {
           setSearching(false)
@@ -87,12 +90,10 @@ export function FriendsModal({ open, controller, onClose }: FriendsModalProps) {
   }, [open, query, search])
 
   const friendlyError = useMemo(() => {
-    if (actionError && ERROR_MESSAGES[actionError]) return ERROR_MESSAGES[actionError]
-    if (actionError) return 'Action failed. Try again later.'
-    if (error && ERROR_MESSAGES[error]) return ERROR_MESSAGES[error]
-    if (error) return 'Unable to load friends.'
+    if (actionError) return getErrorMessage(actionError, t) || t('friends.feedback.actionFailed')
+    if (error) return getErrorMessage(error, t) || t('friends.feedback.loadFailed')
     return null
-  }, [actionError, error])
+  }, [actionError, error, t])
 
   const handleSend = async (userId: number) => {
     try {
@@ -122,7 +123,11 @@ export function FriendsModal({ open, controller, onClose }: FriendsModalProps) {
         <div className="friends-row-name">{entry.nickname}</div>
         <div className="friends-row-meta">{entry.email}</div>
       </div>
-      {entry.since ? <div className="friends-row-since">Since {new Date(entry.since).toLocaleDateString()}</div> : null}
+      {entry.since ? (
+        <div className="friends-row-since">
+          {t('friends.labels.since', { date: new Date(entry.since).toLocaleDateString() })}
+        </div>
+      ) : null}
     </li>
   )
 
@@ -135,10 +140,10 @@ export function FriendsModal({ open, controller, onClose }: FriendsModalProps) {
       <div className="friends-row-actions">
         {kind === 'incoming' ? (
           <button type="button" className="friends-action" onClick={() => handleAccept(entry.requestId)}>
-            Accept
+            {t('friends.actions.accept')}
           </button>
         ) : (
-          <span className="friends-row-status">Pending</span>
+          <span className="friends-row-status">{t('friends.status.pending')}</span>
         )}
       </div>
     </li>
@@ -147,19 +152,19 @@ export function FriendsModal({ open, controller, onClose }: FriendsModalProps) {
   const renderSearchResult = (entry: FriendSearchResult) => {
     let actionNode: JSX.Element | null = null
     if (entry.status === 'friends') {
-      actionNode = <span className="friends-row-status">Friends</span>
+      actionNode = <span className="friends-row-status">{t('friends.status.friends')}</span>
     } else if (entry.status === 'outgoing') {
-      actionNode = <span className="friends-row-status">Request sent</span>
+      actionNode = <span className="friends-row-status">{t('friends.status.requestSent')}</span>
     } else if (entry.status === 'incoming' && entry.requestId) {
       actionNode = (
         <button type="button" className="friends-action" onClick={() => handleAccept(entry.requestId!)}>
-          Accept
+          {t('friends.actions.accept')}
         </button>
       )
     } else {
       actionNode = (
         <button type="button" className="friends-action" onClick={() => handleSend(entry.id)}>
-          Add friend
+          {t('friends.actions.addFriend')}
         </button>
       )
     }
@@ -176,35 +181,35 @@ export function FriendsModal({ open, controller, onClose }: FriendsModalProps) {
 
   const friendsContent = useMemo(() => {
     if (loading && friends.length === 0) {
-      return <div className="friends-empty">Loading friends…</div>
+      return <div className="friends-empty">{t('friends.feedback.loading')}</div>
     }
     if (friends.length === 0) {
-      return <div className="friends-empty">No friends yet. Search for a player to start.</div>
+      return <div className="friends-empty">{t('friends.feedback.noFriends')}</div>
     }
     return <ul className="friends-list">{friends.map(renderFriend)}</ul>
-  }, [friends, loading])
+  }, [friends, loading, t])
 
   const outgoingContent = useMemo(() => {
     if (outgoing.length === 0) {
-      return <div className="friends-empty">You have no pending requests.</div>
+      return <div className="friends-empty">{t('friends.feedback.noOutgoing')}</div>
     }
     return <ul className="friends-list">{outgoing.map((entry) => renderRequest(entry, 'outgoing'))}</ul>
-  }, [outgoing])
+  }, [outgoing, t])
 
   const incomingContent = useMemo(() => {
     if (incoming.length === 0) {
-      return <div className="friends-empty">No new requests yet.</div>
+      return <div className="friends-empty">{t('friends.feedback.noIncoming')}</div>
     }
     return <ul className="friends-list">{incoming.map((entry) => renderRequest(entry, 'incoming'))}</ul>
-  }, [incoming])
+  }, [incoming, t])
 
-  const searchHint = query.trim().length > 0 && query.trim().length < 2 ? 'Enter at least 2 characters.' : null
+  const searchHint = query.trim().length > 0 && query.trim().length < 2 ? t('friends.search.hint') : null
 
   return (
-    <Modal open={open} title="Manage friends" onClose={onClose} width="640px">
+    <Modal open={open} title={t('friends.modal.title')} onClose={onClose} width="640px">
       <div className="friends-modal">
         <div className="friends-tabs" role="tablist">
-          {(Object.keys(TAB_LABELS) as TabKey[]).map((tab) => (
+          {(Object.keys(TAB_LABEL_KEYS) as TabKey[]).map((tab) => (
             <button
               key={tab}
               type="button"
@@ -213,23 +218,23 @@ export function FriendsModal({ open, controller, onClose }: FriendsModalProps) {
               className={`friends-tab${tab === activeTab ? ' active' : ''}`}
               onClick={() => setActiveTab(tab)}
             >
-              {TAB_LABELS[tab]}
+              {t(TAB_LABEL_KEYS[tab])}
               {tab === 'incoming' && incoming.length > 0 ? <span className="friends-tab-badge">{incoming.length}</span> : null}
             </button>
           ))}
         </div>
         <div className="friends-search">
-          <label htmlFor="friendSearch">Find players</label>
+          <label htmlFor="friendSearch">{t('friends.search.label')}</label>
           <input
             id="friendSearch"
             type="search"
-            placeholder="Search by email or nickname"
+            placeholder={t('friends.search.placeholder')}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
           {searchHint ? <div className="friends-search-hint">{searchHint}</div> : null}
         </div>
-        {searching ? <div className="friends-empty">Searching…</div> : null}
+        {searching ? <div className="friends-empty">{t('friends.search.searching')}</div> : null}
         {!searching && results.length > 0 ? (
           <ul className="friends-list friends-search-results">{results.map(renderSearchResult)}</ul>
         ) : null}
@@ -243,4 +248,10 @@ export function FriendsModal({ open, controller, onClose }: FriendsModalProps) {
       </div>
     </Modal>
   )
+}
+
+function getErrorMessage(code: string | null | undefined, t: ReturnType<typeof useTranslation>['t']) {
+  if (!code) return null
+  const key = ERROR_MESSAGE_KEYS[code]
+  return key ? t(key) : null
 }

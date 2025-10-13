@@ -1,14 +1,15 @@
-import {type CSSProperties, FormEvent, useCallback, useEffect, useMemo, useRef, useState} from 'react'
-import {BET_AMOUNTS_CENTS, centsToUsdInput, formatNumber, formatUsd, sanitizeBetValue} from '../utils/helpers'
-import {SKIN_LABELS, SKINS} from '../hooks/useGame'
-import {useFriends} from '../hooks/useFriends'
-import type {PlayerStatsData} from '../hooks/usePlayerStats'
-import type {WinningsLeaderboardEntry} from '../hooks/useWinningsLeaderboard'
-import {PlayerStatsChart} from './PlayerStatsChart'
-import {WinningsLeaderboardCard} from './Leaderboard'
-import {Modal} from './Modal'
-import {FriendsModal} from './FriendsModal'
-import {SnakePreview} from './SnakePreview'
+import { type CSSProperties, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { BET_AMOUNTS_CENTS, centsToUsdInput, formatNumber, formatUsd, sanitizeBetValue } from '../utils/helpers'
+import { SKIN_LABELS, SKINS } from '../hooks/useGame'
+import { useFriends } from '../hooks/useFriends'
+import { useTranslation } from '../hooks/useTranslation'
+import type { PlayerStatsData } from '../hooks/usePlayerStats'
+import type { WinningsLeaderboardEntry } from '../hooks/useWinningsLeaderboard'
+import { PlayerStatsChart } from './PlayerStatsChart'
+import { WinningsLeaderboardCard } from './Leaderboard'
+import { Modal } from './Modal'
+import { FriendsModal } from './FriendsModal'
+import { SnakePreview } from './SnakePreview'
 import wallet from './../assets/wallet.svg'
 import castom from './../assets/castomize.svg'
 import leader from './../assets/leader.svg'
@@ -99,6 +100,7 @@ export function NicknameScreen({
                                    totalWinningsSol,
                                    authToken
                                }: NicknameScreenProps) {
+    const { t } = useTranslation()
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault()
         if (startDisabled) return
@@ -229,10 +231,10 @@ export function NicknameScreen({
                 const successful = document.execCommand('copy')
                 document.body.removeChild(textarea)
                 if (!successful) {
-                    throw new Error('Copy command failed')
+                    throw new Error(t('lobby.wallet.copyCommandFailed'))
                 }
             } else {
-                throw new Error('Clipboard unavailable')
+                throw new Error(t('lobby.wallet.clipboardUnavailable'))
             }
             setCopyStatus('copied')
         } catch (error) {
@@ -246,7 +248,7 @@ export function NicknameScreen({
         if (!onWithdraw) return
         const target = withdrawAddress.trim()
         if (!target) {
-            setWithdrawError('Enter a Solana address')
+            setWithdrawError(t('lobby.withdraw.enterAddress'))
             return
         }
         setWithdrawError(null)
@@ -279,8 +281,9 @@ export function NicknameScreen({
         [primaryColor, secondaryColor]
     )
     const sanitizedNickname = nickname?.trim() || ''
-    const profileName = sanitizedNickname || (isAuthenticated ? 'Player' : 'New player')
-    const profileInitial = profileName.trim().charAt(0).toUpperCase() || 'D'
+    const profileName =
+        sanitizedNickname || (isAuthenticated ? t('lobby.profile.authenticatedFallback') : t('lobby.profile.guestFallback'))
+    const profileInitial = profileName.trim().charAt(0).toUpperCase() || t('lobby.profile.initialFallback')
     const spendableBalance = typeof bettingBalance === 'number' ? bettingBalance : balance
     const selectedBetCents = useMemo(() => {
         const normalized = sanitizeBetValue(betValue, spendableBalance)
@@ -366,7 +369,7 @@ export function NicknameScreen({
     const leaderboardLoading = Boolean(winningsLoading && leaderboardEntries.length === 0)
     const leaderboardRefreshing = Boolean(winningsLoading && leaderboardEntries.length > 0)
     const leaderboardHasError = !winningsLoading && Boolean(winningsError)
-    const rangeBadge = 'All time'
+    const rangeBadge = t('lobby.leaderboard.rangeBadge')
     const activePlayersDisplay = formatNumber(Math.max(0, activePlayers ?? 0))
     const totalPaidUsdDisplay = Number.isFinite(totalWinningsUsd ?? NaN)
         ? usdFormatter.format(totalWinningsUsd ?? 0)
@@ -374,14 +377,19 @@ export function NicknameScreen({
     const totalPaidSolDisplay = Number.isFinite(totalWinningsSol ?? NaN)
         ? `${(totalWinningsSol ?? 0).toFixed(2)} SOL`
         : null
-    const copyLabel = copyStatus === 'copied' ? 'Copied!' : copyStatus === 'error' ? 'Try again' : 'Copy Address'
+    const copyLabel =
+        copyStatus === 'copied'
+            ? t('lobby.wallet.copyStatus.copied')
+            : copyStatus === 'error'
+                ? t('lobby.wallet.copyStatus.error')
+                : t('lobby.wallet.copyStatus.default')
 
     return (
         <div id="nicknameScreen" className={visible ? 'overlay overlay--lobby' : 'overlay overlay--lobby hidden'}>
             <div className="damn-lobby">
                 <div className="damn-lobby__topbar">
                     <div className="damn-topbar__welcome">
-                        <span className="damn-topbar__label">Welcome,</span>
+                        <span className="damn-topbar__label">{t('lobby.welcome.label')}</span>
                         <span className="damn-topbar__name">{profileName}</span>
                     </div>
 
@@ -392,7 +400,7 @@ export function NicknameScreen({
                         <span className="damn-hero__brand-main">SNAKE</span>
                         <span className="damn-hero__brand-accent">FANS</span>
                     </div>
-                    <div className="damn-hero__tagline">Skill-Based Betting</div>
+                    <div className="damn-hero__tagline">{t('lobby.hero.tagline')}</div>
                 </div>
 
                 {(cashoutPending || transferPending) && (
@@ -400,13 +408,13 @@ export function NicknameScreen({
                         <div className="damn-status__indicator"/>
                         <div className="damn-status__body">
                             <div className="damn-status__title">
-                                {cashoutPending ? 'Cash out in progress' : 'Processing transaction'}
+                                {cashoutPending ? t('lobby.status.cashoutTitle') : t('lobby.status.transferTitle')}
                             </div>
                             <p className="damn-status__text">
                                 {transferMessage ||
                                     (cashoutPending
-                                        ? 'We are finalising your payout.'
-                                        : 'Please wait a moment, we are syncing your balance.')}
+                                        ? t('lobby.status.cashoutMessage')
+                                        : t('lobby.status.transferMessage'))}
                             </p>
                         </div>
                     </div>
@@ -420,23 +428,23 @@ export function NicknameScreen({
                                 <div>
                                     <img src={leader} alt=""/>
                                     <h2 className="damn-card__title">
-                                        Leaderboard
+                                        {t('lobby.leaderboard.title')}
                                     </h2>
                                 </div>
                                 <div className="leaderboard__live">
                                     <div className="leaderboard__live-rounded"></div>
-                                    <div className="leaderboard__live-text">Live</div>
+                                    <div className="leaderboard__live-text">{t('lobby.leaderboard.liveBadge')}</div>
 
                                 </div>
                             </header>
                             <ol className={`damn-leaderboard${leaderboardRefreshing ? ' loading' : ''}`}>
                                 {leaderboardLoading ?
-                                    <li className="damn-leaderboard__placeholder">Loading…</li> : null}
+                                    <li className="damn-leaderboard__placeholder">{t('lobby.leaderboard.loading')}</li> : null}
                                 {leaderboardHasError ? (
-                                    <li className="damn-leaderboard__placeholder">Unable to load leaderboard</li>
+                                    <li className="damn-leaderboard__placeholder">{t('lobby.leaderboard.error')}</li>
                                 ) : null}
                                 {!leaderboardLoading && !leaderboardHasError && leaderboardEntries.length === 0 ? (
-                                    <li className="damn-leaderboard__placeholder">No winners yet</li>
+                                    <li className="damn-leaderboard__placeholder">{t('lobby.leaderboard.empty')}</li>
                                 ) : null}
                                 {leaderboardEntries.map((entry, index) => (
                                     <li key={entry.userId}>
@@ -455,7 +463,7 @@ export function NicknameScreen({
                                     className="friends-card-button gray"
                                     onClick={() => setWinningsModalOpen(true)}
                                 >
-                                    Top Winners
+                                    {t('leaderboard.winnings.title')}
                                 </button>
                             </ol>
                         </section>
@@ -464,13 +472,13 @@ export function NicknameScreen({
                             <header className="damn-card__header">
                                 <div>
                                     <img src={friend} alt=""/>
-                                    <h2 className="damn-card__title">Friends</h2>
+                                    <h2 className="damn-card__title">{t('lobby.friends.title')}</h2>
                                 </div>
                             </header>
                             {isAuthenticated ? (
                                 <>
                                     {friendsLoading ? (
-                                        <div className="friends-preview-empty">Loading friends…</div>
+                                        <div className="friends-preview-empty">{t('lobby.friends.loading')}</div>
                                     ) : friendsPreview.length > 0 ? (
                                         <ul className="friends-preview-grid">
                                             {friendsPreview.map((friend, index) => (
@@ -484,19 +492,19 @@ export function NicknameScreen({
                                         </ul>
                                     ) : (
                                         <div className="friends-preview-empty">
-                                            {friendsError ? 'Failed to load friends.' : 'Add friends to see them here.'}
+                                            {friendsError ? t('lobby.friends.error') : t('lobby.friends.empty')}
                                         </div>
                                     )}
                                     <div className="friends-actions-grid ">
                                         <button type="button" className="friends-card-button gray"
                                                 onClick={handleOpenFriends}>
-                                            All friends
+                                            {t('lobby.friends.actions.all')}
                                         </button>
 
                                     </div>
                                 </>
                             ) : (
-                                <p className="damn-empty-text">Sign in to discover and add friends from the arena.</p>
+                                <p className="damn-empty-text">{t('lobby.friends.guestHint')}</p>
                             )}
                         </section>
 
@@ -514,7 +522,7 @@ export function NicknameScreen({
                                     className="damn-field__input"
                                     type="text"
                                     maxLength={16}
-                                    placeholder="Enter nickname"
+                                    placeholder={t('lobby.form.nicknamePlaceholder')}
                                     autoComplete="off"
                                     value={nickname}
                                     onChange={(event) => {
@@ -527,7 +535,7 @@ export function NicknameScreen({
                             </div>
 
                             <div className="damn-field">
-                                <div className="damn-bet-options" role="group" aria-label="Select bet">
+                                <div className="damn-bet-options" role="group" aria-label={t('lobby.form.selectBet')}>
                                     {betOptions.map((option) => {
                                         const selected = option.value === selectedBetCents
                                         return (
@@ -554,7 +562,7 @@ export function NicknameScreen({
                                 disabled={startDisabled}
                                 aria-disabled={startDisabled}
                             >
-                                {startLabel ?? 'Join Game'}
+                                {startLabel ?? t('lobby.form.startDefault')}
                             </button>
                             {startDisabled && startDisabledHint ? (
                                 <p className="damn-start-hint">{startDisabledHint}</p>
@@ -563,19 +571,22 @@ export function NicknameScreen({
                             <div className="damn-join-stats">
                                 <div className="damn-join-stat">
                                     <span className="damn-join-stat__value">{activePlayersDisplay}</span>
-                                    <span className="damn-join-stat__label">Players online</span>
+                                    <span className="damn-join-stat__label">{t('lobby.stats.playersOnline')}</span>
                                 </div>
                                 <div className="damn-join-stat">
                                     <span className="damn-join-stat__value">{totalPaidUsdDisplay}</span>
-                                    <span className="damn-join-stat__label">Global Player Winnings</span>
+                                    <span className="damn-join-stat__label">{t('lobby.stats.globalWinnings')}</span>
                                 </div>
 
                             </div>
                         </section>
 
-                        <button type="button" className="friends-card-button gray"
-                                onClick={() => (isAuthenticated ? setStatsModalOpen(true) : onStart())}> View
-                            Stats
+                        <button
+                            type="button"
+                            className="friends-card-button gray"
+                            onClick={() => (isAuthenticated ? setStatsModalOpen(true) : onStart())}
+                        >
+                            {t('lobby.actions.viewStats')}
                         </button>
                     </form>
 
@@ -584,7 +595,7 @@ export function NicknameScreen({
                             <header className="damn-card__header">
                                 <div>
                                     <img src={wallet} alt=""/>
-                                    <h2 className="damn-card__title">Wallet</h2>
+                                    <h2 className="damn-card__title">{t('lobby.wallet.title')}</h2>
                                 </div>
                                 <button
                                     type="button"
@@ -597,7 +608,9 @@ export function NicknameScreen({
                             </header>
                             <div className="damn-wallet__balance">
                                 <span className="damn-wallet__value">{formatUsd(balance)}</span>
-                                <span className="damn-wallet__meta-value">{formattedSol} SOL</span>
+                                <span className="damn-wallet__meta-value">
+                                    {t('lobby.wallet.solAmount', { amount: formattedSol })}
+                                </span>
 
                             </div>
 
@@ -608,7 +621,9 @@ export function NicknameScreen({
                                     onClick={handleWalletOpen}
                                     disabled={walletLoading && isAuthenticated}
                                 >
-                                    {walletLoading && isAuthenticated ? 'Refreshing…' : 'Add Funds'}
+                                    {walletLoading && isAuthenticated
+                                        ? t('lobby.wallet.refreshing')
+                                        : t('lobby.wallet.addFunds')}
                                 </button>
                                 <button
                                     type="button"
@@ -616,17 +631,17 @@ export function NicknameScreen({
                                     onClick={handleToggleWithdraw}
                                     disabled={!isAuthenticated}
                                 >
-                                    {withdrawExpanded ? 'Hide Withdraw' : 'Cash Out'}
+                                    {withdrawExpanded ? t('lobby.wallet.hideWithdraw') : t('lobby.wallet.cashOut')}
                                 </button>
                             </div>
                             {withdrawExpanded && isAuthenticated ? (
                                 <div className="wallet-withdraw">
-                                    <label htmlFor="withdrawAddress">Withdraw balance</label>
+                                    <label htmlFor="withdrawAddress">{t('lobby.withdraw.label')}</label>
                                     <div className="wallet-withdraw-controls">
                                         <input
                                             id="withdrawAddress"
                                             type="text"
-                                            placeholder="Solana wallet address"
+                                            placeholder={t('lobby.withdraw.placeholder')}
                                             value={withdrawAddress}
                                             onChange={(event) => {
                                                 setWithdrawAddress(event.target.value)
@@ -645,7 +660,7 @@ export function NicknameScreen({
                                             onClick={handleWithdraw}
                                             disabled={withdrawPending || !onWithdraw}
                                         >
-                                            {withdrawPending ? 'Sending…' : 'Withdraw'}
+                                            {withdrawPending ? t('lobby.withdraw.sending') : t('lobby.withdraw.submit')}
                                         </button>
                                     </div>
                                     {withdrawError ? (
@@ -668,7 +683,7 @@ export function NicknameScreen({
                             <header className="damn-card__header">
                                 <div>
                                     <img src={castom} alt=""/>
-                                    <h2 className="damn-card__title ">Customize</h2>
+                                    <h2 className="damn-card__title ">{t('lobby.customize.title')}</h2>
                                 </div>
                             </header>
                             <div className="damn-customize__preview">
@@ -680,7 +695,7 @@ export function NicknameScreen({
                                 onClick={handleOpenSkinModal}
                             >
 
-                                Change Appearance
+                                {t('lobby.customize.changeAppearance')}
                             </button>
 
                         </section>
@@ -689,71 +704,82 @@ export function NicknameScreen({
 
                 <div className="damn-footer">
                     <button type="button" className="damn-secondary-button" onClick={handleDiscordClick}>
-                        Join Discord!
+                        {t('lobby.footer.joinDiscord')}
                     </button>
                     <a className="damn-footer__link" href="https://snakefans.com" target="_blank" rel="noreferrer">
-                        snakefans.com
+                        {t('lobby.footer.website')}
                     </a>
                 </div>
             </div>
 
             <Modal
                 open={skinModalOpen}
-                title="Skin selection"
+                title={t('lobby.skinModal.title')}
                 onClose={handleSkinModalClose}
                 width="520px"
             >
                 <div className="skin-modal">
-                    <p className="skin-modal__hint">Pick the look and color of your snake.</p>
+                    <p className="skin-modal__hint">{t('lobby.skinModal.hint')}</p>
                     <div id="skinList" ref={skinListRef} className="damn-skin-grid">
-                        {Object.entries(SKINS).map(([skin, colors]) => (
-                            <button
-                                type="button"
-                                key={skin}
-                                className={`damn-skin${skin === selectedSkin ? ' selected' : ''}`}
-                                data-skin={skin}
-                                data-name={SKIN_LABELS[skin] || skin}
-                                style={{
-                                    background: `radial-gradient(circle at 35% 35%, ${colors[0] ?? '#38bdf8'}, ${
-                                        colors[1] ?? colors[0] ?? '#8b5cf6'
-                                    })`
-                                }}
-                                onClick={() => handleSkinSelect(skin)}
-                                aria-label={SKIN_LABELS[skin] || skin}
-                                aria-pressed={skin === selectedSkin}
-                            >
-                                <span className="damn-skin__ring"/>
-                            </button>
-                        ))}
+                        {Object.entries(SKINS).map(([skin, colors]) => {
+                            const labelKey = SKIN_LABELS[skin] || 'game.skins.default'
+                            const label = t(labelKey)
+                            return (
+                                <button
+                                    type="button"
+                                    key={skin}
+                                    className={`damn-skin${skin === selectedSkin ? ' selected' : ''}`}
+                                    data-skin={skin}
+                                    data-name={label}
+                                    style={{
+                                        background: `radial-gradient(circle at 35% 35%, ${colors[0] ?? '#38bdf8'}, ${
+                                            colors[1] ?? colors[0] ?? '#8b5cf6'
+                                        })`
+                                    }}
+                                    onClick={() => handleSkinSelect(skin)}
+                                    aria-label={label}
+                                    aria-pressed={skin === selectedSkin}
+                                >
+                                    <span className="damn-skin__ring"/>
+                                </button>
+                            )
+                        })}
                     </div>
                 </div>
             </Modal>
 
-            <Modal open={walletModalOpen} title="Wallet" onClose={() => setWalletModalOpen(false)} width="520px">
+            <Modal
+                open={walletModalOpen}
+                title={t('lobby.wallet.modalTitle')}
+                onClose={() => setWalletModalOpen(false)}
+                width="520px"
+            >
                 <div className="wallet-section wallet-modal-section">
                     <div className="wallet-row">
-                        <span className="wallet-label">In-game balance</span>
+                        <span className="wallet-label">{t('lobby.wallet.inGameBalance')}</span>
                         <span className="wallet-value">{formatUsd(balance)}</span>
                     </div>
                     {showWallet ? (
                         <>
                             <div className="wallet-row">
-                                <span className="wallet-label">SOL</span>
+                                <span className="wallet-label">{t('lobby.wallet.solLabel')}</span>
                                 <span className="wallet-value">{formattedSol}</span>
                             </div>
                             <div className="wallet-row">
-                                <span className="wallet-label">USD</span>
+                                <span className="wallet-label">{t('lobby.wallet.usdLabel')}</span>
                                 <span className="wallet-value">{formattedUsd}</span>
                             </div>
                             <div className="wallet-address" title={walletAddress ?? ''}>
                                 <div className="wallet-address-text">
-                                    <span className="wallet-label">
-                                        Wallet
-                                    </span>
+                                    <span className="wallet-label">{t('lobby.wallet.addressLabel')}</span>
                                     <span className="wallet-hash">{walletAddress}</span>
                                 </div>
                                 <button type="button" className="wallet-copy-button" onClick={handleCopyWallet}>
-                                    {copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Error' : 'Copy'}
+                                    {copyStatus === 'copied'
+                                        ? t('lobby.wallet.copyButton.copied')
+                                        : copyStatus === 'error'
+                                            ? t('lobby.wallet.copyButton.error')
+                                            : t('lobby.wallet.copyButton.default')}
                                 </button>
                             </div>
                             <div className="wallet-actions">
@@ -763,21 +789,21 @@ export function NicknameScreen({
                                     onClick={onRefreshWallet}
                                     disabled={walletLoading}
                                 >
-                                    {walletLoading ? 'Refreshing…' : 'Refresh'}
+                                    {walletLoading ? t('lobby.wallet.refreshing') : t('lobby.wallet.refresh')}
                                 </button>
                             </div>
                             <p className="wallet-placeholder">
-                                Use the Cash Out panel on the lobby screen to withdraw your balance.
+                                {t('lobby.wallet.withdrawHint')}
                             </p>
                         </>
                     ) : (
-                        <p className="wallet-placeholder">Sign in to see wallet details.</p>
+                        <p className="wallet-placeholder">{t('lobby.wallet.signInHint')}</p>
                     )}
                 </div>
             </Modal>
             <Modal
                 open={statsModalOpen}
-                title="Winning stats"
+                title={t('lobby.statsModal.title')}
                 onClose={() => setStatsModalOpen(false)}
                 width="580px"
             >
@@ -790,14 +816,14 @@ export function NicknameScreen({
                     />
                 ) : (
                     <div className="stats-card stats-card-locked modal-placeholder">
-                        <div className="stats-card-title">Stats unavailable</div>
-                        <div className="stats-card-body placeholder">Sign in to view your game history.</div>
+                        <div className="stats-card-title">{t('lobby.statsModal.lockedTitle')}</div>
+                        <div className="stats-card-body placeholder">{t('lobby.statsModal.lockedBody')}</div>
                     </div>
                 )}
             </Modal>
             <Modal
                 open={winningsModalOpen}
-                title="Top winners"
+                title={t('leaderboard.winnings.title')}
                 onClose={() => setWinningsModalOpen(false)}
                 width="520px"
             >

@@ -8,6 +8,7 @@ import { useAuth } from './hooks/useAuth'
 import { useWallet } from './hooks/useWallet'
 import { useWinningsLeaderboard } from './hooks/useWinningsLeaderboard'
 import { usePlayerStats } from './hooks/usePlayerStats'
+import { useTranslation } from './hooks/useTranslation'
 import { ScorePanel } from './components/ScorePanel'
 import { GameLeaderboard } from './components/Leaderboard'
 import { CashoutControl } from './components/CashoutControl'
@@ -23,6 +24,7 @@ function GameView() {
 
   const game = useGame()
   const auth = useAuth()
+  const { t } = useTranslation()
   const wallet = useWallet({ token: auth.token })
   const winningsLeaderboard = useWinningsLeaderboard()
   const playerStats = usePlayerStats({ token: auth.token, days: 30 })
@@ -128,7 +130,7 @@ function GameView() {
   const handleWithdraw = useCallback(
     async (destination: string) => {
       if (typeof wallet.withdrawAll !== 'function') {
-        throw new Error('Cashout feature is unavailable')
+        throw new Error(t('app.errors.cashoutUnavailable'))
       }
       setWithdrawPending(true)
       setWithdrawStatus(null)
@@ -136,19 +138,19 @@ function GameView() {
         const result = await wallet.withdrawAll(destination)
         setWithdrawStatus({
           type: 'success',
-          message: result?.message ?? 'Balance sent to the specified address.'
+          message: result?.message ?? t('app.withdraw.successFallback')
         })
         await wallet.refresh()
         refreshPlayerStats()
       } catch (error) {
-        const message = (error as Error)?.message || 'Failed to complete the cashout'
+        const message = (error as Error)?.message || t('app.withdraw.errorFallback')
         setWithdrawStatus({ type: 'error', message })
         throw error
       } finally {
         setWithdrawPending(false)
       }
     },
-    [refreshPlayerStats, wallet]
+    [refreshPlayerStats, t, wallet]
   )
 
   useEffect(() => {
@@ -316,11 +318,11 @@ function GameView() {
     }
   }, [isAuthenticated])
   const startLabel = useMemo(() => {
-    if (game.cashout.pending) return 'Awaiting cashout'
-    if (game.transfer.pending) return 'Processing...'
-    if (auth.status === 'checking') return 'Loading...'
-    return isAuthenticated ? 'Play' : 'Login'
-  }, [auth.status, game.cashout.pending, game.transfer.pending, isAuthenticated])
+    if (game.cashout.pending) return t('app.startLabel.cashoutPending')
+    if (game.transfer.pending) return t('app.startLabel.transferPending')
+    if (auth.status === 'checking') return t('app.startLabel.checking')
+    return isAuthenticated ? t('app.startLabel.play') : t('app.startLabel.login')
+  }, [auth.status, game.cashout.pending, game.transfer.pending, isAuthenticated, t])
 
   const startDisabled =
     auth.status === 'checking' ||
@@ -328,12 +330,12 @@ function GameView() {
     game.transfer.pending ||
     (isAuthenticated && game.account.balance < BET_AMOUNTS_CENTS[0])
   const startHint = useMemo(() => {
-    if (game.cashout.pending) return 'Please wait for the cashout confirmation.'
-    if (game.transfer.pending) return 'We are processing a transaction with your balance.'
+    if (game.cashout.pending) return t('app.startHint.cashoutPending')
+    if (game.transfer.pending) return t('app.startHint.transferPending')
     if (isAuthenticated && game.account.balance < BET_AMOUNTS_CENTS[0])
-      return 'Not enough funds for the minimum $1 bet.'
+      return t('app.startHint.insufficientFunds')
     return undefined
-  }, [game.cashout.pending, game.transfer.pending, isAuthenticated, game.account.balance])
+  }, [game.account.balance, game.cashout.pending, game.transfer.pending, isAuthenticated, t])
 
   const handlePrimaryAction = isAuthenticated ? handleStart : () => setAuthModalOpen(true)
   const inLobby = game.nicknameScreenVisible
@@ -413,7 +415,7 @@ function GameView() {
         <div className="transfer-overlay">
           <div className="transfer-modal">
             <div className="transfer-spinner" />
-            <div className="transfer-text">{game.transfer.message || 'Transferring funds…'}</div>
+            <div className="transfer-text">{game.transfer.message || t('app.transferFallback')}</div>
           </div>
         </div>
       )}
