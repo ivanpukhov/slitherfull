@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { ReactNode, useEffect } from 'react'
 
 import '../../styles/legal.css'
 
@@ -14,6 +14,17 @@ type LegalSectionProps = {
 }
 
 export function LegalLayout({ title, effectiveDate, children }: LegalLayoutProps) {
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+
+    const { classList } = document.body
+    classList.add('legal-page-body')
+
+    return () => {
+      classList.remove('legal-page-body')
+    }
+  }, [])
+
   return (
     <div className="legal-page">
       <header className="legal-page__header">
