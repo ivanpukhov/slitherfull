@@ -118,7 +118,7 @@
     },
     "stats": {
       "playersOnline": "Игроков онлайн",
-      "globalWinnings": "Глобальные выигрыши игроков"
+      "globalWinnings": "Общий выигрыш"
     },
     "actions": {
       "title": "Управление балансом",

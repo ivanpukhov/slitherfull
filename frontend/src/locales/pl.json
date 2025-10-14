@@ -1,363 +1,363 @@
 {
   "scorePanel": {
-    "lengthLabel": "Length"
+    "lengthLabel": "Długość"
   },
   "leaderboard": {
     "game": {
-      "title": "Arena leaders",
-      "empty": "No players in the arena",
-      "bet": "Bet: {{amount}}",
-      "lengthLabel": "length"
+      "title": "Liderzy areny",
+      "empty": "Brak graczy na arenie",
+      "bet": "Zakład: {{amount}}",
+      "lengthLabel": "długość"
     },
     "winnings": {
-      "title": "Top winners",
-      "loading": "Loading…",
-      "error": "Failed to load data",
-      "empty": "No data",
-      "wins": "Wins: {{count}}",
+      "title": "Najlepsi zwycięzcy",
+      "loading": "Ładowanie…",
+      "error": "Nie udało się załadować danych",
+      "empty": "Brak danych",
+      "wins": "Wygrane: {{count}}",
       "solAmount": "{{amount}} SOL"
     }
   },
   "app": {
     "errors": {
-      "cashoutUnavailable": "Cashout feature is unavailable"
+      "cashoutUnavailable": "Funkcja wypłaty jest niedostępna"
     },
     "withdraw": {
-      "successFallback": "Balance sent to the specified address.",
-      "errorFallback": "Failed to complete the cashout"
+      "successFallback": "Saldo wysłano na podany adres.",
+      "errorFallback": "Nie udało się zakończyć wypłaty"
     },
     "startLabel": {
-      "cashoutPending": "Awaiting cashout",
-      "transferPending": "Processing...",
-      "checking": "Loading...",
-      "play": "Play",
-      "login": "Login"
+      "cashoutPending": "Oczekiwanie na wypłatę",
+      "transferPending": "Przetwarzanie...",
+      "checking": "Ładowanie...",
+      "play": "Graj",
+      "login": "Zaloguj się"
     },
     "startHint": {
-      "cashoutPending": "Please wait for the cashout confirmation.",
-      "transferPending": "We are processing a transaction with your balance.",
-      "insufficientFunds": "Not enough funds for the minimum $1 bet."
+      "cashoutPending": "Proszę czekać na potwierdzenie wypłaty.",
+      "transferPending": "Trwa przetwarzanie transakcji z Twoim saldem.",
+      "insufficientFunds": "Za mało środków na minimalny zakład 1 USD."
     },
-    "transferFallback": "Transferring funds…"
+    "transferFallback": "Przesyłanie środków…"
   },
   "lobby": {
     "wallet": {
-      "copyCommandFailed": "Copy command failed",
-      "clipboardUnavailable": "Clipboard unavailable",
+      "copyCommandFailed": "Nie udało się skopiować",
+      "clipboardUnavailable": "Schowek niedostępny",
       "copyStatus": {
-        "copied": "Copied!",
-        "error": "Try again",
-        "default": "Copy Address"
+        "copied": "Skopiowano!",
+        "error": "Spróbuj ponownie",
+        "default": "Kopiuj adres"
       },
-      "title": "Wallet",
-      "refreshing": "Refreshing…",
-      "refresh": "Refresh",
-      "addFunds": "Add Funds",
-      "hideWithdraw": "Hide Withdraw",
-      "cashOut": "Cash Out",
+      "title": "Portfel",
+      "refreshing": "Odświeżanie…",
+      "refresh": "Odśwież",
+      "addFunds": "Dodaj środki",
+      "hideWithdraw": "Ukryj wypłatę",
+      "cashOut": "Wypłać",
       "solAmount": "{{amount}} SOL",
-      "modalTitle": "Wallet",
-      "inGameBalance": "In-game balance",
+      "modalTitle": "Portfel",
+      "inGameBalance": "Saldo w grze",
       "solLabel": "SOL",
       "usdLabel": "USD",
-      "addressLabel": "Wallet",
+      "addressLabel": "Adres portfela",
       "copyButton": {
-        "copied": "Copied",
-        "error": "Error",
-        "default": "Copy"
+        "copied": "Skopiowano",
+        "error": "Błąd",
+        "default": "Kopiuj"
       },
-      "withdrawHint": "Use the Cash Out panel on the lobby screen to withdraw your balance.",
-      "signInHint": "Sign in to see wallet details."
+      "withdrawHint": "Użyj panelu Wypłaty w lobby, aby wypłacić saldo.",
+      "signInHint": "Zaloguj się, aby zobaczyć szczegóły portfela."
     },
     "withdraw": {
-      "label": "Withdraw balance",
-      "placeholder": "Solana wallet address",
-      "enterAddress": "Enter a Solana address",
-      "sending": "Sending…",
-      "submit": "Withdraw"
+      "label": "Wypłać saldo",
+      "placeholder": "Adres portfela Solana",
+      "enterAddress": "Wprowadź adres Solana",
+      "sending": "Wysyłanie…",
+      "submit": "Wypłać"
     },
     "profile": {
-      "authenticatedFallback": "Player",
-      "guestFallback": "New player",
-      "initialFallback": "P"
+      "authenticatedFallback": "Gracz",
+      "guestFallback": "Nowy gracz",
+      "initialFallback": "G"
     },
     "leaderboard": {
-      "rangeBadge": "All time",
-      "title": "Leaderboard",
-      "liveBadge": "Live",
-      "loading": "Loading…",
-      "error": "Unable to load leaderboard",
-      "empty": "No winners yet"
+      "rangeBadge": "Cały czas",
+      "title": "Tablica wyników",
+      "liveBadge": "Na żywo",
+      "loading": "Ładowanie…",
+      "error": "Nie można załadować wyników",
+      "empty": "Brak zwycięzców"
     },
     "welcome": {
-      "label": "Welcome,"
+      "label": "Witaj,"
     },
     "hero": {
-      "tagline": "Skill-Based Betting"
+      "tagline": "Zakłady oparte na umiejętnościach"
     },
     "status": {
-      "cashoutTitle": "Cash out in progress",
-      "transferTitle": "Processing transaction",
-      "cashoutMessage": "We are finalising your payout.",
-      "transferMessage": "Please wait a moment, we are syncing your balance."
+      "cashoutTitle": "Trwa wypłata",
+      "transferTitle": "Przetwarzanie transakcji",
+      "cashoutMessage": "Finalizujemy Twoją wypłatę.",
+      "transferMessage": "Proszę czekać, synchronizujemy saldo."
     },
     "friends": {
-      "title": "Friends",
-      "loading": "Loading friends…",
-      "error": "Failed to load friends.",
-      "empty": "Add friends to see them here.",
+      "title": "Przyjaciele",
+      "loading": "Ładowanie znajomych…",
+      "error": "Nie udało się załadować znajomych.",
+      "empty": "Dodaj znajomych, aby zobaczyć ich tutaj.",
       "actions": {
-        "all": "All friends"
+        "all": "Wszyscy znajomi"
       },
-      "guestHint": "Sign in to discover and add friends from the arena."
+      "guestHint": "Zaloguj się, aby odkrywać i dodawać znajomych z areny."
     },
     "form": {
-      "nicknamePlaceholder": "Enter nickname",
-      "selectBet": "Select bet",
-      "startDefault": "Join Game"
+      "nicknamePlaceholder": "Wprowadź pseudonim",
+      "selectBet": "Wybierz zakład",
+      "startDefault": "Dołącz do gry"
     },
     "stats": {
-      "playersOnline": "Players online",
-      "globalWinnings": "Global Player Winnings"
+      "playersOnline": "Gracze online",
+      "globalWinnings": "Globalne wygrane graczy"
     },
     "actions": {
-      "viewStats": "View Stats"
+      "viewStats": "Zobacz statystyki"
     },
     "customize": {
-      "title": "Customize",
-      "changeAppearance": "Change Appearance"
+      "title": "Personalizacja",
+      "changeAppearance": "Zmień wygląd"
     },
     "footer": {
-      "joinDiscord": "Join Discord!",
+      "joinDiscord": "Dołącz do Discorda!",
       "website": "snakefans.com"
     },
     "skinModal": {
-      "title": "Skin selection",
-      "hint": "Pick the look and color of your snake."
+      "title": "Wybór skóry",
+      "hint": "Wybierz wygląd i kolor swojego węża."
     },
     "statsModal": {
-      "title": "Winning stats",
-      "lockedTitle": "Stats unavailable",
-      "lockedBody": "Sign in to view your game history."
+      "title": "Statystyki wygranych",
+      "lockedTitle": "Statystyki niedostępne",
+      "lockedBody": "Zaloguj się, aby zobaczyć historię gier."
     }
   },
   "friends": {
     "modal": {
-      "title": "Manage friends"
+      "title": "Zarządzaj znajomymi"
     },
     "tabs": {
-      "friends": "My friends",
-      "outgoing": "Outgoing requests",
-      "incoming": "Incoming requests"
+      "friends": "Moi znajomi",
+      "outgoing": "Wysłane zaproszenia",
+      "incoming": "Otrzymane zaproszenia"
     },
     "errors": {
-      "unauthorized": "Sign in to manage friends.",
-      "invalidPayload": "Something went wrong. Try again.",
-      "cannotSelf": "You cannot add yourself.",
-      "userNotFound": "User not found.",
-      "alreadyFriends": "You are already friends.",
-      "alreadyRequested": "Request already sent.",
-      "requestFailed": "Unable to send request.",
-      "unavailable": "Unable to load friends right now.",
-      "searchFailed": "Search failed."
+      "unauthorized": "Zaloguj się, aby zarządzać znajomymi.",
+      "invalidPayload": "Coś poszło nie tak. Spróbuj ponownie.",
+      "cannotSelf": "Nie możesz dodać siebie.",
+      "userNotFound": "Użytkownik nie znaleziony.",
+      "alreadyFriends": "Już jesteście znajomymi.",
+      "alreadyRequested": "Zaproszenie już wysłane.",
+      "requestFailed": "Nie udało się wysłać zaproszenia.",
+      "unavailable": "Nie można teraz załadować znajomych.",
+      "searchFailed": "Nie udało się wyszukać."
     },
     "feedback": {
-      "loading": "Loading friends…",
-      "noFriends": "No friends yet. Search for a player to start.",
-      "noOutgoing": "You have no pending requests.",
-      "noIncoming": "No new requests yet.",
-      "searchFailed": "Search failed.",
-      "loadFailed": "Unable to load friends.",
-      "actionFailed": "Action failed. Try again later."
+      "loading": "Ładowanie znajomych…",
+      "noFriends": "Brak znajomych. Wyszukaj gracza, aby rozpocząć.",
+      "noOutgoing": "Brak oczekujących zaproszeń.",
+      "noIncoming": "Brak nowych zaproszeń.",
+      "searchFailed": "Nie udało się wyszukać.",
+      "loadFailed": "Nie udało się załadować znajomych.",
+      "actionFailed": "Nie udało się wykonać akcji. Spróbuj później."
     },
     "labels": {
-      "since": "Since {{date}}"
+      "since": "Od {{date}}"
     },
     "actions": {
-      "accept": "Accept",
-      "addFriend": "Add friend"
+      "accept": "Akceptuj",
+      "addFriend": "Dodaj znajomego"
     },
     "status": {
-      "pending": "Pending",
-      "friends": "Friends",
-      "requestSent": "Request sent"
+      "pending": "Oczekujące",
+      "friends": "Znajomi",
+      "requestSent": "Wysłano zaproszenie"
     },
     "search": {
-      "label": "Find players",
-      "placeholder": "Search by email or nickname",
-      "hint": "Enter at least 2 characters.",
-      "searching": "Searching…"
+      "label": "Znajdź graczy",
+      "placeholder": "Szukaj po e-mailu lub pseudonimie",
+      "hint": "Wprowadź co najmniej 2 znaki.",
+      "searching": "Wyszukiwanie…"
     }
   },
   "auth": {
     "modal": {
-      "loginTitle": "Sign in to your account",
-      "registerTitle": "Create an account",
+      "loginTitle": "Zaloguj się do konta",
+      "registerTitle": "Utwórz konto",
       "validation": {
-        "missingFields": "Please fill in all fields."
+        "missingFields": "Proszę wypełnić wszystkie pola."
       },
-      "closeAria": "Close authentication window",
-      "loginTab": "Sign in",
-      "registerTab": "Sign up",
-      "hint": "Sign in or create an account to save your nickname and balance. You start with 10 coins to place bets.",
-      "submitting": "Submitting...",
-      "loginAction": "Sign in",
-      "registerAction": "Sign up",
-      "checkingSession": "Checking session..."
+      "closeAria": "Zamknij okno logowania",
+      "loginTab": "Logowanie",
+      "registerTab": "Rejestracja",
+      "hint": "Zaloguj się lub utwórz konto, aby zapisać pseudonim i saldo. Na start otrzymujesz 10 monet na zakłady.",
+      "submitting": "Wysyłanie...",
+      "loginAction": "Zaloguj się",
+      "registerAction": "Zarejestruj się",
+      "checkingSession": "Sprawdzanie sesji..."
     },
     "fields": {
       "email": "Email",
-      "password": "Password",
-      "nickname": "Nickname"
+      "password": "Hasło",
+      "nickname": "Pseudonim"
     },
     "errors": {
-      "generic": "Failed to process the request.",
-      "invalidPayload": "Please check the information you entered.",
-      "emailTaken": "This email is already registered.",
-      "nicknameTaken": "The selected nickname is taken.",
-      "invalidCredentials": "Incorrect email or password.",
-      "network": "Unable to connect to the server.",
-      "server": "A server error occurred. Please try again later."
+      "generic": "Nie udało się przetworzyć żądania.",
+      "invalidPayload": "Sprawdź wprowadzone dane.",
+      "emailTaken": "Ten e-mail jest już zarejestrowany.",
+      "nicknameTaken": "Wybrany pseudonim jest zajęty.",
+      "invalidCredentials": "Nieprawidłowy e-mail lub hasło.",
+      "network": "Nie można połączyć się z serwerem.",
+      "server": "Wystąpił błąd serwera. Spróbuj ponownie później."
     }
   },
   "admin": {
     "portal": {
-      "title": "Admin Portal",
+      "title": "Panel administratora",
       "fields": {
         "email": "Email",
-        "password": "Password"
+        "password": "Hasło"
       },
-      "verifying": "Verifying...",
-      "signIn": "Sign in",
-      "signOut": "Sign out",
-      "error": "Error: {{message}}"
+      "verifying": "Weryfikacja...",
+      "signIn": "Zaloguj się",
+      "signOut": "Wyloguj się",
+      "error": "Błąd: {{message}}"
     },
     "dashboard": {
-      "title": "Wallet overview",
-      "subtitle": "Updated automatically after sign-in",
-      "gameWallet": "Game wallet",
-      "totalSol": "Total SOL"
+      "title": "Przegląd portfela",
+      "subtitle": "Aktualizuje się automatycznie po zalogowaniu",
+      "gameWallet": "Portfel gry",
+      "totalSol": "Całkowite SOL"
     },
     "common": {
-      "refresh": "Refresh",
-      "refreshing": "Refreshing..."
+      "refresh": "Odśwież",
+      "refreshing": "Odświeżanie..."
     },
     "transfers": {
-      "title": "Transfers",
-      "typeLabel": "Transfer type",
+      "title": "Przelewy",
+      "typeLabel": "Typ transferu",
       "types": {
-        "gameToUser": "Game wallet → Player",
-        "userToGame": "Player → Game wallet",
-        "userToUser": "Player → Player"
+        "gameToUser": "Portfel gry → Gracz",
+        "userToGame": "Gracz → Portfel gry",
+        "userToUser": "Gracz → Gracz"
       },
-      "senderLabel": "Sender",
-      "recipientLabel": "Recipient",
-      "selectUser": "Select a user",
-      "amountLabel": "Amount (in credits)",
-      "processing": "Processing...",
-      "submit": "Transfer",
-      "success": "Transfer completed",
+      "senderLabel": "Nadawca",
+      "recipientLabel": "Odbiorca",
+      "selectUser": "Wybierz użytkownika",
+      "amountLabel": "Kwota (w kredytach)",
+      "processing": "Przetwarzanie...",
+      "submit": "Prześlij",
+      "success": "Transfer zakończony",
       "validation": {
-        "invalidAmount": "Enter a valid amount",
-        "selectRecipient": "Select a recipient",
-        "selectSender": "Select a sender",
-        "selectBoth": "Select a sender and a recipient",
-        "sameUser": "You cannot transfer to yourself"
+        "invalidAmount": "Wprowadź poprawną kwotę",
+        "selectRecipient": "Wybierz odbiorcę",
+        "selectSender": "Wybierz nadawcę",
+        "selectBoth": "Wybierz nadawcę i odbiorcę",
+        "sameUser": "Nie możesz wysłać do siebie"
       },
       "errors": {
-        "invalidAmount": "Invalid amount",
-        "missingRecipient": "Select a recipient",
-        "missingSender": "Select a sender",
-        "missingBoth": "Select a sender and a recipient",
-        "insufficientFunds": "Not enough funds in the wallet",
-        "senderNotFound": "Sender not found",
-        "recipientNotFound": "Recipient not found",
-        "sameUser": "You cannot transfer to yourself"
+        "invalidAmount": "Nieprawidłowa kwota",
+        "missingRecipient": "Wybierz odbiorcę",
+        "missingSender": "Wybierz nadawcę",
+        "missingBoth": "Wybierz nadawcę i odbiorcę",
+        "insufficientFunds": "Za mało środków w portfelu",
+        "senderNotFound": "Nadawca nie znaleziony",
+        "recipientNotFound": "Odbiorca nie znaleziony",
+        "sameUser": "Nie możesz wysłać do siebie"
       }
     },
     "table": {
       "id": "ID",
       "email": "Email",
-      "nickname": "Nickname",
-      "wallet": "Wallet",
-      "sol": "Balance (SOL)",
-      "lamports": "Lamports",
-      "inGameBalance": "In-game balance"
+      "nickname": "Pseudonim",
+      "wallet": "Portfel",
+      "sol": "Saldo (SOL)",
+      "lamports": "Lamporty",
+      "inGameBalance": "Saldo w grze"
     }
   },
   "deathScreen": {
-    "newBetLabel": "New bet",
+    "newBetLabel": "Nowy zakład",
     "betHint": {
-      "prefix": "Bets:",
-      "available": "Available:"
+      "prefix": "Zakłady:",
+      "available": "Dostępne:"
     },
-    "retryButton": "Play again"
+    "retryButton": "Zagraj ponownie"
   },
   "cashoutScreen": {
-    "title": "Balance cashed out",
-    "close": "Done"
+    "title": "Saldo wypłacone",
+    "close": "Zakończ"
   },
   "resultModal": {
-    "retryLabel": "Retry Bet",
-    "available": "Available: {{amount}}",
-    "retryButton": "Play again"
+    "retryLabel": "Ponów zakład",
+    "available": "Dostępne: {{amount}}",
+    "retryButton": "Zagraj ponownie"
   },
   "stats": {
     "chart": {
-      "title": "Winnings statistics",
-      "loading": "Loading…",
-      "empty": "No data to display",
+      "title": "Statystyki wygranych",
+      "loading": "Ładowanie…",
+      "empty": "Brak danych do wyświetlenia",
       "solAmount": "{{amount}} SOL"
     }
   },
   "modal": {
-    "close": "Close"
+    "close": "Zamknij"
   },
   "game": {
     "skins": {
-      "sky": "Sky",
-      "emerald": "Emerald",
-      "crimson": "Crimson",
-      "amber": "Amber",
-      "violet": "Violet",
-      "obsidian": "Obsidian",
-      "mint": "Mint"
+      "sky": "Niebo",
+      "emerald": "Szmaragd",
+      "crimson": "Karmazyn",
+      "amber": "Bursztyn",
+      "violet": "Fiolet",
+      "obsidian": "Obsydian",
+      "mint": "Mięta"
     },
     "score": {
-      "defaultMeta": "Rank: —",
-      "metaWithSpeed": "Rank: {{rank}} · Speed: {{speed}} · {{boost}}",
-      "meta": "Rank: {{rank}} · {{boost}}"
+      "defaultMeta": "Ranga: —",
+      "metaWithSpeed": "Ranga: {{rank}} · Prędkość: {{speed}} · {{boost}}",
+      "meta": "Ranga: {{rank}} · {{boost}}"
     },
     "cashout": {
-      "label": "Cashout",
-      "hint": "Hold the button for 2 seconds or press Q",
-      "requestLabel": "Cashout request...",
-      "requestHint": "Request in progress",
-      "cashedOutLabel": "Balance cashed out",
-      "cashedOutHint": "Balance locked in",
-      "transferMessage": "Withdrawal is being processed...",
+      "label": "Wypłata",
+      "hint": "Przytrzymaj przycisk przez 2 sekundy lub naciśnij Q",
+      "requestLabel": "Żądanie wypłaty...",
+      "requestHint": "Trwa żądanie",
+      "cashedOutLabel": "Saldo wypłacone",
+      "cashedOutHint": "Saldo zablokowane",
+      "transferMessage": "Wypłata w trakcie przetwarzania...",
       "result": {
-        "title": "Cashout request sent",
-        "line1": "You were returned to the lobby, the match has ended.",
-        "line2": "We locked in your balance and will finish the transfer automatically."
+        "title": "Żądanie wypłaty wysłane",
+        "line1": "Zostałeś przeniesiony do lobby, mecz zakończony.",
+        "line2": "Zablokowaliśmy Twoje saldo i dokończymy transfer automatycznie."
       },
-      "countdown": "Hold for another {{seconds}} s",
-      "balanceSummary": "Your balance is now {{amount}}."
+      "countdown": "Przytrzymaj jeszcze {{seconds}} s",
+      "balanceSummary": "Twoje saldo wynosi teraz {{amount}}."
     },
     "transfer": {
-      "pendingMessage": "Transferring funds…"
+      "pendingMessage": "Przesyłanie środków…"
     },
     "boost": {
-      "on": "Boost: on",
-      "ready": "Boost: ready",
-      "off": "Boost: off"
+      "on": "Dopalacz: aktywny",
+      "ready": "Dopalacz: gotowy",
+      "off": "Dopalacz: wyłączony"
     },
     "death": {
-      "unknown": "unknown",
-      "summary": "You were defeated by {{name}}",
-      "scoreLine": "Score: {{score}}",
-      "balanceRemaining": "Balance remaining {{amount}}",
-      "balanceDepleted": "Balance depleted"
+      "unknown": "nieznany",
+      "summary": "Zostałeś pokonany przez {{name}}",
+      "scoreLine": "Wynik: {{score}}",
+      "balanceRemaining": "Pozostałe saldo {{amount}}",
+      "balanceDepleted": "Saldo wyczerpane"
     },
     "snake": {
       "anonymous": "Anon"
@@ -365,19 +365,19 @@
   },
   "wallet": {
     "errors": {
-      "authRequired": "Authentication required",
-      "enterAddress": "Enter a wallet address",
-      "invalidDestination": "Invalid wallet address",
-      "insufficientFunds": "Not enough funds in the wallet",
-      "withdrawFailed": "Failed to complete the cashout",
-      "profileFailed": "Unable to load wallet details.",
-      "refreshFailed": "Unable to refresh wallet details.",
-      "airdropFailed": "Unable to request an airdrop.",
-      "generic": "Unable to process the request. Please try again."
+      "authRequired": "Wymagane logowanie",
+      "enterAddress": "Wprowadź adres portfela",
+      "invalidDestination": "Nieprawidłowy adres portfela",
+      "insufficientFunds": "Za mało środków w portfelu",
+      "withdrawFailed": "Nie udało się zakończyć wypłaty",
+      "profileFailed": "Nie udało się załadować szczegółów portfela.",
+      "refreshFailed": "Nie udało się odświeżyć portfela.",
+      "airdropFailed": "Nie udało się uzyskać airdropa.",
+      "generic": "Nie udało się przetworzyć żądania. Spróbuj ponownie."
     },
     "withdraw": {
-      "sent": "Sent {{amount}} SOL",
-      "success": "Withdrawal completed successfully"
+      "sent": "Wysłano {{amount}} SOL",
+      "success": "Wypłata zakończona pomyślnie"
     }
   }
 }
