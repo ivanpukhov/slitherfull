@@ -363,6 +363,16 @@
       "anonymous": "Anon"
     }
   },
+  "auth": {
+    "modal": {
+      "legal": {
+        "intro": "Kontynuując, akceptujesz nasze",
+        "and": "oraz potwierdzasz zapoznanie z",
+        "terms": "Warunkami korzystania z usługi",
+        "privacy": "Polityką prywatności"
+      }
+    }
+  },
   "wallet": {
     "errors": {
       "authRequired": "Wymagane logowanie",
