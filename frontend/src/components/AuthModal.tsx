@@ -139,6 +139,27 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
                 ? t('auth.modal.loginAction')
                 : t('auth.modal.registerAction')}
           </button>
+          <p className="auth-legal">
+            {t('auth.modal.legal.intro')}{' '}
+            <a
+              className="auth-legal-link"
+              href="/terms-of-service.html"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t('auth.modal.legal.terms')}
+            </a>{' '}
+            {t('auth.modal.legal.and')}{' '}
+            <a
+              className="auth-legal-link"
+              href="/privacy-policy.html"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t('auth.modal.legal.privacy')}
+            </a>
+            .
+          </p>
           {status === 'checking' && !submitting && (
             <p className="auth-status">{t('auth.modal.checkingSession')}</p>
           )}

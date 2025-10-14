@@ -203,7 +203,13 @@
       "submitting": "Enviando...",
       "loginAction": "Iniciar sesión",
       "registerAction": "Registrarse",
-      "checkingSession": "Verificando sesión..."
+      "checkingSession": "Verificando sesión...",
+      "legal": {
+        "intro": "Al continuar, aceptas nuestros",
+        "and": "y reconoces la",
+        "terms": "Términos del servicio",
+        "privacy": "Política de privacidad"
+      }
     },
     "fields": {
       "email": "Correo electrónico",
