@@ -2,6 +2,14 @@
   color-scheme: dark light;
 }
 
+body.legal-page-body {
+  display: block;
+  min-height: 100vh;
+  height: auto;
+  overflow-y: auto;
+  padding: 0;
+}
+
 .legal-page {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   margin: 0 auto;
