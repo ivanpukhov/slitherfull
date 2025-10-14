@@ -143,7 +143,7 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
             {t('auth.modal.legal.intro')}{' '}
             <a
               className="auth-legal-link"
-              href="/terms-of-service.html"
+              href="/terms-of-service"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -152,7 +152,7 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
             {t('auth.modal.legal.and')}{' '}
             <a
               className="auth-legal-link"
-              href="/privacy-policy.html"
+              href="/privacy-policy"
               target="_blank"
               rel="noopener noreferrer"
             >
