@@ -49,7 +49,11 @@ function resolveBaseUrl(req) {
 
 function resolveRedirectUri(req) {
   const baseUrl = resolveBaseUrl(req)
-  return `${baseUrl}/api/auth/google/callback`
+  const basePath = `${req.baseUrl || ''}${req.path || ''}`.replace(/\/+$/, '')
+  if (basePath.endsWith('/callback')) {
+    return `${baseUrl}${basePath}`
+  }
+  return `${baseUrl}${basePath}/callback`
 }
 
 function normalizeReturnOrigin(value) {
@@ -129,7 +133,7 @@ router.post('/login', async (req, res) => {
   }
 })
 
-router.get('/google', (req, res) => {
+function startGoogleAuth(req, res) {
   if (!isGoogleConfigured()) {
     return res.status(500).json({ error: 'google_not_configured' })
   }
@@ -145,9 +149,9 @@ router.get('/google', (req, res) => {
     console.error('Failed to initiate Google auth', err)
     res.status(500).json({ error: 'google_auth_failed' })
   }
-})
+}
 
-router.get('/google/callback', async (req, res) => {
+async function completeGoogleAuth(req, res) {
   const state = typeof req.query.state === 'string' ? req.query.state : null
   const code = typeof req.query.code === 'string' ? req.query.code : null
   const error = typeof req.query.error === 'string' ? req.query.error : null
@@ -172,7 +176,15 @@ router.get('/google/callback', async (req, res) => {
     token: result.token,
     user: result.user
   })
-})
+}
+
+router.get('/google', startGoogleAuth)
+router.get('/google/callback', completeGoogleAuth)
+
+// Alternate paths for deployments where /api/auth/google is intercepted before
+// it reaches the backend (e.g. custom nginx rules).
+router.get('/oauth/google', startGoogleAuth)
+router.get('/oauth/google/callback', completeGoogleAuth)
 
 router.get('/me', async (req, res) => {
   try {

@@ -18,6 +18,7 @@ export interface AuthResult {
 const TOKEN_KEY = 'slither_token'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const GOOGLE_OAUTH_PATH = import.meta.env.VITE_GOOGLE_OAUTH_PATH || '/api/auth/oauth/google'
 let API_ORIGIN: string | null = null
 try {
   API_ORIGIN = new URL(API_BASE_URL).origin
@@ -142,7 +143,7 @@ export function useAuth() {
       return { ok: false, error: 'google_auth_failed' }
     }
     const returnTo = window.location.origin
-    const popupUrl = `${API_BASE_URL}/api/auth/google?return_to=${encodeURIComponent(returnTo)}`
+    const popupUrl = `${API_BASE_URL}${GOOGLE_OAUTH_PATH}?return_to=${encodeURIComponent(returnTo)}`
     const width = 480
     const height = 640
     const dualScreenLeft = window.screenLeft ?? window.screenX ?? 0
