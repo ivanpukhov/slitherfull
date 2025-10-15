@@ -7,8 +7,10 @@ const { issueAuthResponse } = require('./authService')
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
-const GOOGLE_AUTH_URI = process.env.GOOGLE_AUTH_URI
-const GOOGLE_TOKEN_URI = process.env.GOOGLE_TOKEN_URI
+const GOOGLE_AUTH_URI =
+  process.env.GOOGLE_AUTH_URI || 'https://accounts.google.com/o/oauth2/v2/auth'
+const GOOGLE_TOKEN_URI =
+  process.env.GOOGLE_TOKEN_URI || 'https://oauth2.googleapis.com/token'
 
 const oauthClient = new OAuth2Client(GOOGLE_CLIENT_ID)
 
