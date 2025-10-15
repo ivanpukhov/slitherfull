@@ -21,6 +21,14 @@ function createToken(user) {
   return jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN })
 }
 
+function issueAuthResponse(user) {
+  if (!user) {
+    throw new Error('missing_user')
+  }
+  const token = createToken(user)
+  return { token, user: sanitizeUser(user) }
+}
+
 async function registerUser({ email, password, nickname }) {
   const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : ''
   const normalizedNickname = typeof nickname === 'string' ? nickname.trim() : ''
@@ -46,8 +54,8 @@ async function registerUser({ email, password, nickname }) {
     walletSecretKey: wallet.secretKey
   })
   await walletService.requestInitialAirdrop(user)
-  const token = createToken(user)
-  return { ok: true, user: sanitizeUser(user), token }
+  const { token, user } = issueAuthResponse(user)
+  return { ok: true, user, token }
 }
 
 async function loginUser({ email, password }) {
@@ -59,13 +67,16 @@ async function loginUser({ email, password }) {
   if (!user) {
     return { ok: false, error: 'invalid_credentials' }
   }
+  if (!user.passwordHash) {
+    return { ok: false, error: 'password_auth_unavailable' }
+  }
   const match = await bcrypt.compare(password, user.passwordHash)
   if (!match) {
     return { ok: false, error: 'invalid_credentials' }
   }
   await walletService.refreshUserBalance(user).catch(() => null)
-  const token = createToken(user)
-  return { ok: true, user: sanitizeUser(user), token }
+  const { token, user: sanitized } = issueAuthResponse(user)
+  return { ok: true, user: sanitized, token }
 }
 
 async function verifyToken(token) {
@@ -84,5 +95,6 @@ module.exports = {
   registerUser,
   loginUser,
   verifyToken,
-  sanitizeUser
+  sanitizeUser,
+  issueAuthResponse
 }

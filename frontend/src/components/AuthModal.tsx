@@ -7,22 +7,24 @@ interface AuthModalProps {
   status: 'checking' | 'authenticated' | 'unauthenticated'
   onLogin: (email: string, password: string) => Promise<AuthResult>
   onRegister: (email: string, password: string, nickname: string) => Promise<AuthResult>
+  onGoogleLogin?: () => Promise<AuthResult>
   onClose?: () => void
 }
 
 type AuthMode = 'login' | 'register'
 
-export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthModalProps) {
+export function AuthModal({ open, status, onLogin, onRegister, onGoogleLogin, onClose }: AuthModalProps) {
   const [mode, setMode] = useState<AuthMode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [nickname, setNickname] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [oauthPending, setOauthPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { t } = useTranslation()
 
   const overlayClass = open ? 'overlay auth-overlay' : 'overlay hidden'
-  const isLoading = status === 'checking' || submitting
+  const isLoading = status === 'checking' || submitting || oauthPending
 
   const title = useMemo(
     () => (mode === 'login' ? t('auth.modal.loginTitle') : t('auth.modal.registerTitle')),
@@ -58,6 +60,22 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
   const toggleMode = (nextMode: AuthMode) => {
     setMode(nextMode)
     setError(null)
+  }
+
+  const handleGoogleLogin = async () => {
+    if (!onGoogleLogin || oauthPending) return
+    setOauthPending(true)
+    setError(null)
+    try {
+      const result = await onGoogleLogin()
+      if (!result.ok) {
+        setError(mapError(result.error, t))
+      }
+    } catch (err) {
+      setError(mapError('google_auth_failed', t))
+    } finally {
+      setOauthPending(false)
+    }
   }
 
   return (
@@ -164,6 +182,22 @@ export function AuthModal({ open, status, onLogin, onRegister, onClose }: AuthMo
             <p className="auth-status">{t('auth.modal.checkingSession')}</p>
           )}
         </form>
+        {onGoogleLogin ? (
+          <div className="auth-oauth">
+            <div className="auth-divider" role="presentation">
+              <span>{t('auth.modal.or')}</span>
+            </div>
+            <button
+              type="button"
+              className="auth-google"
+              onClick={handleGoogleLogin}
+              disabled={isLoading}
+            >
+              {oauthPending ? t('auth.modal.submitting') : t('auth.modal.googleButton')}
+            </button>
+            <p className="auth-oauth-hint">{t('auth.modal.googleHint')}</p>
+          </div>
+        ) : null}
       </div>
     </div>
   )
@@ -176,6 +210,13 @@ function mapError(code: string | null | undefined, t: ReturnType<typeof useTrans
     email_taken: t('auth.errors.emailTaken'),
     nickname_taken: t('auth.errors.nicknameTaken'),
     invalid_credentials: t('auth.errors.invalidCredentials'),
+    password_auth_unavailable: t('auth.errors.passwordAuthUnavailable'),
+    popup_blocked: t('auth.errors.popupBlocked'),
+    oauth_cancelled: t('auth.errors.oauthCancelled'),
+    google_auth_failed: t('auth.errors.googleFailed'),
+    google_state_invalid: t('auth.errors.googleFailed'),
+    google_not_configured: t('auth.errors.googleFailed'),
+    google_email_not_verified: t('auth.errors.googleEmailNotVerified'),
     network_error: t('auth.errors.network'),
     server_error: t('auth.errors.server')
   }

@@ -18,6 +18,12 @@ export interface AuthResult {
 const TOKEN_KEY = 'slither_token'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+let API_ORIGIN: string | null = null
+try {
+  API_ORIGIN = new URL(API_BASE_URL).origin
+} catch (err) {
+  API_ORIGIN = null
+}
 
 export function useAuth() {
   const [token, setToken] = useState<string | null>(() => {
@@ -131,6 +137,68 @@ export function useAuth() {
     }
   }, [])
 
+  const loginWithGoogle = useCallback(async (): Promise<AuthResult> => {
+    if (typeof window === 'undefined') {
+      return { ok: false, error: 'google_auth_failed' }
+    }
+    const returnTo = window.location.origin
+    const popupUrl = `${API_BASE_URL}/api/auth/google?return_to=${encodeURIComponent(returnTo)}`
+    const width = 480
+    const height = 640
+    const dualScreenLeft = window.screenLeft ?? window.screenX ?? 0
+    const dualScreenTop = window.screenTop ?? window.screenY ?? 0
+    const screenWidth = window.outerWidth ?? window.innerWidth ?? 0
+    const screenHeight = window.outerHeight ?? window.innerHeight ?? 0
+    const left = Math.max(0, dualScreenLeft + (screenWidth - width) / 2)
+    const top = Math.max(0, dualScreenTop + (screenHeight - height) / 2)
+    const features = `popup=yes,toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=${width},height=${height},top=${top},left=${left}`
+    const popup = window.open(popupUrl, 'google_auth', features)
+    if (!popup) {
+      return { ok: false, error: 'popup_blocked' }
+    }
+    popup.focus()
+    return new Promise<AuthResult>((resolve) => {
+      let settled = false
+      const finalize = (result: AuthResult) => {
+        if (settled) return
+        settled = true
+        window.removeEventListener('message', handleMessage)
+        window.clearInterval(timerId)
+        if (!popup.closed) {
+          popup.close()
+        }
+        resolve(result)
+      }
+
+      const handleMessage = (event: MessageEvent) => {
+        if (API_ORIGIN && event.origin !== API_ORIGIN) {
+          return
+        }
+        const data = event.data as { type?: string; ok?: boolean; token?: string; user?: AuthUser; error?: string } | null
+        if (!data || data.type !== 'google-auth') {
+          return
+        }
+        if (!data.ok || !data.token || !data.user) {
+          finalize({ ok: false, error: data?.error || 'google_auth_failed' })
+          return
+        }
+        setToken(data.token)
+        setUser(data.user)
+        setStatus('authenticated')
+        setProfileLoaded(true)
+        finalize({ ok: true })
+      }
+
+      const timerId = window.setInterval(() => {
+        if (popup.closed) {
+          finalize({ ok: false, error: 'oauth_cancelled' })
+        }
+      }, 500)
+
+      window.addEventListener('message', handleMessage)
+    })
+  }, [setToken, setUser, setStatus, setProfileLoaded])
+
   const logout = useCallback(() => {
     setToken(null)
     setUser(null)
@@ -151,6 +219,7 @@ export function useAuth() {
     ready,
     login,
     register,
+    loginWithGoogle,
     logout,
     syncBalance
   }
