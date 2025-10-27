@@ -1,6 +1,10 @@
 {
   "scorePanel": {
-    "lengthLabel": "Długość"
+    "lengthLabel": "Długość",
+    "performanceLabel": "Wydajność",
+    "fps": "{{value}} FPS",
+    "ping": "Ping: {{value}} ms",
+    "jitter": "Wahania: {{value}} ms"
   },
   "leaderboard": {
     "game": {

@@ -317,6 +317,44 @@ canvas {
     line-height: 1.4;
 }
 
+#scorePanel .performance {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+#scorePanel .performance-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(148, 163, 184, 0.72);
+}
+
+#scorePanel .performance-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+#scorePanel .performance-metrics .metric {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(226, 232, 240, 0.92);
+    background: rgba(15, 23, 42, 0.52);
+    border: 1px solid rgba(94, 234, 212, 0.18);
+    border-radius: 10px;
+    padding: 4px 8px;
+    backdrop-filter: blur(2px);
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+#scorePanel .performance-metrics .metric.warning {
+    color: rgba(251, 191, 36, 0.95);
+    border-color: rgba(251, 191, 36, 0.45);
+    background: rgba(30, 10, 10, 0.42);
+}
+
 .game-hud {
     position: fixed;
     inset: 0;

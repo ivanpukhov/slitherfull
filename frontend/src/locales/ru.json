@@ -1,6 +1,10 @@
 {
   "scorePanel": {
-    "lengthLabel": "Длина"
+    "lengthLabel": "Длина",
+    "performanceLabel": "Производительность",
+    "fps": "{{value}} FPS",
+    "ping": "Пинг: {{value}} мс",
+    "jitter": "Скачки: {{value}} мс"
   },
   "leaderboard": {
     "game": {
