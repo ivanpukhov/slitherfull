@@ -156,6 +156,16 @@ export interface LastResultState {
   variant: 'death' | 'cashout'
 }
 
+export interface PerformanceMetrics {
+  fps: number
+  frameTime: number
+  ping: number
+  jitter: number
+  lowFps: boolean
+  lastFrameAt: number
+  lastBroadcast: number
+}
+
 interface GameUIState {
   score: number
   scoreMeta: string
@@ -201,6 +211,7 @@ interface InternalState {
   }
   ui: GameUIState
   backgroundOffset: { x: number; y: number }
+  performance: PerformanceMetrics
 }
 
 const initialAccount: AccountState = {
@@ -258,6 +269,16 @@ const initialUI: GameUIState = {
   }
 }
 
+const initialPerformance: PerformanceMetrics = {
+  fps: 0,
+  frameTime: 0,
+  ping: 0,
+  jitter: 0,
+  lowFps: false,
+  lastFrameAt: 0,
+  lastBroadcast: 0
+}
+
 export class GameController {
   public state: InternalState
   private listeners: Set<() => void> = new Set()
@@ -284,7 +305,8 @@ export class GameController {
       pendingBet: null,
       cashoutHold: { start: null, frame: null, triggered: false, source: null },
       ui: { ...initialUI },
-      backgroundOffset: { x: 0, y: 0 }
+      backgroundOffset: { x: 0, y: 0 },
+      performance: { ...initialPerformance }
     }
   }
 
@@ -619,6 +641,10 @@ export class GameController {
 
   getUI() {
     return this.state.ui
+  }
+
+  getPerformance() {
+    return this.state.performance
   }
 
   getMeSnake() {
@@ -1047,8 +1073,8 @@ export class GameController {
   }
 
   update(dt: number) {
-    const smoothPos = Math.min(1, dt * POSITION_SMOOTH)
-    const smoothAngle = Math.min(1, dt * ANGLE_SMOOTH)
+    const smoothPos = 1 - Math.exp(-dt * POSITION_SMOOTH)
+    const smoothAngle = 1 - Math.exp(-dt * ANGLE_SMOOTH)
     const now = performance.now()
     const background = this.state.backgroundOffset
     const tileWidth = Math.max(1, HEX_PATTERN_TILE_WIDTH)
@@ -1169,16 +1195,47 @@ export class GameController {
         this.state.camera.targetY = me.displayY
       }
     }
-    this.state.camera.x = lerp(
-        this.state.camera.x,
-        this.state.camera.targetX,
-        Math.min(1, dt * CAMERA_SMOOTH)
-    )
-    this.state.camera.y = lerp(
-        this.state.camera.y,
-        this.state.camera.targetY,
-        Math.min(1, dt * CAMERA_SMOOTH)
-    )
+    const cameraSmooth = 1 - Math.exp(-dt * CAMERA_SMOOTH)
+    this.state.camera.x = lerp(this.state.camera.x, this.state.camera.targetX, cameraSmooth)
+    this.state.camera.y = lerp(this.state.camera.y, this.state.camera.targetY, cameraSmooth)
+  }
+
+  updateFrameMetrics(frameSeconds: number) {
+    if (!Number.isFinite(frameSeconds) || frameSeconds <= 0) return
+    const stats = this.state.performance
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
+    const frameMs = frameSeconds * 1000
+    const fpsInstant = 1 / frameSeconds
+    const smoothing = 1 - Math.exp(-Math.min(frameSeconds * 6, 4))
+    stats.frameTime = stats.frameTime > 0 ? lerp(stats.frameTime, frameMs, smoothing) : frameMs
+    stats.fps = stats.fps > 0 ? lerp(stats.fps, fpsInstant, smoothing) : fpsInstant
+    stats.lowFps = stats.fps < 50
+    stats.lastFrameAt = now
+    if (!stats.lastBroadcast || now - stats.lastBroadcast >= 180) {
+      stats.lastBroadcast = now
+      this.notify()
+    }
+  }
+
+  updateNetworkLatency(pingMs: number) {
+    if (!Number.isFinite(pingMs) || pingMs <= 0) return
+    const stats = this.state.performance
+    const smoothing = 0.25
+    stats.ping = stats.ping > 0 ? lerp(stats.ping, pingMs, smoothing) : pingMs
+    const deviation = Math.abs(pingMs - stats.ping)
+    stats.jitter = stats.jitter > 0 ? lerp(stats.jitter, deviation, 0.2) : deviation
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
+    if (!stats.lastBroadcast || now - stats.lastBroadcast >= 150) {
+      stats.lastBroadcast = now
+      this.notify()
+    }
+  }
+
+  resetNetworkLatency() {
+    this.state.performance.ping = 0
+    this.state.performance.jitter = 0
+    this.state.performance.lastBroadcast = 0
+    this.notify()
   }
 
   draw(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, time: number, dpr: number) {
@@ -1234,6 +1291,7 @@ export function useGame() {
   const [foods, setFoods] = useState<Map<string, FoodState>>(new Map(controller.getFoods()))
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([...controller.getLeaderboard()])
   const [ui, setUI] = useState<GameUIState>({ ...controller.getUI() })
+  const [performance, setPerformance] = useState<PerformanceMetrics>({ ...controller.getPerformance() })
 
   useEffect(() => {
     return controller.subscribe(() => {
@@ -1242,6 +1300,7 @@ export function useGame() {
       setFoods(new Map(controller.getFoods()))
       setLeaderboard([...controller.getLeaderboard()])
       setUI({ ...controller.getUI() })
+      setPerformance({ ...controller.getPerformance() })
     })
   }, [])
 
@@ -1271,6 +1330,7 @@ export function useGame() {
     skinName,
     betValue: ui.betValue,
     retryBetValue: ui.retryBetValue,
+    performance,
     setNickname: (value: string) => controller.setNickname(value),
     setSelectedSkin: (skin: string) => controller.setSelectedSkin(skin),
     setBetValue: (value: string) => controller.setBetValue(value),

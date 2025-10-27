@@ -4,6 +4,7 @@ import type { GameController } from './useGame'
 import { translate } from './useTranslation'
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080'
+const PING_INTERVAL = 3500
 
 interface UseConnectionOptions {
   controller: GameController
@@ -17,6 +18,8 @@ export type ConnectionStatus = 'idle' | 'connecting' | 'connected'
 export function useConnection({ controller, token, onAuthError, onBalanceUpdate }: UseConnectionOptions) {
   const wsRef = useRef<WebSocket | null>(null)
   const [status, setStatus] = useState<ConnectionStatus>('idle')
+  const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const lastPingSentRef = useRef<number | null>(null)
 
   useEffect(() => {
     controller.setCashoutRequestHandler(() => {
@@ -39,7 +42,13 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
       }
       wsRef.current = null
     }
-  }, [])
+    if (pingIntervalRef.current) {
+      clearInterval(pingIntervalRef.current)
+      pingIntervalRef.current = null
+    }
+    lastPingSentRef.current = null
+    controller.resetNetworkLatency()
+  }, [controller])
 
   useEffect(() => closeConnection, [closeConnection])
 
@@ -59,17 +68,45 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
         ws.onopen = () => {
           setStatus('connected')
           ws.send(JSON.stringify({ type: 'join', name, skin, token }))
+          if (pingIntervalRef.current) {
+            clearInterval(pingIntervalRef.current)
+            pingIntervalRef.current = null
+          }
+          const sendPing = () => {
+            if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
+            const timestamp = Date.now()
+            lastPingSentRef.current = timestamp
+            wsRef.current.send(JSON.stringify({ type: 'ping', t: timestamp }))
+          }
+          sendPing()
+          pingIntervalRef.current = setInterval(sendPing, PING_INTERVAL)
         }
 
         ws.onclose = () => {
           setStatus('idle')
           controller.setAlive(false)
           controller.setCashoutPending(false)
+          if (pingIntervalRef.current) {
+            clearInterval(pingIntervalRef.current)
+            pingIntervalRef.current = null
+          }
+          lastPingSentRef.current = null
+          controller.resetNetworkLatency()
         }
 
         ws.onmessage = (event) => {
           const message = safeParse<any>(event.data)
           if (!message) return
+          if (message.type === 'pong') {
+            const sent = typeof message.t === 'number' ? message.t : lastPingSentRef.current
+            if (typeof sent === 'number') {
+              const latency = Date.now() - sent
+              if (latency > 0) {
+                controller.updateNetworkLatency(latency)
+              }
+            }
+            return
+          }
           if (message.type === 'welcome') {
             if (message.id) {
               const resolvedName = typeof message.name === 'string' ? message.name : name

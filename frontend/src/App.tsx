@@ -353,7 +353,13 @@ function GameView() {
       <LobbyBackdrop visible={inLobby} />
       {!inLobby ? (
         <div className="game-hud">
-          <ScorePanel score={game.score} scoreMeta={game.scoreMeta} />
+          <ScorePanel
+            score={game.score}
+            scoreMeta={game.scoreMeta}
+            fps={game.performance.fps}
+            ping={game.performance.ping}
+            jitter={game.performance.jitter}
+          />
           <GameLeaderboard entries={game.leaderboard} meName={game.controller.state.meName} />
         </div>
       ) : null}

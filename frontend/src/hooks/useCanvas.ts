@@ -10,6 +10,10 @@ interface UseCanvasOptions {
 
 const DEFAULT_DPR_LIMIT = 2.5
 const TOUCH_DPR_LIMIT = 1.5
+const LOW_END_DPR_LIMIT = 1.4
+const PERFORMANCE_CHECK_INTERVAL = 1600
+const QUALITY_STEP = 0.15
+const QUALITY_RECOVERY_STEP = 0.08
 
 function getDpr() {
   if (typeof window === 'undefined') {
@@ -22,6 +26,21 @@ function getDpr() {
   try {
     if (window.matchMedia('(pointer: coarse)').matches) {
       limit = TOUCH_DPR_LIMIT
+    }
+    const nav = window.navigator as Navigator & {
+      connection?: { effectiveType?: string }
+      deviceMemory?: number
+      hardwareConcurrency?: number
+    }
+    if (typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency <= 4) {
+      limit = Math.min(limit, LOW_END_DPR_LIMIT)
+    }
+    if (typeof nav.deviceMemory === 'number' && nav.deviceMemory <= 3) {
+      limit = Math.min(limit, LOW_END_DPR_LIMIT)
+    }
+    const effectiveType = nav.connection?.effectiveType
+    if (effectiveType === 'slow-2g' || effectiveType === '2g') {
+      limit = Math.min(limit, LOW_END_DPR_LIMIT)
     }
   } catch (error) {
     // matchMedia might be unavailable in rare environments; ignore and use default limit.
@@ -123,27 +142,40 @@ export function useCanvas({ canvasRef, controller }: UseCanvasOptions) {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
     let animationFrame: number | null = null
-    let dpr = getDpr()
+    let baseDpr = getDpr()
+    let renderDpr = baseDpr
+    let dpr = renderDpr
     let accumulator = 0
+    let lastQualityCheck = typeof performance !== 'undefined' ? performance.now() : Date.now()
 
-    const setCanvasSize = () => {
+    const applyCanvasSize = () => {
       const width = window.innerWidth
       const height = window.innerHeight
-      dpr = getDpr()
-      canvas.width = Math.round(width * dpr)
-      canvas.height = Math.round(height * dpr)
+      canvas.width = Math.round(width * renderDpr)
+      canvas.height = Math.round(height * renderDpr)
       canvas.style.width = `${width}px`
       canvas.style.height = `${height}px`
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      ctx.setTransform(renderDpr, 0, 0, renderDpr, 0, 0)
+      dpr = renderDpr
       controller.state.camera.zoom = CAMERA_ZOOM
       controller.hexPattern = buildHexPattern(ctx)
+    }
+
+    const setCanvasSize = (options?: { reset?: boolean }) => {
+      baseDpr = getDpr()
+      if (options?.reset) {
+        renderDpr = baseDpr
+      } else {
+        renderDpr = Math.min(renderDpr, baseDpr)
+      }
+      applyCanvasSize()
     }
 
     const handleResize = () => {
       setCanvasSize()
     }
 
-    setCanvasSize()
+    setCanvasSize({ reset: true })
     window.addEventListener('resize', handleResize)
 
     let lastTime = performance.now()
@@ -165,6 +197,20 @@ export function useCanvas({ canvasRef, controller }: UseCanvasOptions) {
         controller.update(accumulator)
         accumulator = 0
       }
+      controller.updateFrameMetrics(frameSeconds)
+
+      if (now - lastQualityCheck >= PERFORMANCE_CHECK_INTERVAL) {
+        const stats = controller.state.performance
+        if (stats && stats.lowFps && renderDpr > 1) {
+          renderDpr = Math.max(1, renderDpr - QUALITY_STEP)
+          applyCanvasSize()
+        } else if (stats && !stats.lowFps && stats.fps > 64 && renderDpr + QUALITY_RECOVERY_STEP < baseDpr) {
+          renderDpr = Math.min(baseDpr, renderDpr + QUALITY_RECOVERY_STEP)
+          applyCanvasSize()
+        }
+        lastQualityCheck = now
+      }
+
       controller.draw(canvas, ctx, now / 1000, dpr)
       animationFrame = requestAnimationFrame(loop)
     }
