@@ -80,6 +80,18 @@
       "sending": "Wysyłanie…",
       "submit": "Wypłać"
     },
+    "withdrawModal": {
+      "title": "Wypłata środków",
+      "walletBalance": "Saldo portfela",
+      "balanceMeta": "Dostępne saldo",
+      "fullBalanceHint": "Wypłata wyśle całe saldo z gry na podany adres.",
+      "amountLabel": "Kwota",
+      "maxButton": "MAX",
+      "addressLabel": "Adres portfela",
+      "addressPlaceholder": "Podaj adres portfela Solana",
+      "submit": "Wypłać",
+      "submitting": "Przetwarzanie…"
+    },
     "profile": {
       "authenticatedFallback": "Gracz",
       "guestFallback": "Nowy gracz",
@@ -128,7 +140,7 @@
       "viewStats": "Zobacz statystyki"
     },
     "customize": {
-      "title": "Personalizacja",
+      "title": "Dostosuj wygląd",
       "changeAppearance": "Zmień wygląd"
     },
     "footer": {
@@ -136,8 +148,23 @@
       "website": "snakefans.com"
     },
     "skinModal": {
-      "title": "Wybór skóry",
-      "hint": "Wybierz wygląd i kolor swojego węża."
+      "title": "Dostosuj wygląd",
+      "hint": "Wybierz wygląd swojego węża. Wkrótce pojawią się nowe elementy.",
+      "tabs": {
+        "inventory": "Ekwipunek",
+        "inventoryBadge": "{{count}} odblokowane",
+        "shop": "Sklep"
+      },
+      "categoriesLabel": "Kategorie wyglądu",
+      "categories": {
+        "skins": "Skórki",
+        "hats": "Czapki",
+        "boosts": "Dodatki"
+      },
+      "comingSoon": "Wkrótce",
+      "randomize": "Losowo",
+      "locked": "Zablokowane",
+      "previewLabel": "Podgląd"
     },
     "statsModal": {
       "title": "Statystyki wygranych",
@@ -195,7 +222,7 @@
   },
   "auth": {
     "modal": {
-      "loginTitle": "Zaloguj się do konta",
+      "loginTitle": "Zaloguj się lub zarejestruj",
       "registerTitle": "Utwórz konto",
       "validation": {
         "missingFields": "Proszę wypełnić wszystkie pola."
@@ -207,12 +234,17 @@
       "submitting": "Wysyłanie...",
       "loginAction": "Zaloguj się",
       "registerAction": "Zarejestruj się",
-      "checkingSession": "Sprawdzanie sesji..."
+      "checkingSession": "Sprawdzanie sesji...",
+      "divider": "lub kontynuuj przez",
+      "googleButton": "Logowanie przez Google"
     },
     "fields": {
       "email": "Email",
       "password": "Hasło",
-      "nickname": "Pseudonim"
+      "nickname": "Pseudonim",
+      "emailPlaceholder": "Podaj e-mail",
+      "passwordPlaceholder": "Podaj hasło",
+      "nicknamePlaceholder": "Wybierz pseudonim"
     },
     "errors": {
       "generic": "Nie udało się przetworzyć żądania.",

@@ -80,6 +80,18 @@
       "sending": "Enviando…",
       "submit": "Retirar"
     },
+    "withdrawModal": {
+      "title": "Retirar fondos",
+      "walletBalance": "Saldo del monedero",
+      "balanceMeta": "Saldo disponible",
+      "fullBalanceHint": "El retiro enviará todo tu saldo del juego a la dirección indicada.",
+      "amountLabel": "Cantidad",
+      "maxButton": "MAX",
+      "addressLabel": "Dirección del monedero",
+      "addressPlaceholder": "Introduce una dirección de Solana",
+      "submit": "Retirar",
+      "submitting": "Procesando…"
+    },
     "profile": {
       "authenticatedFallback": "Jugador",
       "guestFallback": "Nuevo jugador",
@@ -128,7 +140,7 @@
       "viewStats": "Ver estadísticas"
     },
     "customize": {
-      "title": "Personalizar",
+      "title": "Personalizar apariencia",
       "changeAppearance": "Cambiar apariencia"
     },
     "footer": {
@@ -136,8 +148,23 @@
       "website": "snakefans.com"
     },
     "skinModal": {
-      "title": "Selección de aspecto",
-      "hint": "Elige el aspecto y color de tu serpiente."
+      "title": "Personalizar apariencia",
+      "hint": "Elige el aspecto de tu serpiente. Muy pronto habrá más cosméticos.",
+      "tabs": {
+        "inventory": "Inventario",
+        "inventoryBadge": "{{count}} desbloqueados",
+        "shop": "Tienda"
+      },
+      "categoriesLabel": "Categorías de apariencia",
+      "categories": {
+        "skins": "Aspectos",
+        "hats": "Sombreros",
+        "boosts": "Mejoras"
+      },
+      "comingSoon": "Próximamente",
+      "randomize": "Aleatorio",
+      "locked": "Bloqueado",
+      "previewLabel": "Vista previa"
     },
     "statsModal": {
       "title": "Estadísticas de ganancias",
@@ -195,7 +222,7 @@
   },
   "auth": {
     "modal": {
-      "loginTitle": "Inicia sesión en tu cuenta",
+      "loginTitle": "Inicia sesión o regístrate",
       "registerTitle": "Crea una cuenta",
       "validation": {
         "missingFields": "Por favor completa todos los campos."
@@ -208,6 +235,8 @@
       "loginAction": "Iniciar sesión",
       "registerAction": "Registrarse",
       "checkingSession": "Verificando sesión...",
+      "divider": "o continúa con",
+      "googleButton": "Autenticación con Google",
       "legal": {
         "intro": "Al continuar, aceptas nuestros",
         "and": "y reconoces la",
@@ -218,7 +247,10 @@
     "fields": {
       "email": "Correo electrónico",
       "password": "Contraseña",
-      "nickname": "Apodo"
+      "nickname": "Apodo",
+      "emailPlaceholder": "Introduce tu email",
+      "passwordPlaceholder": "Introduce tu contraseña",
+      "nicknamePlaceholder": "Elige un apodo"
     },
     "errors": {
       "generic": "No se pudo procesar la solicitud.",

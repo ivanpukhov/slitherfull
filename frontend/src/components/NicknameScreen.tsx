@@ -11,6 +11,7 @@ import { Modal } from './Modal'
 import { FriendsModal } from './FriendsModal'
 import { SnakePreview } from './SnakePreview'
 import { LanguageSelector } from './LanguageSelector'
+import { WithdrawModal } from './WithdrawModal'
 import wallet from './../assets/wallet.svg'
 import castom from './../assets/castomize.svg'
 import leader from './../assets/leader.svg'
@@ -147,7 +148,7 @@ export function NicknameScreen({
     const copyResetTimer = useRef<number | null>(null)
     const [withdrawAddress, setWithdrawAddress] = useState('')
     const [withdrawError, setWithdrawError] = useState<string | null>(null)
-    const [withdrawExpanded, setWithdrawExpanded] = useState(false)
+    const [withdrawModalOpen, setWithdrawModalOpen] = useState(false)
     const [walletModalOpen, setWalletModalOpen] = useState(false)
     const [statsModalOpen, setStatsModalOpen] = useState(false)
     const [winningsModalOpen, setWinningsModalOpen] = useState(false)
@@ -168,6 +169,7 @@ export function NicknameScreen({
         if (withdrawStatus?.type === 'success') {
             setWithdrawAddress('')
             setWithdrawError(null)
+            setWithdrawModalOpen(false)
         }
     }, [withdrawStatus])
 
@@ -178,16 +180,16 @@ export function NicknameScreen({
     }, [friendsModalOpen, isAuthenticated])
 
     useEffect(() => {
-        if (!isAuthenticated) {
-            setWithdrawExpanded(false)
+        if (!isAuthenticated && withdrawModalOpen) {
+            setWithdrawModalOpen(false)
         }
-    }, [isAuthenticated])
+    }, [isAuthenticated, withdrawModalOpen])
 
     useEffect(() => {
-        if (!visible) {
-            setWithdrawExpanded(false)
+        if (!visible && withdrawModalOpen) {
+            setWithdrawModalOpen(false)
         }
-    }, [visible])
+    }, [visible, withdrawModalOpen])
 
     useEffect(() => {
         if (!visible && skinModalOpen) {
@@ -262,6 +264,8 @@ export function NicknameScreen({
 
     const topWinner = useMemo(() => winningsEntries[0] ?? null, [winningsEntries])
     const skinColors = useMemo(() => SKINS[selectedSkin] ?? [], [selectedSkin])
+    const skinOptions = useMemo(() => Object.entries(SKINS) as [string, string[]][], [])
+    const lockedSkinSlots = useMemo(() => Math.max(0, 12 - skinOptions.length), [skinOptions.length])
     const {friends: friendsList, loading: friendsLoading, error: friendsError} = friendsController
     const friendsPreview = useMemo(() => friendsList.slice(0, 3), [friendsList])
     const primaryColor = skinColors[0] ?? '#38bdf8'
@@ -322,10 +326,18 @@ export function NicknameScreen({
     const handleSkinSelect = useCallback(
         (skin: string) => {
             onSelectSkin(skin)
-            setSkinModalOpen(false)
         },
         [onSelectSkin]
     )
+
+    const handleRandomSkin = useCallback(() => {
+        if (!skinOptions.length) return
+        const randomIndex = Math.floor(Math.random() * skinOptions.length)
+        const randomSkin = skinOptions[randomIndex]?.[0]
+        if (randomSkin) {
+            onSelectSkin(randomSkin)
+        }
+    }, [onSelectSkin, skinOptions])
 
     const handleWalletOpen = useCallback(() => {
         if (isAuthenticated) {
@@ -335,12 +347,12 @@ export function NicknameScreen({
         }
     }, [isAuthenticated, onStart])
 
-    const handleToggleWithdraw = useCallback(() => {
+    const handleOpenWithdraw = useCallback(() => {
         if (!isAuthenticated) {
             onStart()
             return
         }
-        setWithdrawExpanded((prev) => !prev)
+        setWithdrawModalOpen(true)
         if (withdrawError) {
             setWithdrawError(null)
         }
@@ -629,51 +641,19 @@ export function NicknameScreen({
                                 <button
                                     type="button"
                                     className="friends-card-button  blue"
-                                    onClick={handleToggleWithdraw}
+                                    onClick={() => {
+                                        if (withdrawModalOpen) {
+                                            setWithdrawModalOpen(false)
+                                        } else {
+                                            handleOpenWithdraw()
+                                        }
+                                    }}
                                     disabled={!isAuthenticated}
                                 >
-                                    {withdrawExpanded ? t('lobby.wallet.hideWithdraw') : t('lobby.wallet.cashOut')}
+                                    {withdrawModalOpen ? t('lobby.wallet.hideWithdraw') : t('lobby.wallet.cashOut')}
                                 </button>
                             </div>
-                            {withdrawExpanded && isAuthenticated ? (
-                                <div className="wallet-withdraw">
-                                    <label htmlFor="withdrawAddress">{t('lobby.withdraw.label')}</label>
-                                    <div className="wallet-withdraw-controls">
-                                        <input
-                                            id="withdrawAddress"
-                                            type="text"
-                                            placeholder={t('lobby.withdraw.placeholder')}
-                                            value={withdrawAddress}
-                                            onChange={(event) => {
-                                                setWithdrawAddress(event.target.value)
-                                                if (withdrawError) setWithdrawError(null)
-                                            }}
-                                            onKeyDown={(event) => {
-                                                if (event.key === 'Enter') {
-                                                    event.preventDefault()
-                                                    handleWithdraw()
-                                                }
-                                            }}
-                                        />
-                                        <button
-                                            type="button"
-                                            className="wallet-withdraw-button"
-                                            onClick={handleWithdraw}
-                                            disabled={withdrawPending || !onWithdraw}
-                                        >
-                                            {withdrawPending ? t('lobby.withdraw.sending') : t('lobby.withdraw.submit')}
-                                        </button>
-                                    </div>
-                                    {withdrawError ? (
-                                        <p className="wallet-withdraw-status error">{withdrawError}</p>
-                                    ) : withdrawStatus ? (
-                                        <p className={`wallet-withdraw-status ${withdrawStatus.type}`}>
-                                            {withdrawStatus.message}
-                                        </p>
-                                    ) : null}
-                                </div>
-                            ) : null}
-                            {!withdrawExpanded && withdrawStatus ? (
+                            {withdrawStatus ? (
                                 <p className={`wallet-withdraw-status wallet-withdraw-status--summary ${withdrawStatus.type}`}>
                                     {withdrawStatus.message}
                                 </p>
@@ -717,34 +697,85 @@ export function NicknameScreen({
                 open={skinModalOpen}
                 title={t('lobby.skinModal.title')}
                 onClose={handleSkinModalClose}
-                width="520px"
+                width="920px"
             >
-                <div className="skin-modal">
-                    <p className="skin-modal__hint">{t('lobby.skinModal.hint')}</p>
-                    <div id="skinList" ref={skinListRef} className="damn-skin-grid">
-                        {Object.entries(SKINS).map(([skin, colors]) => {
-                            const labelKey = SKIN_LABELS[skin] || 'game.skins.default'
-                            const label = t(labelKey)
-                            return (
+                <div className="appearance-modal">
+                    <div className="appearance-modal__top">
+                        <div className="appearance-modal__tabs" role="tablist">
+                            <button type="button" className="active" aria-selected="true">
+                                <span className="appearance-tab__label">{t('lobby.skinModal.tabs.inventory')}</span>
+                                <span className="appearance-tab__badge" aria-hidden="true">
+                                    {t('lobby.skinModal.tabs.inventoryBadge', {count: skinOptions.length})}
+                                </span>
+                            </button>
+                            <button type="button" disabled>
+                                <span className="appearance-tab__label">{t('lobby.skinModal.tabs.shop')}</span>
+                                <span className="appearance-tab__lock" aria-hidden="true">🔒</span>
+                            </button>
+                        </div>
+                        <p className="appearance-modal__hint">{t('lobby.skinModal.hint')}</p>
+                    </div>
+                    <div className="appearance-modal__content">
+                        <nav className="appearance-modal__sidebar" aria-label={t('lobby.skinModal.categoriesLabel')}>
+                            <button type="button" className="active">
+                                <span>{t('lobby.skinModal.categories.skins')}</span>
+                            </button>
+                            <button type="button" disabled>
+                                <span>{t('lobby.skinModal.categories.hats')}</span>
+                                <span className="appearance-modal__coming">{t('lobby.skinModal.comingSoon')}</span>
+                            </button>
+                            <button type="button" disabled>
+                                <span>{t('lobby.skinModal.categories.boosts')}</span>
+                                <span className="appearance-modal__coming">{t('lobby.skinModal.comingSoon')}</span>
+                            </button>
+                        </nav>
+                        <div className="appearance-modal__gallery">
+                            <div className="appearance-grid">
                                 <button
                                     type="button"
-                                    key={skin}
-                                    className={`damn-skin${skin === selectedSkin ? ' selected' : ''}`}
-                                    data-skin={skin}
-                                    data-name={label}
-                                    style={{
-                                        background: `radial-gradient(circle at 35% 35%, ${colors[0] ?? '#38bdf8'}, ${
-                                            colors[1] ?? colors[0] ?? '#8b5cf6'
-                                        })`
-                                    }}
-                                    onClick={() => handleSkinSelect(skin)}
-                                    aria-label={label}
-                                    aria-pressed={skin === selectedSkin}
+                                    className="appearance-grid__random"
+                                    onClick={handleRandomSkin}
                                 >
-                                    <span className="damn-skin__ring"/>
+                                    <span className="appearance-grid__random-icon" aria-hidden="true">⟳</span>
+                                    <span>{t('lobby.skinModal.randomize')}</span>
                                 </button>
-                            )
-                        })}
+                                <div id="skinList" ref={skinListRef} className="appearance-grid__skins">
+                                    {skinOptions.map(([skin, colors]) => {
+                                        const labelKey = SKIN_LABELS[skin] || 'game.skins.default'
+                                        const label = t(labelKey)
+                                        return (
+                                            <button
+                                                type="button"
+                                                key={skin}
+                                                className={`appearance-tile${skin === selectedSkin ? ' selected' : ''}`}
+                                                data-skin={skin}
+                                                data-name={label}
+                                                style={{
+                                                    background: `radial-gradient(circle at 35% 35%, ${colors[0] ?? '#38bdf8'}, ${
+                                                        colors[1] ?? colors[0] ?? '#8b5cf6'
+                                                    })`
+                                                }}
+                                                onClick={() => handleSkinSelect(skin)}
+                                                aria-label={label}
+                                                aria-pressed={skin === selectedSkin}
+                                            >
+                                                <span className="appearance-tile__ring"/>
+                                            </button>
+                                        )
+                                    })}
+                                    {Array.from({length: lockedSkinSlots}).map((_, index) => (
+                                        <div key={`locked-${index}`} className="appearance-tile appearance-tile--locked">
+                                            <span className="appearance-tile__lock" aria-hidden="true">🔒</span>
+                                            <span className="appearance-tile__label">{t('lobby.skinModal.locked')}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="appearance-modal__preview">
+                            <SnakePreview colors={skinColors} length={100} width={320} height={240}/>
+                            <div className="appearance-preview__label">{t('lobby.skinModal.previewLabel')}</div>
+                        </div>
                     </div>
                 </div>
             </Modal>
@@ -802,6 +833,26 @@ export function NicknameScreen({
                     )}
                 </div>
             </Modal>
+
+            <WithdrawModal
+                open={withdrawModalOpen}
+                balanceCents={balance}
+                solBalance={walletSol}
+                usdBalance={walletUsd ?? undefined}
+                pending={withdrawPending}
+                address={withdrawAddress}
+                error={withdrawError}
+                status={withdrawStatus ?? null}
+                onAddressChange={(value) => {
+                    setWithdrawAddress(value)
+                    if (withdrawError) {
+                        setWithdrawError(null)
+                    }
+                }}
+                onSubmit={handleWithdraw}
+                onClose={() => setWithdrawModalOpen(false)}
+            />
+
             <Modal
                 open={statsModalOpen}
                 title={t('lobby.statsModal.title')}

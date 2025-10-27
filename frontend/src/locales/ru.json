@@ -80,6 +80,18 @@
       "sending": "Отправляем…",
       "submit": "Вывести"
     },
+    "withdrawModal": {
+      "title": "Вывод средств",
+      "walletBalance": "Игровой баланс",
+      "balanceMeta": "Доступно к выводу",
+      "fullBalanceHint": "При выводе вся сумма с игрового баланса отправится на указанный адрес.",
+      "amountLabel": "Сумма",
+      "maxButton": "MAX",
+      "addressLabel": "Адрес кошелька",
+      "addressPlaceholder": "Укажите адрес Solana-кошелька",
+      "submit": "Вывести",
+      "submitting": "Отправляем…"
+    },
     "profile": {
       "authenticatedFallback": "Игрок",
       "guestFallback": "Новый игрок",
@@ -169,7 +181,7 @@
       "website": "snakefans.com"
     },
     "customize": {
-      "title": "Внешний вид",
+      "title": "Настройка внешнего вида",
       "changeAppearance": "Изменить скин"
     },
     "walletSummary": {
@@ -178,8 +190,23 @@
       "available": "Доступно"
     },
     "skinModal": {
-      "title": "Выбор скина",
-      "hint": "Выберите оформление змейки"
+      "title": "Настройка внешнего вида",
+      "hint": "Подберите скин для своей змейки. Скоро появятся новые предметы.",
+      "tabs": {
+        "inventory": "Инвентарь",
+        "inventoryBadge": "{{count}} открыто",
+        "shop": "Магазин"
+      },
+      "categoriesLabel": "Категории оформления",
+      "categories": {
+        "skins": "Скины",
+        "hats": "Шапки",
+        "boosts": "Бусты"
+      },
+      "comingSoon": "Скоро",
+      "randomize": "Случайный",
+      "locked": "Заблокировано",
+      "previewLabel": "Предпросмотр"
     }
   },
   "deathScreen": {
@@ -262,12 +289,35 @@
   },
   "auth": {
     "modal": {
+      "loginTitle": "Войдите или зарегистрируйтесь",
+      "registerTitle": "Создайте аккаунт",
+      "validation": {
+        "missingFields": "Заполните все поля."
+      },
+      "closeAria": "Закрыть окно авторизации",
+      "loginTab": "Вход",
+      "registerTab": "Регистрация",
+      "hint": "Войдите или создайте аккаунт, чтобы сохранить ник и баланс. Новые игроки получают 10 монет.",
+      "submitting": "Отправляем…",
+      "loginAction": "Войти",
+      "registerAction": "Зарегистрироваться",
+      "checkingSession": "Проверяем сессию…",
+      "divider": "или продолжите через",
+      "googleButton": "Авторизация через Google",
       "legal": {
         "intro": "Продолжая, вы соглашаетесь с нашими",
         "and": "и подтверждаете ознакомление с",
         "terms": "Условиями использования",
         "privacy": "Политикой конфиденциальности"
       }
+    },
+    "fields": {
+      "email": "Email",
+      "password": "Пароль",
+      "nickname": "Никнейм",
+      "emailPlaceholder": "Введите email",
+      "passwordPlaceholder": "Введите пароль",
+      "nicknamePlaceholder": "Придумайте никнейм"
     },
     "errors": {
       "generic": "Не удалось обработать запрос.",

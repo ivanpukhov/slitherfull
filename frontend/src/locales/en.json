@@ -80,6 +80,18 @@
       "sending": "Sending…",
       "submit": "Withdraw"
     },
+    "withdrawModal": {
+      "title": "Cash out",
+      "walletBalance": "Wallet balance",
+      "balanceMeta": "Available balance",
+      "fullBalanceHint": "Withdrawals send your full in-game balance to the destination below.",
+      "amountLabel": "Amount",
+      "maxButton": "MAX",
+      "addressLabel": "Destination wallet address",
+      "addressPlaceholder": "Enter a Solana wallet address",
+      "submit": "Cash Out",
+      "submitting": "Processing…"
+    },
     "profile": {
       "authenticatedFallback": "Player",
       "guestFallback": "New player",
@@ -128,7 +140,7 @@
       "viewStats": "View Stats"
     },
     "customize": {
-      "title": "Customize",
+      "title": "Customize Appearance",
       "changeAppearance": "Change Appearance"
     },
     "footer": {
@@ -136,8 +148,23 @@
       "website": "snakefans.com"
     },
     "skinModal": {
-      "title": "Skin selection",
-      "hint": "Pick the look and color of your snake."
+      "title": "Customize appearance",
+      "hint": "Select a skin for your snake. New cosmetics will unlock soon.",
+      "tabs": {
+        "inventory": "Inventory",
+        "inventoryBadge": "{{count}} owned",
+        "shop": "Shop"
+      },
+      "categoriesLabel": "Appearance categories",
+      "categories": {
+        "skins": "Skins",
+        "hats": "Hats",
+        "boosts": "Boosts"
+      },
+      "comingSoon": "Coming soon",
+      "randomize": "Randomize",
+      "locked": "Locked",
+      "previewLabel": "Live preview"
     },
     "statsModal": {
       "title": "Winning stats",
@@ -195,7 +222,7 @@
   },
   "auth": {
     "modal": {
-      "loginTitle": "Sign in to your account",
+      "loginTitle": "Log in or sign up",
       "registerTitle": "Create an account",
       "validation": {
         "missingFields": "Please fill in all fields."
@@ -208,6 +235,8 @@
       "loginAction": "Sign in",
       "registerAction": "Sign up",
       "checkingSession": "Checking session...",
+      "divider": "or continue with",
+      "googleButton": "Authorization via Google",
       "legal": {
         "intro": "By continuing, you agree to our",
         "and": "and acknowledge the",
@@ -218,7 +247,10 @@
     "fields": {
       "email": "Email",
       "password": "Password",
-      "nickname": "Nickname"
+      "nickname": "Nickname",
+      "emailPlaceholder": "Enter your email",
+      "passwordPlaceholder": "Enter your password",
+      "nicknamePlaceholder": "Choose a nickname"
     },
     "errors": {
       "generic": "Failed to process the request.",
