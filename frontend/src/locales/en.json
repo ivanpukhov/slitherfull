@@ -204,9 +204,6 @@
       "loginAction": "Sign in",
       "registerAction": "Sign up",
       "checkingSession": "Checking session...",
-      "or": "Or",
-      "googleButton": "Continue with Google",
-      "googleHint": "We'll create or link your account using your Google email.",
       "legal": {
         "intro": "By continuing, you agree to our",
         "and": "and acknowledge the",
@@ -225,11 +222,6 @@
       "emailTaken": "This email is already registered.",
       "nicknameTaken": "The selected nickname is taken.",
       "invalidCredentials": "Incorrect email or password.",
-      "passwordAuthUnavailable": "This account uses Google sign-in.",
-      "popupBlocked": "Allow pop-ups to continue with Google.",
-      "oauthCancelled": "Google sign-in was cancelled.",
-      "googleFailed": "Unable to complete Google sign-in.",
-      "googleEmailNotVerified": "Verify your Google email before signing in.",
       "network": "Unable to connect to the server.",
       "server": "A server error occurred. Please try again later."
     }

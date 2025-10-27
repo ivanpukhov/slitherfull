@@ -347,7 +347,6 @@ function GameView() {
         status={auth.status}
         onLogin={auth.login}
         onRegister={auth.register}
-        onGoogleLogin={auth.loginWithGoogle}
         onClose={() => setAuthModalOpen(false)}
       />
       <canvas id="canvas" ref={canvasRef} />

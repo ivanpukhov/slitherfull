@@ -68,7 +68,7 @@ async function loginUser({ email, password }) {
     return { ok: false, error: 'invalid_credentials' }
   }
   if (!user.passwordHash) {
-    return { ok: false, error: 'password_auth_unavailable' }
+    return { ok: false, error: 'invalid_credentials' }
   }
   const match = await bcrypt.compare(password, user.passwordHash)
   if (!match) {
