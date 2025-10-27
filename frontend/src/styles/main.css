@@ -21,7 +21,7 @@
     --color-surface-elevated: rgba(16, 16, 24, 0.96);
     --color-border: rgba(250, 204, 21, 0.18);
     --color-border-strong: rgba(250, 204, 21, 0.3);
-    --color-accent: #f4c542;
+    --color-accent: #FFF94E;
     --color-accent-strong: #f59e0b;
     --color-accent-glow: rgba(244, 197, 66, 0.35);
     --color-secondary: #facc15;
@@ -43,17 +43,16 @@ body {
     width: 100%;
     overflow-x: hidden;
     overflow-y: hidden;
-    background:
-            radial-gradient(circle at 18% 18%, rgba(244, 197, 66, 0.22), transparent 46%),
-            radial-gradient(circle at 82% 22%, rgba(234, 179, 8, 0.18), transparent 52%),
-            radial-gradient(circle at 70% 82%, rgba(146, 64, 14, 0.2), transparent 58%),
-            linear-gradient(150deg, #020204 0%, #030308 55%, #000000 100%);
+    background: radial-gradient(circle at 18% 18%, rgba(244, 197, 66, 0.22), transparent 46%),
+    radial-gradient(circle at 82% 22%, rgba(234, 179, 8, 0.18), transparent 52%),
+    radial-gradient(circle at 70% 82%, rgba(146, 64, 14, 0.2), transparent 58%),
+    linear-gradient(150deg, #020204 0%, #030308 55%, #000000 100%);
     color: var(--color-text-primary);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
 }
 
-body{
+body {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -89,16 +88,15 @@ body::after {
     content: "";
     position: fixed;
     inset: 0;
-    background:
-            radial-gradient(circle at 50% 0%, rgba(250, 204, 21, 0.16), transparent 60%),
-            linear-gradient(130deg, rgba(250, 204, 21, 0.12), rgba(147, 51, 12, 0.14) 45%, transparent 75%),
-            repeating-linear-gradient(
-                    -45deg,
-                    rgba(120, 53, 15, 0.08) 0,
-                    rgba(120, 53, 15, 0.08) 2px,
-                    rgba(3, 3, 3, 0.06) 2px,
-                    rgba(3, 3, 3, 0.06) 12px
-            );
+    background: radial-gradient(circle at 50% 0%, rgba(250, 204, 21, 0.16), transparent 60%),
+    linear-gradient(130deg, rgba(250, 204, 21, 0.12), rgba(147, 51, 12, 0.14) 45%, transparent 75%),
+    repeating-linear-gradient(
+            -45deg,
+            rgba(120, 53, 15, 0.08) 0,
+            rgba(120, 53, 15, 0.08) 2px,
+            rgba(3, 3, 3, 0.06) 2px,
+            rgba(3, 3, 3, 0.06) 12px
+    );
     mix-blend-mode: screen;
     opacity: 0.36;
     pointer-events: none;
@@ -1020,11 +1018,9 @@ canvas {
 }
 
 
-
 .overlay.hidden {
     display: none;
 }
-
 
 
 .overlay--lobby .lobby-card {
@@ -2572,7 +2568,6 @@ canvas {
 }
 
 
-
 .damn-card--wallet .wallet-withdraw {
     margin-top: 16px;
 }
@@ -3312,7 +3307,7 @@ body.is-touch #leaderboard {
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: clamp(24px, 4vw, 40px);
+    gap: 2px;
     color: var(--color-text-primary);
 }
 
@@ -3390,8 +3385,16 @@ body.is-touch #leaderboard {
 }
 
 .damn-topbar__welcome {
-    display: flex;
-    gap: 4px;
+    display: inline-flex;
+    height: 50px;
+    padding: 15px 16px;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    border: 0.5px solid rgba(105, 105, 105, 0.50);
+    backdrop-filter: blur(5px);
 }
 
 .damn-topbar__label, .damn-topbar__name {
@@ -3524,38 +3527,38 @@ body.is-touch #leaderboard {
     text-align: center;
     display: flex;
     flex-direction: column;
-    gap: 12px;
 }
 
 .damn-hero__brand {
     display: inline-flex;
     align-items: baseline;
     justify-content: center;
+    gap: 2px;
+    margin-bottom: -20px;
 }
 
-.damn-hero__brand-main {
-    font-size: 50px;
-    font-weight: 700;
-    color: var(--color-accent);
-    font-style: italic;
-    font-family: "Boldonse", system-ui !important;
-    text-shadow: 0 20px 36px rgba(0, 0, 0, 0.65), 0 0 48px var(--color-accent-glow);
+.damn-hero__brand-main, .damn-hero__brand-accent {
+    color: #FFF94E;
+    text-align: center;
+    font-family: Modak !important;
+    font-size: 102.175px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+    text-transform: uppercase;
 }
 
-.damn-hero__brand-accent {
-    font-family: "Boldonse", system-ui !important;
-    font-size: 50px;
-    font-weight: 600;
-    font-style: italic;
-    color: #ffffff;
-    text-shadow: 0 18px 32px rgba(0, 0, 0, 0.6);
-}
 
 .damn-hero__tagline {
-    font-size: clamp(16px, 2.2vw, 22px);
-    font-weight: 600;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
+    color: #FFF;
+    text-align: center;
+    font-family: Inter;
+    font-size: 18px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: normal;
+    margin-bottom: 20px;
+
 }
 
 .damn-status {
@@ -3601,7 +3604,7 @@ body.is-touch #leaderboard {
 
 .damn-grid {
     display: grid;
-    gap: clamp(18px, 3vw, 28px);
+    gap: 10px;
 }
 
 @media (min-width: 1024px) {
@@ -3614,7 +3617,7 @@ body.is-touch #leaderboard {
 .damn-column {
     display: flex;
     flex-direction: column;
-    gap: clamp(16px, 2.4vw, 24px);
+    gap: 14px;
 }
 
 .damn-column--center {
@@ -3624,19 +3627,17 @@ body.is-touch #leaderboard {
 }
 
 .damn-card {
-    position: relative;
-    padding: 15px !important;
-    background: #000;
-    border: 1px solid var(--color-border);
-    overflow: hidden;
-    border-radius: .5rem;
+    border-radius: 10px;
+    border: 0.5px solid rgba(196, 196, 196, 0.25);
+    background: rgba(42, 42, 42, 0.20);
+    box-shadow: 0 4px 0 0 #121212;
+    backdrop-filter: blur(6px);
+    padding: 15px;
 }
-
 
 
 .damn-card__header {
     display: flex;
-    align-items: flex-start;
     justify-content: space-between;
     gap: 18px;
     margin-bottom: clamp(16px, 2.4vw, 22px);
@@ -3651,7 +3652,7 @@ body.is-touch #leaderboard {
     align-items: center;
 }
 
-.damn-card__header > div:first-child > img{
+.damn-card__header > div:first-child > img {
     height: 18px;
 }
 
@@ -3661,7 +3662,6 @@ body.is-touch #leaderboard {
     font-size: 16px;
     /*text-transform: uppercase;*/
 }
-
 
 
 .damn-card__subtitle {
@@ -3761,7 +3761,7 @@ body.is-touch #leaderboard {
     color: var(--color-text-soft);
 }
 
-.leaderboard__live{
+.leaderboard__live {
     display: flex;
     gap: 5px;
     border: 1px solid #49DE80;
@@ -3771,12 +3771,12 @@ body.is-touch #leaderboard {
     border-radius: 50px;
 }
 
-.leaderboard__live-text{
+.leaderboard__live-text {
     color: #49DE80;
     font-size: 12px;
 }
 
-.leaderboard__live-rounded{
+.leaderboard__live-rounded {
 
     border-radius: 50%;
     background-color: #49DE80;
@@ -3831,19 +3831,19 @@ body.is-touch #leaderboard {
 }
 
 .damn-field__input {
-    padding: 14px 16px;
-    border-radius: 6px;
-    color: var(--color-text-primary);
-    font-size: 16px;
-    border: 1px solid #FEBA2B;
-    background: transparent;
-    margin-bottom: -5px;
+    border-radius: 10px;
+    background: #1A1A1A;
+    border: none;
+    display: flex;
+    height: 64px;
+    padding: 18px 12px 18px 16px;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
 }
 
 .damn-field__input:focus {
     outline: none;
-    border-color: rgba(250, 204, 21, 0.55);
-    box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.18);
 }
 
 .damn-field__note {
@@ -3865,30 +3865,52 @@ body.is-touch #leaderboard {
 }
 
 .damn-bet-option {
-    padding: 12px 18px;
-    border-radius: 8px;
-    border: 1px solid rgba(148, 163, 184, 0.22);
-    background: #000;
-    color: var(--color-text-primary);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.25s ease;
-    width: 30%;
-    border: 3px solid #FEBA2B;
-    box-shadow: 0 8px 0 #AE6904;
+    display: flex;
+    width: 116px;
+    height: 54px;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: #1A1A1A;
+    border: none;
+    position: relative;
 }
 
-.damn-bet-option:hover {
-    transform: translateY(4px);
-    box-shadow: 0 4px 0 #AE6904;
-    background: #261c02;
+.damn-bet-option::before, .damn-primary-button::before {
+    content: '';
+    position: absolute;
+    border-radius: 10px;
+    background: #0C0C0C;
+    width: 100%;
+    height: 100%;
+    margin-left: 6px;
+    margin-top: 6px;
+    z-index: -1;
 }
 
+.damn-bet-option.selected::before, .damn-primary-button::before {
+    background: #FFF94E;
+}
 
 .damn-bet-option.selected {
-    background: var(--color-accent);
-    border: 3px solid #FEBA2B !important;
-    color: black;
+    border-radius: 10px;
+    border: 0.5px solid #1A1A1A !important;
+    background: #FFF94E;
+    display: flex;
+    width: 116px;
+    height: 54px;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    color: #1D1D1D;
+    font-family: Inter;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: normal;
 }
 
 .damn-bet-option.selected,
@@ -3914,11 +3936,9 @@ body.is-touch #leaderboard {
 }
 
 
-.mb-30{
+.mb-30 {
     margin-bottom: -30px;
 }
-
-
 
 
 .damn-primary-button,
@@ -3931,25 +3951,47 @@ body.is-touch #leaderboard {
     font-size: 14px !important;
 }
 
+.damn-link-button{
+    display: flex;
+    height: 25px;
+    padding: 3px 8px;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    border-radius: 5px;
+    background: rgba(118, 118, 118, 0.10);
+    border: none;
+    color: #888;
+    font-family: Inter;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: normal;
+}
+
 .damn-primary-button {
-    background: linear-gradient(
-            to bottom,
-            var(--color-accent) 0 50%,
-            #FEBA2B 50% 100%
-    );
-    border: 5px solid #FCA10A;
-    color: #0b1020;
+    border-radius: 10px;
+    border: 1px solid #1A1A1A;
+    background: #FFF94E;
+    display: flex;
+    width: 368px;
+    height: 82px;
+    padding: 18px 24px;
+    align-items: center;
+    flex-shrink: 0;
+    justify-content: center;
+    align-items: center;
+    color: #1D1D1D;
+    font-family: Inter;
+    font-size: 18px !important;
+    font-style: normal;
+    font-weight: 900;
+    line-height: normal;
     text-transform: uppercase;
-    padding: 14px 22px;
-    box-shadow: 0 8px 0 #AE6904;
 
 }
 
-.damn-primary-button:hover {
-    box-shadow: 0 4px 0 #AE6904;
-    border: 5px solid rgba(252, 161, 10, 0.93);
-    transform: translateY(4px);
-}
+
 
 .damn-primary-button--outline {
     background: transparent;
@@ -3961,7 +4003,7 @@ body.is-touch #leaderboard {
 
 .damn-primary-button--full {
     width: 100%;
-    font-size: clamp(18px, 2.4vw, 20px);
+    /*font-size: clamp(18px, 2.4vw, 20px);*/
     font-weight: 600;
 }
 
@@ -3973,8 +4015,6 @@ body.is-touch #leaderboard {
 }
 
 
-
-
 .damn-primary-button:disabled,
 .damn-secondary-button:disabled,
 .damn-link-button:disabled {
@@ -3982,9 +4022,6 @@ body.is-touch #leaderboard {
     cursor: not-allowed;
     box-shadow: none;
 }
-
-
-
 
 
 .damn-start-hint {
@@ -3997,18 +4034,19 @@ body.is-touch #leaderboard {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 12px;
-    border-top: 1px solid rgba(148, 163, 184, 0.18);
-    margin-top: 30px;
+    margin-bottom: 14px;
 }
 
 .damn-join-stat {
-    border-radius: 18px;
+    border-radius: 10px;
+    border: 0.5px solid rgba(196, 196, 196, 0.25);
+    background: rgba(42, 42, 42, 0.20);
+    box-shadow: 0 4px 0 0 #121212;
+    backdrop-filter: blur(6px);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px 10px;
     text-align: center;
+    padding: 19px 0;
 }
 
 .damn-join-stat__value {
@@ -4065,7 +4103,6 @@ body.is-touch #leaderboard {
     display: flex;
     align-items: baseline;
     flex-direction: column;
-    align-items: center;
     gap: 2px;
 }
 
@@ -4078,7 +4115,6 @@ body.is-touch #leaderboard {
 .damn-wallet__value {
     font-size: 20px;
     font-weight: 700;
-    color: var(--color-accent);
 }
 
 .damn-wallet__meta {
@@ -4122,7 +4158,7 @@ body.is-touch #leaderboard {
 }
 
 
-.damn-card--customize{
+.damn-card--customize {
     padding: 15px !important;
 }
 
@@ -4184,7 +4220,6 @@ body.is-touch #leaderboard {
     height: 100%;
     display: block;
 }
-
 
 
 .skin-modal {
@@ -4251,7 +4286,7 @@ body.is-touch #leaderboard {
     color: var(--color-accent);
 }
 
-.damn-card--friends .damn-card__header{
+.damn-card--friends .damn-card__header {
     margin-bottom: 0;
 }
 
@@ -4287,58 +4322,79 @@ body.is-touch #leaderboard {
 
 .friends-actions-grid {
     margin-top: auto;
+    z-index: 1;
 }
 
-.friends-card-button {
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    border: 2px solid var(--color-accent);
-    padding: 8px ;
-    background: transparent;
+section.damn-card.damn-card--customize{
+    z-index: 1;
+}
+
+.friends-card-button, .gray {
+    border-radius: 10px;
+    border: 1px solid #242424;
+    background: #191919;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    position: relative;
     width: 100%;
+    padding: 18px 0;
 
 }
 
-.gray{
-    border-color: #909090;
-    box-shadow: 0 3px 0 #6B7280;
-    color: #909090;
+
+
+.friends-card-button::before, .gray::before{
+    content: '';
+    position: absolute;
+    border-radius: 10px;
+    border: 1px solid #1A1A1A;
+    background: #0D0D0D;
+    width: 100%;
+    height: 100%;
+    margin-left: 6px;
+    margin-top: 6px;
+    z-index: -1;
 }
 
-.gray:hover {
-    box-shadow: 0 2px 0 #6B7280;
-    background: rgba(143, 143, 143, 0.17);
+
+
+
+.gray {
+
 }
+
+.green, .blue{
+    width: 48% ;
+}
+
+
 
 .green {
-    border-color: rgb(34 197 94);
-    box-shadow: 0 4px 0 #17803D;
-    color: rgb(34 197 94);
+    border-radius: 10px;
+    border: 0.5px solid #84E092 !important;
+    background: #171D18 !important;
+    color: #84E092;
+    font-family: Inter;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: normal;
 }
 
-.green:hover {
-    box-shadow: 0 2px 0 #17803D;
-    background: rgba(34, 197, 94, 0.17);
-}
 
 .blue {
-    border-color: #5965F2;
-    box-shadow: 0 4px 0 #3C45A5;
-    color: #5965F2;
-
-}
-
-.blue:hover {
-    box-shadow: 0 2px 0 #3C45A5;
-    background: rgba(89, 101, 242, 0.25);
-
-}
-
-.friends-card-button:hover {
-    transform: translateY(1px);
-
+    border-radius: 10px !important;
+    border: 0.5px solid #C3A4E9;
+    background: #121012 !important;
+    color: #C3A4E9;
+    font-family: Inter;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: normal;
 }
 
 
@@ -4506,6 +4562,6 @@ body.is-touch #leaderboard {
 }
 
 
-*{
-    font-family: "Montserrat", sans-serif !important;
+* {
+    font-family: "Inter", sans-serif !important;
 }

@@ -515,7 +515,17 @@ export function NicknameScreen({
                     <form className="damn-column damn-column--center" onSubmit={handleSubmit}>
                         <section className="damn-card damn-card--join">
 
+                            <div className="damn-join-stats">
+                                <div className="damn-join-stat">
+                                    <span className="damn-join-stat__value">{activePlayersDisplay}</span>
+                                    <span className="damn-join-stat__label">{t('lobby.stats.playersOnline')}</span>
+                                </div>
+                                <div className="damn-join-stat">
+                                    <span className="damn-join-stat__value">{totalPaidUsdDisplay}</span>
+                                    <span className="damn-join-stat__label">{t('lobby.stats.globalWinnings')}</span>
+                                </div>
 
+                            </div>
                             <div className="damn-field">
 
                                 <input
@@ -569,17 +579,7 @@ export function NicknameScreen({
                                 <p className="damn-start-hint">{startDisabledHint}</p>
                             ) : null}
 
-                            <div className="damn-join-stats">
-                                <div className="damn-join-stat">
-                                    <span className="damn-join-stat__value">{activePlayersDisplay}</span>
-                                    <span className="damn-join-stat__label">{t('lobby.stats.playersOnline')}</span>
-                                </div>
-                                <div className="damn-join-stat">
-                                    <span className="damn-join-stat__value">{totalPaidUsdDisplay}</span>
-                                    <span className="damn-join-stat__label">{t('lobby.stats.globalWinnings')}</span>
-                                </div>
 
-                            </div>
                         </section>
 
                         <button

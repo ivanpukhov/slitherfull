@@ -34,7 +34,7 @@
       "cashoutPending": "Awaiting cashout",
       "transferPending": "Processing...",
       "checking": "Loading...",
-      "play": "Play",
+      "play": "Join Game",
       "login": "Login"
     },
     "startHint": {
@@ -51,7 +51,7 @@
       "copyStatus": {
         "copied": "Copied!",
         "error": "Try again",
-        "default": "Copy Address"
+        "default": "Copy"
       },
       "title": "Wallet",
       "refreshing": "Refreshing…",
@@ -94,10 +94,10 @@
       "empty": "No winners yet"
     },
     "welcome": {
-      "label": "Welcome,"
+      "label": "\uD83D\uDC4B Welcome,"
     },
     "hero": {
-      "tagline": "Skill-Based Betting"
+      "tagline": "No luck, no gambling - only your skill matters"
     },
     "status": {
       "cashoutTitle": "Cash out in progress",
