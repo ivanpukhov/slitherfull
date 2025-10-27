@@ -54,8 +54,8 @@ async function registerUser({ email, password, nickname }) {
     walletSecretKey: wallet.secretKey
   })
   await walletService.requestInitialAirdrop(user)
-  const { token, user } = issueAuthResponse(user)
-  return { ok: true, user, token }
+  const { token, user: sanitizedUser } = issueAuthResponse(user)
+  return { ok: true, user: sanitizedUser, token }
 }
 
 async function loginUser({ email, password }) {
