@@ -69,6 +69,39 @@ interface DrawBackgroundOptions {
   backgroundOffset?: { x: number; y: number }
 }
 
+type VignetteCacheEntry = {
+  width: number
+  height: number
+  gradient: CanvasGradient
+}
+
+const vignetteCache = new WeakMap<CanvasRenderingContext2D, VignetteCacheEntry>()
+
+function getVignetteGradient(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number
+): CanvasGradient {
+  const cached = vignetteCache.get(ctx)
+  if (cached && cached.width === width && cached.height === height) {
+    return cached.gradient
+  }
+
+  const gradient = ctx.createRadialGradient(
+    width / 2,
+    height / 2,
+    Math.min(width, height) * 0.2,
+    width / 2,
+    height / 2,
+    Math.max(width, height) * 0.75
+  )
+  gradient.addColorStop(0, 'rgba(5, 9, 16, 0)')
+  gradient.addColorStop(1, 'rgba(0, 0, 0, 0.65)')
+
+  vignetteCache.set(ctx, { width, height, gradient })
+  return gradient
+}
+
 export function drawBackground({
   ctx,
   camX,
@@ -103,17 +136,7 @@ export function drawBackground({
   }
   ctx.restore()
 
-  const vignette = ctx.createRadialGradient(
-    width / 2,
-    height / 2,
-    Math.min(width, height) * 0.2,
-    width / 2,
-    height / 2,
-    Math.max(width, height) * 0.75
-  )
-  vignette.addColorStop(0, 'rgba(5, 9, 16, 0)')
-  vignette.addColorStop(1, 'rgba(0, 0, 0, 0.65)')
-  ctx.fillStyle = vignette
+  ctx.fillStyle = getVignetteGradient(ctx, width, height)
   ctx.fillRect(0, 0, width, height)
 }
 
@@ -145,6 +168,9 @@ export function drawFoods({
   ctx.save()
   const halfWidth = canvas.width / dpr / 2
   const halfHeight = canvas.height / dpr / 2
+  const viewHalfWidth = halfWidth / zoom
+  const viewHalfHeight = halfHeight / zoom
+  const cullPadding = 120
   ctx.translate(halfWidth, halfHeight)
   ctx.scale(zoom, zoom)
   ctx.translate(-camX, -camY)
@@ -162,6 +188,14 @@ export function drawFoods({
     const radius = (baseSize + magnitude * (food.big ? 1.45 : 1.1)) * pulse
     const fx = typeof food.displayX === 'number' ? food.displayX : food.targetX
     const fy = typeof food.displayY === 'number' ? food.displayY : food.targetY
+    if (
+      fx < camX - viewHalfWidth - cullPadding ||
+      fx > camX + viewHalfWidth + cullPadding ||
+      fy < camY - viewHalfHeight - cullPadding ||
+      fy > camY + viewHalfHeight + cullPadding
+    ) {
+      continue
+    }
     ctx.globalAlpha = (food.big ? 0.95 : 0.88) * (food.life || 1)
     ctx.shadowBlur = food.big ? 38 : 24
     ctx.shadowColor = withAlpha(color, food.big ? 0.75 : 0.5)
