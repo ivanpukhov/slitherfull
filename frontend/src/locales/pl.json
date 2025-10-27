@@ -203,10 +203,7 @@
       "submitting": "Wysyłanie...",
       "loginAction": "Zaloguj się",
       "registerAction": "Zarejestruj się",
-      "checkingSession": "Sprawdzanie sesji...",
-      "or": "Lub",
-      "googleButton": "Kontynuuj z Google",
-      "googleHint": "Utworzymy lub połączymy konto z Twoim adresem Google."
+      "checkingSession": "Sprawdzanie sesji..."
     },
     "fields": {
       "email": "Email",
@@ -219,11 +216,6 @@
       "emailTaken": "Ten e-mail jest już zarejestrowany.",
       "nicknameTaken": "Wybrany pseudonim jest zajęty.",
       "invalidCredentials": "Nieprawidłowy e-mail lub hasło.",
-      "passwordAuthUnavailable": "To konto loguje się przez Google.",
-      "popupBlocked": "Zezwól na wyskakujące okna, aby kontynuować przez Google.",
-      "oauthCancelled": "Logowanie przez Google zostało przerwane.",
-      "googleFailed": "Nie udało się ukończyć logowania Google.",
-      "googleEmailNotVerified": "Zweryfikuj swój adres Google przed logowaniem.",
       "network": "Nie można połączyć się z serwerem.",
       "server": "Wystąpił błąd serwera. Spróbuj ponownie później."
     }

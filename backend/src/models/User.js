@@ -20,7 +20,7 @@ User.init(
     },
     passwordHash: {
       type: DataTypes.STRING,
-      allowNull: true
+      allowNull: false
     },
     nickname: {
       type: DataTypes.STRING,
@@ -40,11 +40,6 @@ User.init(
     walletSecretKey: {
       type: DataTypes.TEXT,
       allowNull: false
-    },
-    googleId: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      unique: true
     }
   },
   {

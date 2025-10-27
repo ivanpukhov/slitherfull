@@ -204,9 +204,6 @@
       "loginAction": "Iniciar sesión",
       "registerAction": "Registrarse",
       "checkingSession": "Verificando sesión...",
-      "or": "O",
-      "googleButton": "Continuar con Google",
-      "googleHint": "Crearemos o vincularemos tu cuenta con tu correo de Google.",
       "legal": {
         "intro": "Al continuar, aceptas nuestros",
         "and": "y reconoces la",
@@ -225,11 +222,6 @@
       "emailTaken": "Este correo ya está registrado.",
       "nicknameTaken": "El apodo seleccionado ya está en uso.",
       "invalidCredentials": "Correo o contraseña incorrectos.",
-      "passwordAuthUnavailable": "Esta cuenta usa el acceso con Google.",
-      "popupBlocked": "Permite las ventanas emergentes para continuar con Google.",
-      "oauthCancelled": "Se canceló el inicio de sesión con Google.",
-      "googleFailed": "No se pudo completar el inicio de sesión con Google.",
-      "googleEmailNotVerified": "Verifica tu correo de Google antes de iniciar sesión.",
       "network": "No se pudo conectar al servidor.",
       "server": "Error del servidor. Intenta más tarde."
     }
