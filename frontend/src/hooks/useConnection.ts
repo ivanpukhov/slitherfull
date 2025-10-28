@@ -6,6 +6,13 @@ import { translate } from './useTranslation'
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080'
 const PING_INTERVAL = 3500
 
+function nowMs(): number {
+  if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+    return performance.now()
+  }
+  return Date.now()
+}
+
 interface UseConnectionOptions {
   controller: GameController
   token?: string | null
@@ -74,7 +81,7 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
           }
           const sendPing = () => {
             if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return
-            const timestamp = Date.now()
+            const timestamp = nowMs()
             lastPingSentRef.current = timestamp
             wsRef.current.send(JSON.stringify({ type: 'ping', t: timestamp }))
           }
@@ -98,10 +105,14 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
           const message = safeParse<any>(event.data)
           if (!message) return
           if (message.type === 'pong') {
-            const sent = typeof message.t === 'number' ? message.t : lastPingSentRef.current
+            const fallbackSent = typeof lastPingSentRef.current === 'number' ? lastPingSentRef.current : null
+            const sent = typeof message.t === 'number' ? message.t : fallbackSent
             if (typeof sent === 'number') {
-              const latency = Date.now() - sent
-              if (latency > 0) {
+              let latency = nowMs() - sent
+              if (!Number.isFinite(latency) || latency <= 0) {
+                latency = fallbackSent !== null ? nowMs() - fallbackSent : NaN
+              }
+              if (Number.isFinite(latency) && latency > 0) {
                 controller.updateNetworkLatency(latency)
               }
             }
