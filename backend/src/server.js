@@ -39,8 +39,9 @@ const cfg = {
     sectorSize: 128,
 
     // food
-    initialFood: 450,
-    targetFood: 700,
+    initialFood: 30,
+    targetFood: 30,
+    maxFood: 30,
     foodSpawnChance: 0.55,
     foodPickupRadius: 26,
     deathScatterRadius: 140,
