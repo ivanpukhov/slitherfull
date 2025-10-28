@@ -1217,9 +1217,10 @@ export class GameController {
     }
   }
 
-  updateNetworkLatency(pingMs: number) {
-    if (!Number.isFinite(pingMs) || pingMs <= 0) return
+  updateNetworkLatency(rttMs: number) {
+    if (!Number.isFinite(rttMs) || rttMs <= 0) return
     const stats = this.state.performance
+    const pingMs = rttMs / 2
     const smoothing = 0.25
     stats.ping = stats.ping > 0 ? lerp(stats.ping, pingMs, smoothing) : pingMs
     const deviation = Math.abs(pingMs - stats.ping)
