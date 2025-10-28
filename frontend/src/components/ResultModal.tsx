@@ -46,7 +46,7 @@ export function ResultModal({
   }
 
   return (
-    <Modal open={open} title={result.title} onClose={onClose} width="520px">
+    <Modal open={open} title={result.title} onClose={onClose} >
       <div className={`result-modal result-modal--${result.variant}`}>
         <ul className="result-modal__details">
           {result.details.map((line, index) => (

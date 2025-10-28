@@ -717,7 +717,7 @@ export function NicknameScreen({
                 open={skinModalOpen}
                 title={t('lobby.skinModal.title')}
                 onClose={handleSkinModalClose}
-                width="520px"
+
             >
                 <div className="skin-modal">
                     <p className="skin-modal__hint">{t('lobby.skinModal.hint')}</p>
@@ -753,7 +753,7 @@ export function NicknameScreen({
                 open={walletModalOpen}
                 title={t('lobby.wallet.modalTitle')}
                 onClose={() => setWalletModalOpen(false)}
-                width="520px"
+
             >
                 <div className="wallet-section wallet-modal-section">
                     <div className="wallet-row">
@@ -826,7 +826,7 @@ export function NicknameScreen({
                 open={winningsModalOpen}
                 title={t('leaderboard.winnings.title')}
                 onClose={() => setWinningsModalOpen(false)}
-                width="520px"
+
             >
                 <WinningsLeaderboardCard
                     entries={winningsEntries}

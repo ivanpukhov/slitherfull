@@ -62,7 +62,6 @@ export function WinningsLeaderboardCard({
     <div className="winnings-card" role="complementary">
       <div className="winnings-card-header">
         <div className="winnings-card-titles">
-          <div className="winnings-card-title">{t('leaderboard.winnings.title')}</div>
           {priceHint ? <div className="winnings-card-subtitle">{priceHint}</div> : null}
         </div>
       </div>

@@ -550,7 +550,6 @@ canvas {
 .modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(4, 4, 8, 0.78);
     backdrop-filter: blur(14px);
     display: flex;
     align-items: center;
@@ -563,17 +562,16 @@ canvas {
 }
 
 .modal-window {
-    width: min(90vw, 640px);
-    border-radius: 28px;
-    border: 1px solid rgba(244, 197, 66, 0.28);
-    background: linear-gradient(155deg, rgba(8, 8, 14, 0.96), rgba(18, 18, 26, 0.92)),
-    radial-gradient(circle at 15% -10%, rgba(244, 197, 66, 0.18), transparent 70%);
-    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.65),
-    0 0 0 1px rgba(244, 197, 66, 0.18),
-    0 0 42px rgba(245, 158, 11, 0.18);
+    width: min(90vw, 726px);
     max-height: 90vh;
     overflow: hidden;
     animation: modal-pop 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+    border-radius: 10px;
+    border: 0.5px solid rgba(196, 196, 196, 0.25);
+    background: #111;
+    box-shadow: 0 4px 0 0 #121212;
+    backdrop-filter: blur(6px);
 }
 
 .modal-header {
@@ -1363,7 +1361,7 @@ canvas {
     height: 40px;
     border-radius: 14px;
     border: 1px solid rgba(148, 163, 184, 0.24);
-    background: rgba(15, 23, 42, 0.6);
+    background: #111;
     color: #e2e8f0;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -1586,7 +1584,7 @@ canvas {
     display: grid;
     place-items: center;
     box-shadow: 0 0 0 12px rgba(15, 23, 42, 0.45),
-    0 30px 80px rgba(15, 23, 42, 0.6);
+    0 30px 80px #111;
 }
 
 .arena-character-core {
@@ -1660,7 +1658,7 @@ canvas {
     place-items: center;
     overflow: hidden;
     box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.16),
-    0 16px 30px rgba(15, 23, 42, 0.6);
+    0 16px 30px #111;
     transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
@@ -1681,7 +1679,7 @@ canvas {
     width: 58%;
     height: 58%;
     border-radius: 50%;
-    border: 2px solid rgba(15, 23, 42, 0.6);
+    border: 2px solid #111;
     background: rgba(15, 23, 42, 0.35);
 }
 
@@ -1955,11 +1953,6 @@ canvas {
 
 .winnings-card {
     margin-top: 0;
-    padding: 18px 20px;
-    border-radius: 24px;
-    border: 1px solid rgba(244, 197, 66, 0.22);
-    background: linear-gradient(150deg, rgba(8, 8, 14, 0.92), rgba(18, 18, 26, 0.9)),
-    radial-gradient(circle at 20% 0%, rgba(244, 197, 66, 0.16), transparent 70%);
 }
 
 .winnings-preview {
@@ -2044,10 +2037,12 @@ canvas {
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 12px 16px;
-    border-radius: 18px;
-    background: rgba(8, 8, 14, 0.78);
-    border: 1px solid rgba(244, 197, 66, 0.2);
+    border-radius: 5px;
+    border: 0.5px solid #FFE692;
+    background: #212121;
+    box-shadow: 4px 4px 0 0 rgba(255, 230, 146, 0.50);
+    padding: 18px 12px;
+
 }
 
 .winnings-card-list li.placeholder {
@@ -2534,7 +2529,7 @@ canvas {
     padding: 10px 12px;
     border-radius: 12px;
     border: 1px solid rgba(148, 163, 184, 0.4);
-    background: rgba(15, 23, 42, 0.6);
+    background: #111;
     color: #e2e8f0;
     font-family: 'JetBrains Mono', Menlo, Monaco, Consolas, 'Courier New', monospace;
     font-size: 12px;
@@ -4453,7 +4448,7 @@ section.damn-card.damn-card--customize{
     padding: 10px 12px;
     border-radius: 10px;
     border: 1px solid rgba(148, 163, 184, 0.16);
-    background: rgba(15, 23, 42, 0.6);
+    background: #111;
     color: var(--color-text-primary);
 }
 
@@ -4485,7 +4480,7 @@ section.damn-card.damn-card--customize{
     align-items: center;
     justify-content: space-between;
     padding: 10px 12px;
-    background: rgba(15, 23, 42, 0.6);
+    background: #111;
     border: 1px solid rgba(148, 163, 184, 0.14);
     border-radius: 10px;
     gap: 12px;
