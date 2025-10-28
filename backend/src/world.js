@@ -143,6 +143,9 @@ class World {
             '#ffd166', '#fca311', '#ff5e57', '#4cd137', '#00e5ff', '#7d5fff',
             '#ff8bd2', '#b7fbff', '#caffbf', '#fdffb6', '#ffd6a5', '#bdb2ff'
         ]
+        this.maxFood = Number.isFinite(cfg.maxFood)
+            ? Math.max(0, Math.floor(cfg.maxFood))
+            : Infinity
         this.nextFoodId = 1
         this.tickId = 0
         this.centerX = cfg.width / 2
@@ -182,6 +185,7 @@ class World {
     }
 
     spawnFoodAt(x, y, value = 1, options = {}) {
+        if (this.foods.size >= this.maxFood) return null
         const pos = projectToCircle(this.centerX, this.centerY, this.radius, x, y)
         const id = "f" + (this.nextFoodId++)
         const palette = options.palette || this.foodPalette
@@ -194,11 +198,13 @@ class World {
         this.foods.set(id, f)
         const key = this.foodSpatial.add(id, f.x, f.y)
         this.foodCells.set(id, key)
+        return f
     }
 
     spawnFood() {
+        if (this.foods.size >= this.maxFood) return null
         const p = randomPointInCircle(this.centerX, this.centerY, this.radius)
-        this.spawnFoodAt(p.x, p.y, 1)
+        return this.spawnFoodAt(p.x, p.y, 1)
     }
 
     addPlayer(ws, name, skin, context = {}) {
@@ -498,6 +504,7 @@ class World {
                     big: true,
                     betValue: GOLDEN_FOOD_VALUE_CENTS
                 })
+                if (this.foods.size >= this.maxFood) break
             }
         }
 
@@ -515,6 +522,7 @@ class World {
                     big: value >= this.cfg.bigFoodThreshold
                 })
                 remaining -= value
+                if (this.foods.size >= this.maxFood) break
             }
 
             let index = points.length - 1
@@ -524,6 +532,7 @@ class World {
                 const value = Math.min(remaining, 2)
                 this.spawnFoodAt(clamped.x, clamped.y, value, { palette })
                 remaining -= value
+                if (this.foods.size >= this.maxFood) break
                 index = (index - 1 + points.length) % points.length
             }
         }
