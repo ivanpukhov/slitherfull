@@ -435,7 +435,6 @@ export function NicknameScreen({
     const handleSkinSelect = useCallback(
         (skin: string) => {
             onSelectSkin(skin)
-            setSkinModalOpen(false)
         },
         [onSelectSkin]
     )
@@ -884,6 +883,9 @@ export function NicknameScreen({
                             )
                         })}
                     </div>
+                    <div className="skin-modal__preview" aria-hidden="true">
+                        <SnakePreview colors={skinColors} width={420} height={200} length={140} />
+                    </div>
                 </div>
             </Modal>
 
@@ -904,7 +906,6 @@ export function NicknameScreen({
                 profileName={profileName}
                 profileEmail={authUser?.email ?? null}
                 inGameBalance={balance}
-                snakeColors={skinColors}
                 totalWinningsUsd={totalWinningsUsd}
                 totalWinningsSol={totalWinningsSol}
                 activePlayers={activePlayers}

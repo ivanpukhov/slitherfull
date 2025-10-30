@@ -4894,6 +4894,21 @@ body.is-touch #leaderboard {
     color: rgba(255, 255, 255, 0.72);
 }
 
+.skin-modal__preview {
+    margin-top: 8px;
+    padding: 16px;
+    border-radius: 16px;
+    background: #111111;
+    border: 1px solid var(--color-accent);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.skin-modal__preview .snake-preview {
+    max-width: 100%;
+}
+
 .damn-skin-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
@@ -5255,19 +5270,6 @@ section.damn-card.damn-card--customize{
     flex-direction: column;
     gap: 24px;
     z-index: 1;
-}
-
-.social-modal__snake {
-    position: absolute;
-    top: -80px;
-    right: -120px;
-    width: 420px;
-    opacity: 0.32;
-    pointer-events: none;
-}
-
-.social-modal__snake .snake-preview__canvas {
-    filter: drop-shadow(0 24px 48px #FFF94F0A);
 }
 
 .social-modal__tabs {
@@ -5649,28 +5651,38 @@ section.damn-card.damn-card--customize{
 }
 
 .server-browser__tabs {
-    display: inline-flex;
+    display: flex;
     gap: 12px;
+    padding: 8px;
+    background: #111111;
+    border-radius: 14px;
+    align-self: flex-start;
 }
 
 .server-browser__tab {
-    border: 1px solid rgba(255, 249, 78, 0.16);
-    border-radius: 12px;
-    padding: 10px 18px;
-    background: rgba(26, 26, 26, 0.9);
-    color: rgba(255, 255, 255, 0.78);
+    border: 1px solid #1a1a1a;
+    border-radius: 10px;
+    padding: 10px 20px;
+    background: #1a1a1a;
+    color: #ffffff;
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.server-browser__tab:hover,
+.server-browser__tab:focus-visible {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    outline: none;
 }
 
 .server-browser__tab.active {
     background: var(--color-accent);
-    color: #111;
-    box-shadow: 0 14px 30px rgba(255, 249, 78, 0.28);
+    color: #111111;
     border-color: var(--color-accent);
 }
 
