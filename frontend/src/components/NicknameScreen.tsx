@@ -1006,20 +1006,8 @@ export function NicknameScreen({
                                 <div className="hub-wallet-panel cashout-panel">
                                     <div className="cashout-modal">
                                         <header className="cashout-modal__header">
-                                            <div className="cashout-modal__title">
-                                                <span className="cashout-modal__icon">💸</span>
-                                                <div>
-                                                    <h3 className="cashout-modal__heading">{t('hub.account.cashoutModal.title')}</h3>
-                                                    <span className="cashout-modal__subtitle">{t('hub.account.cashoutModal.subtitle')}</span>
-                                                </div>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                className="cashout-modal__home"
-                                                onClick={() => setWalletModalOpen(false)}
-                                            >
-                                                {t('hub.account.cashoutModal.home')}
-                                            </button>
+
+
                                         </header>
                                         <section className="cashout-section">
                                             <div className="cashout-balance">
