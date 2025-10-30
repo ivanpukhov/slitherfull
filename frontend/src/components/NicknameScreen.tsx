@@ -14,21 +14,18 @@ import { useFriends } from '../hooks/useFriends'
 import { getIntlLocale, useTranslation } from '../hooks/useTranslation'
 import type { PlayerStatsData } from '../hooks/usePlayerStats'
 import type { WinningsLeaderboardEntry } from '../hooks/useWinningsLeaderboard'
-import { PlayerStatsChart } from './PlayerStatsChart'
-import { WinningsLeaderboardCard } from './Leaderboard'
 import { Modal } from './Modal'
-import { FriendsPanel } from './FriendsModal'
 import { SnakePreview } from './SnakePreview'
 import { LanguageSelector } from './LanguageSelector'
 import { useWalletContext } from '../hooks/useWalletContext'
 import type { AuthResult, AuthUser } from '../hooks/useAuth'
 import { QRCodeCanvas } from 'qrcode.react'
+import { SocialModal, type SocialTab } from './SocialModal'
+import { ServerBrowserModal, type ServerBrowserTab } from './ServerBrowserModal'
 import wallet from './../assets/wallet.svg'
 import castom from './../assets/castomize.svg'
 import leader from './../assets/leader.svg'
 import friend from './../assets/friend.svg'
-
-type HubTab = 'winners' | 'friends' | 'stats' | 'account'
 
 interface NicknameScreenProps {
     visible: boolean
@@ -66,6 +63,8 @@ interface NicknameScreenProps {
     authToken?: string | null
     authUser?: AuthUser | null
     onUpdateNickname?: (nickname: string) => Promise<AuthResult>
+    onRequireAuth: () => void
+    onLogout?: () => void
 }
 
 export function NicknameScreen({
@@ -103,7 +102,9 @@ export function NicknameScreen({
                                    totalWinningsSol,
                                    authToken,
                                    authUser,
-                                   onUpdateNickname
+                                   onUpdateNickname,
+                                   onRequireAuth,
+                                   onLogout
                                }: NicknameScreenProps) {
     const { t, locale } = useTranslation()
     const wallet = useWalletContext()
@@ -158,8 +159,10 @@ export function NicknameScreen({
     const copyResetTimer = useRef<number | null>(null)
     const [withdrawAddress, setWithdrawAddress] = useState('')
     const [withdrawError, setWithdrawError] = useState<string | null>(null)
-    const [hubModalOpen, setHubModalOpen] = useState(false)
-    const [hubTab, setHubTab] = useState<HubTab>('winners')
+    const [socialModalOpen, setSocialModalOpen] = useState(false)
+    const [socialTab, setSocialTab] = useState<SocialTab>('leaderboard')
+    const [serverBrowserOpen, setServerBrowserOpen] = useState(false)
+    const [serverBrowserTab, setServerBrowserTab] = useState<ServerBrowserTab>('account')
     const [walletModalOpen, setWalletModalOpen] = useState(false)
     const [walletTab, setWalletTab] = useState<'deposit' | 'withdraw'>('deposit')
     const [skinModalOpen, setSkinModalOpen] = useState(false)
@@ -170,33 +173,6 @@ export function NicknameScreen({
         { type: 'success' | 'error'; message: string } | null
     >(null)
     const [nicknameSaving, setNicknameSaving] = useState(false)
-    const incomingFriendRequests = friendsController.incoming?.length ?? 0
-
-    const hubTabs = useMemo(
-        () => [
-            { key: 'winners' as const, label: t('hub.tabs.winners') },
-            { key: 'friends' as const, label: t('hub.tabs.friends') },
-            { key: 'stats' as const, label: t('hub.tabs.stats') },
-            { key: 'account' as const, label: t('hub.tabs.account') }
-        ],
-        [t]
-    )
-
-    const hubTitle = useMemo(() => {
-        switch (hubTab) {
-            case 'winners':
-                return t('hub.titles.winners')
-            case 'friends':
-                return t('hub.titles.friends')
-            case 'stats':
-                return t('hub.titles.stats')
-            case 'account':
-                return t('hub.titles.account')
-            default:
-                return t('hub.titles.winners')
-        }
-    }, [hubTab, t])
-
     const depositUri = useMemo(() => {
         if (!walletAddress) return null
         const normalized = walletAddress.trim()
@@ -280,7 +256,8 @@ export function NicknameScreen({
 
     useEffect(() => {
         if (!visible) {
-            setHubModalOpen(false)
+            setSocialModalOpen(false)
+            setServerBrowserOpen(false)
             setWalletModalOpen(false)
         }
     }, [visible])
@@ -298,10 +275,10 @@ export function NicknameScreen({
     }, [walletTab, withdrawError])
 
     useEffect(() => {
-        if (hubModalOpen && hubTab === 'friends') {
+        if (socialModalOpen && socialTab === 'friends') {
             friendsController.refresh()
         }
-    }, [friendsController, hubModalOpen, hubTab])
+    }, [friendsController, socialModalOpen, socialTab])
 
     useEffect(() => {
         setNicknameDraft(authUser?.nickname ?? '')
@@ -379,8 +356,11 @@ export function NicknameScreen({
         }
     }
 
-    const topWinner = useMemo(() => winningsEntries[0] ?? null, [winningsEntries])
     const skinColors = useMemo(() => SKINS[selectedSkin] ?? [], [selectedSkin])
+    const selectedSkinLabel = useMemo(
+        () => t(SKIN_LABELS[selectedSkin] || 'game.skins.default'),
+        [selectedSkin, t]
+    )
     const {friends: friendsList, loading: friendsLoading, error: friendsError} = friendsController
     const friendsPreview = useMemo(() => friendsList.slice(0, 3), [friendsList])
     const primaryColor = skinColors[0] ?? '#38bdf8'
@@ -446,31 +426,40 @@ export function NicknameScreen({
         [onSelectSkin]
     )
 
-    const handleOpenHub = useCallback(
-        (tab: HubTab) => {
-            if (!isAuthenticated && (tab === 'friends' || tab === 'account')) {
-                onStart()
+    const handleOpenSocial = useCallback(
+        (nextTab: SocialTab) => {
+            const requiresAuth = nextTab === 'friends' || nextTab === 'profile' || nextTab === 'search'
+            if (!isAuthenticated && requiresAuth) {
+                onRequireAuth()
                 return
             }
-            if (tab === 'account') {
+            setSocialTab(nextTab)
+            setSocialModalOpen(true)
+        },
+        [isAuthenticated, onRequireAuth]
+    )
+
+    const handleOpenServerBrowser = useCallback(
+        (nextTab: ServerBrowserTab = 'account') => {
+            if (nextTab === 'account') {
                 setNicknameFeedback(null)
             }
-            setHubTab(tab)
-            setHubModalOpen(true)
+            setServerBrowserTab(nextTab)
+            setServerBrowserOpen(true)
         },
-        [isAuthenticated, onStart]
+        []
     )
 
     const handleWalletOpen = useCallback(
         (tab: 'deposit' | 'withdraw' = 'deposit') => {
             if (!isAuthenticated) {
-                onStart()
+                onRequireAuth()
                 return
             }
             setWalletTab(tab)
             setWalletModalOpen(true)
         },
-        [isAuthenticated, onStart]
+        [isAuthenticated, onRequireAuth]
     )
 
     const handleManageAffiliate = useCallback(() => {
@@ -486,16 +475,16 @@ export function NicknameScreen({
     }, [])
 
     const handleOpenFriends = useCallback(() => {
-        handleOpenHub('friends')
-    }, [handleOpenHub])
+        handleOpenSocial('friends')
+    }, [handleOpenSocial])
 
     const handleOpenStats = useCallback(() => {
-        handleOpenHub('stats')
-    }, [handleOpenHub])
+        handleOpenSocial('profile')
+    }, [handleOpenSocial])
 
     const handleOpenWinners = useCallback(() => {
-        handleOpenHub('winners')
-    }, [handleOpenHub])
+        handleOpenSocial('leaderboard')
+    }, [handleOpenSocial])
 
     const handleWalletRefresh = useCallback(() => {
         if (typeof walletRefresh === 'function') {
@@ -521,6 +510,9 @@ export function NicknameScreen({
             : copyStatus === 'error'
                 ? t('lobby.wallet.copyStatus.error')
                 : t('lobby.wallet.copyStatus.default')
+    const serverBrowserButtonLabel = isAuthenticated
+        ? t('serverBrowser.actions.settings')
+        : t('serverBrowser.actions.login')
 
     return (
         <div id="nicknameScreen" className={visible ? 'overlay overlay--lobby' : 'overlay overlay--lobby hidden'}>
@@ -530,7 +522,16 @@ export function NicknameScreen({
                         <span className="damn-topbar__label">{t('lobby.welcome.label')}</span>
                         <span className="damn-topbar__name">{profileName}</span>
                     </div>
-                    <LanguageSelector/>
+                    <div className="damn-topbar__actions">
+                        <button
+                            type="button"
+                            className={`topbar-button${isAuthenticated ? ' topbar-button--settings' : ' topbar-button--login'}`}
+                            onClick={() => handleOpenServerBrowser('account')}
+                        >
+                            {serverBrowserButtonLabel}
+                        </button>
+                        <LanguageSelector/>
+                    </div>
                 </div>
 
                 <div className="damn-hero">
@@ -845,152 +846,60 @@ export function NicknameScreen({
                 </div>
             </Modal>
 
-            <Modal
-                open={hubModalOpen}
-                title={hubTitle}
-                onClose={() => setHubModalOpen(false)}
-                width="720px"
-            >
-                <div className="hub-modal">
-                    <div className="hub-tabs" role="tablist">
-                        {hubTabs.map(({ key, label }) => (
-                            <button
-                                key={key}
-                                type="button"
-                                role="tab"
-                                aria-selected={hubTab === key}
-                                className={`hub-tab${hubTab === key ? ' active' : ''}`}
-                                onClick={() => {
-                                    setHubTab(key)
-                                    if (key === 'account') {
-                                        setNicknameFeedback(null)
-                                    }
-                                }}
-                            >
-                                {label}
-                                {key === 'friends' && incomingFriendRequests > 0 ? (
-                                    <span className="hub-tab-badge">{incomingFriendRequests}</span>
-                                ) : null}
-                            </button>
-                        ))}
-                    </div>
-                    <div className="hub-panels">
-                        {hubTab === 'winners' ? (
-                            <WinningsLeaderboardCard
-                                entries={winningsEntries}
-                                loading={winningsLoading}
-                                error={winningsError ?? null}
-                                priceHint={winningsPriceHint}
-                            />
-                        ) : null}
-                        {hubTab === 'friends' ? (
-                            isAuthenticated ? (
-                                <FriendsPanel
-                                    controller={friendsController}
-                                    active={hubModalOpen && hubTab === 'friends'}
-                                />
-                            ) : (
-                                <div className="hub-placeholder">{t('hub.friends.loginPrompt')}</div>
-                            )
-                        ) : null}
-                        {hubTab === 'stats' ? (
-                            isAuthenticated ? (
-                                <PlayerStatsChart
-                                    series={playerStats?.series ?? []}
-                                    loading={playerStatsLoading}
-                                    totalUsd={playerStats?.totals?.usd ?? 0}
-                                    totalSol={playerStats?.totals?.sol ?? 0}
-                                />
-                            ) : (
-                                <div className="hub-placeholder">{t('hub.stats.loginPrompt')}</div>
-                            )
-                        ) : null}
-                        {hubTab === 'account' ? (
-                            isAuthenticated ? (
-                                <div className="hub-account">
-                                    <section className="hub-account-section">
-                                        <h3>{t('hub.account.profileSection')}</h3>
-                                        <div className="hub-account-field">
-                                            <span className="hub-account-label">{t('hub.account.email')}</span>
-                                            <span className="hub-account-value">{authUser?.email ?? '—'}</span>
-                                        </div>
-                                        <div className="hub-account-field">
-                                            <span className="hub-account-label">{t('hub.account.nickname')}</span>
-                                            <div className="hub-account-nickname">
-                                                <input
-                                                    type="text"
-                                                    maxLength={16}
-                                                    value={nicknameDraft}
-                                                    onChange={(event) => setNicknameDraft(event.target.value)}
-                                                    disabled={nicknameSaving || !onUpdateNickname}
-                                                />
-                                                <button
-                                                    type="button"
-                                                    className="hub-account-save"
-                                                    onClick={handleNicknameSubmit}
-                                                    disabled={nicknameSubmitDisabled}
-                                                >
-                                                    {nicknameSaving ? t('hub.account.saving') : t('hub.account.save')}
-                                                </button>
-                                            </div>
-                                        </div>
-                                        {nicknameFeedback ? (
-                                            <div className={`hub-account-feedback ${nicknameFeedback.type}`}>
-                                                {nicknameFeedback.message}
-                                            </div>
-                                        ) : null}
-                                        <p className="hub-account-info">
-                                            {t('hub.account.commissionInfo', {
-                                                percent: Math.round(BET_COMMISSION_RATE * 100)
-                                            })}
-                                        </p>
-                                    </section>
-                                    <section className="hub-account-section">
-                                        <h3>{t('hub.account.walletSection')}</h3>
-                                        <div className="hub-wallet-summary">
-                                            <div className="hub-wallet-item">
-                                                <span className="hub-wallet-label">{t('hub.account.inGameBalance')}</span>
-                                                <span className="hub-wallet-value">{formatUsd(balance)}</span>
-                                            </div>
-                                            {typeof walletSol === 'number' ? (
-                                                <div className="hub-wallet-item">
-                                                    <span className="hub-wallet-label">{t('hub.account.walletSol')}</span>
-                                                    <span className="hub-wallet-value">{formattedSol}</span>
-                                                </div>
-                                            ) : null}
-                                            {typeof derivedUsd === 'number' ? (
-                                                <div className="hub-wallet-item">
-                                                    <span className="hub-wallet-label">{t('hub.account.walletUsd')}</span>
-                                                    <span className="hub-wallet-value">{formattedUsd}</span>
-                                                </div>
-                                            ) : null}
-                                        </div>
-                                        <div className="hub-wallet-tabs" role="group" aria-label={t('hub.account.walletSection')}>
-                                            <button
-                                                type="button"
-                                                className="hub-wallet-tab"
-                                                onClick={() => handleWalletOpen('deposit')}
-                                            >
-                                                {t('hub.account.depositTab')}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="hub-wallet-tab"
-                                                onClick={() => handleWalletOpen('withdraw')}
-                                            >
-                                                {t('hub.account.withdrawTab')}
-                                            </button>
-                                        </div>
-                                        {walletError ? <div className="hub-wallet-error">{walletError}</div> : null}
-                                    </section>
-                                </div>
-                            ) : (
-                                <div className="hub-placeholder">{t('hub.account.loginPrompt')}</div>
-                            )
-                        ) : null}
-                    </div>
-                </div>
-            </Modal>
+            <SocialModal
+                open={socialModalOpen}
+                tab={socialTab}
+                onSelectTab={setSocialTab}
+                onClose={() => setSocialModalOpen(false)}
+                winningsEntries={winningsEntries}
+                winningsLoading={winningsLoading}
+                winningsError={winningsError ?? null}
+                winningsPriceHint={winningsPriceHint}
+                isAuthenticated={Boolean(isAuthenticated)}
+                onRequireAuth={onRequireAuth}
+                friendsController={friendsController}
+                playerStats={playerStats ?? null}
+                playerStatsLoading={playerStatsLoading}
+                profileName={profileName}
+                profileEmail={authUser?.email ?? null}
+                inGameBalance={balance}
+                snakeColors={skinColors}
+                totalWinningsUsd={totalWinningsUsd}
+                totalWinningsSol={totalWinningsSol}
+                activePlayers={activePlayers}
+            />
+
+            <ServerBrowserModal
+                open={serverBrowserOpen}
+                tab={serverBrowserTab}
+                onSelectTab={setServerBrowserTab}
+                onClose={() => setServerBrowserOpen(false)}
+                isAuthenticated={Boolean(isAuthenticated)}
+                onRequireAuth={onRequireAuth}
+                onLogout={onLogout}
+                profileName={profileName}
+                profileEmail={authUser?.email ?? null}
+                walletAddress={walletAddress}
+                walletUsd={derivedUsd}
+                walletSol={walletSol ?? null}
+                walletLoading={walletLoading}
+                onRefreshWallet={handleWalletRefresh}
+                onCopyWallet={handleCopyWallet}
+                walletCopyLabel={copyLabel}
+                inGameBalance={balance}
+                snakeColors={skinColors}
+                selectedSkinLabel={selectedSkinLabel}
+                betValue={betValue}
+                serverRegion={t('serverBrowser.game.regionValue')}
+                nicknameDraft={nicknameDraft}
+                onNicknameDraftChange={setNicknameDraft}
+                onSubmitNickname={handleNicknameSubmit}
+                nicknameSaving={nicknameSaving}
+                nicknameFeedback={nicknameFeedback}
+                nicknameSubmitDisabled={nicknameSubmitDisabled}
+                commissionPercent={Math.round(BET_COMMISSION_RATE * 100)}
+            />
+
 
             <Modal
                 open={walletModalOpen}

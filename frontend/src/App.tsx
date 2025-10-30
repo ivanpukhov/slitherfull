@@ -405,7 +405,9 @@ function GameView() {
     t
   ])
 
-  const handlePrimaryAction = isAuthenticated ? handleStart : () => setAuthModalOpen(true)
+  const handleRequireAuth = useCallback(() => setAuthModalOpen(true), [])
+
+  const handlePrimaryAction = isAuthenticated ? handleStart : handleRequireAuth
   const inLobby = game.nicknameScreenVisible
 
   return (
@@ -469,6 +471,8 @@ function GameView() {
         authToken={auth.token}
         authUser={auth.user}
         onUpdateNickname={auth.updateNickname}
+        onRequireAuth={handleRequireAuth}
+        onLogout={auth.logout}
       />
       <ResultModal
         open={Boolean(game.lastResult)}

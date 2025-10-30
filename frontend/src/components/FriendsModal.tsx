@@ -27,20 +27,23 @@ const ERROR_MESSAGE_KEYS: Record<string, string> = {
   search_failed: 'friends.errors.searchFailed'
 }
 
+type Translate = ReturnType<typeof useTranslation>['t']
+
+export function resolveFriendsError(code: string | null | undefined, t: Translate) {
+  if (!code) return null
+  const key = ERROR_MESSAGE_KEYS[code]
+  return key ? t(key) : null
+}
+
 interface FriendsPanelProps {
   controller: UseFriendsResult
   active: boolean
 }
 
 export function FriendsPanel({ controller, active }: FriendsPanelProps) {
-  const { friends, outgoing, incoming, loading, error, refresh, search, sendRequest, acceptRequest } = controller
+  const { friends, outgoing, incoming, loading, error, refresh, acceptRequest } = controller
   const [activeTab, setActiveTab] = useState<TabKey>('friends')
-  const [query, setQuery] = useState('')
-  const [results, setResults] = useState<FriendSearchResult[]>([])
-  const [searching, setSearching] = useState(false)
-  const [searchError, setSearchError] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
-  const debounceRef = useRef<number | null>(null)
   const { t } = useTranslation()
 
   useEffect(() => {
@@ -51,60 +54,15 @@ export function FriendsPanel({ controller, active }: FriendsPanelProps) {
   useEffect(() => {
     if (!active) {
       setActiveTab('friends')
-      setQuery('')
-      setResults([])
-      setSearchError(null)
       setActionError(null)
-      setSearching(false)
-      return
     }
-    if (query.trim().length < 2) {
-      setResults([])
-      setSearchError(null)
-      setSearching(false)
-      return
-    }
-    setSearching(true)
-    const handle = window.setTimeout(() => {
-      search(query.trim())
-        .then((list) => {
-          setResults(list)
-          setSearchError(null)
-        })
-        .catch((err: Error) => {
-          setResults([])
-          setSearchError(getErrorMessage(err.message, t) || t('friends.feedback.searchFailed'))
-        })
-        .finally(() => {
-          setSearching(false)
-        })
-    }, 250)
-    debounceRef.current = handle
-    return () => {
-      if (debounceRef.current) {
-        window.clearTimeout(debounceRef.current)
-        debounceRef.current = null
-      }
-    }
-  }, [active, query, search, t])
+  }, [active])
 
   const friendlyError = useMemo(() => {
-    if (actionError) return getErrorMessage(actionError, t) || t('friends.feedback.actionFailed')
-    if (error) return getErrorMessage(error, t) || t('friends.feedback.loadFailed')
+    if (actionError) return resolveFriendsError(actionError, t) || t('friends.feedback.actionFailed')
+    if (error) return resolveFriendsError(error, t) || t('friends.feedback.loadFailed')
     return null
   }, [actionError, error, t])
-
-  const handleSend = async (userId: number) => {
-    try {
-      setActionError(null)
-      await sendRequest(userId)
-      setActiveTab('outgoing')
-      setResults([])
-      setQuery('')
-    } catch (err) {
-      setActionError((err as Error).message)
-    }
-  }
 
   const handleAccept = async (requestId: number) => {
     try {
@@ -148,6 +106,146 @@ export function FriendsPanel({ controller, active }: FriendsPanelProps) {
     </li>
   )
 
+  const friendsContent = useMemo(() => {
+    if (loading && friends.length === 0) {
+      return <div className="friends-empty">{t('friends.feedback.loading')}</div>
+    }
+    if (friends.length === 0) {
+      return <div className="friends-empty">{t('friends.feedback.noFriends')}</div>
+    }
+    return <ul className="friends-list">{friends.map(renderFriend)}</ul>
+  }, [friends, loading, t])
+
+  const outgoingContent = useMemo(() => {
+    if (outgoing.length === 0) {
+      return <div className="friends-empty">{t('friends.feedback.noOutgoing')}</div>
+    }
+    return <ul className="friends-list">{outgoing.map((entry) => renderRequest(entry, 'outgoing'))}</ul>
+  }, [outgoing, t])
+
+  const incomingContent = useMemo(() => {
+    if (incoming.length === 0) {
+      return <div className="friends-empty">{t('friends.feedback.noIncoming')}</div>
+    }
+    return <ul className="friends-list">{incoming.map((entry) => renderRequest(entry, 'incoming'))}</ul>
+  }, [incoming, t])
+
+  return (
+    <div className="friends-panel">
+      <div className="friends-tabs" role="tablist">
+        {(['friends', 'outgoing', 'incoming'] as TabKey[]).map((key) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === key}
+            className={`friends-tab${activeTab === key ? ' active' : ''}`}
+            onClick={() => setActiveTab(key)}
+          >
+            {t(TAB_LABEL_KEYS[key])}
+          </button>
+        ))}
+      </div>
+      <div className="friends-section" role="tabpanel">
+        {activeTab === 'friends' ? friendsContent : null}
+        {activeTab === 'outgoing' ? outgoingContent : null}
+        {activeTab === 'incoming' ? incomingContent : null}
+      </div>
+      {friendlyError ? <div className="friends-error">{friendlyError}</div> : null}
+    </div>
+  )
+}
+
+interface FriendSearchPanelProps {
+  controller: UseFriendsResult
+  active: boolean
+}
+
+export function FriendSearchPanel({ controller, active }: FriendSearchPanelProps) {
+  const { search, sendRequest, acceptRequest } = controller
+  const { t } = useTranslation()
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<FriendSearchResult[]>([])
+  const [searching, setSearching] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const debounceRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (!active) {
+      setQuery('')
+      setResults([])
+      setSearchError(null)
+      setActionError(null)
+      setSearching(false)
+      return
+    }
+    if (query.trim().length < 2) {
+      setResults([])
+      setSearchError(null)
+      setSearching(false)
+      return
+    }
+    setSearching(true)
+    const handle = window.setTimeout(() => {
+      search(query.trim())
+        .then((list) => {
+          setResults(list)
+          setSearchError(null)
+        })
+        .catch((err: Error) => {
+          setResults([])
+          setSearchError(resolveFriendsError(err.message, t) || t('friends.feedback.searchFailed'))
+        })
+        .finally(() => {
+          setSearching(false)
+        })
+    }, 250)
+    debounceRef.current = handle
+    return () => {
+      if (debounceRef.current) {
+        window.clearTimeout(debounceRef.current)
+        debounceRef.current = null
+      }
+    }
+  }, [active, query, search, t])
+
+  const friendlyError = useMemo(() => {
+    if (actionError) return resolveFriendsError(actionError, t) || t('friends.feedback.actionFailed')
+    if (searchError) return searchError
+    return null
+  }, [actionError, searchError, t])
+
+  const handleSend = async (userId: number) => {
+    try {
+      setActionError(null)
+      await sendRequest(userId)
+      setResults((prev) =>
+        prev.map((entry) =>
+          entry.id === userId ? { ...entry, status: 'outgoing', requestId: entry.requestId ?? null } : entry
+        )
+      )
+    } catch (err) {
+      setActionError((err as Error).message)
+    }
+  }
+
+  const handleAccept = async (requestId: number) => {
+    try {
+      setActionError(null)
+      await acceptRequest(requestId)
+      setResults((prev) =>
+        prev.map((entry) =>
+          entry.requestId === requestId
+            ? { ...entry, status: 'friends', requestId }
+            : entry
+        )
+      )
+    } catch (err) {
+      setActionError((err as Error).message)
+    }
+  }
+
   const renderSearchResult = (entry: FriendSearchResult) => {
     let actionNode: JSX.Element | null = null
     if (entry.status === 'friends') {
@@ -178,93 +276,27 @@ export function FriendsPanel({ controller, active }: FriendsPanelProps) {
     )
   }
 
-  const friendsContent = useMemo(() => {
-    if (loading && friends.length === 0) {
-      return <div className="friends-empty">{t('friends.feedback.loading')}</div>
-    }
-    if (friends.length === 0) {
-      return <div className="friends-empty">{t('friends.feedback.noFriends')}</div>
-    }
-    return <ul className="friends-list">{friends.map(renderFriend)}</ul>
-  }, [friends, loading, t])
-
-  const outgoingContent = useMemo(() => {
-    if (outgoing.length === 0) {
-      return <div className="friends-empty">{t('friends.feedback.noOutgoing')}</div>
-    }
-    return <ul className="friends-list">{outgoing.map((entry) => renderRequest(entry, 'outgoing'))}</ul>
-  }, [outgoing, t])
-
-  const incomingContent = useMemo(() => {
-    if (incoming.length === 0) {
-      return <div className="friends-empty">{t('friends.feedback.noIncoming')}</div>
-    }
-    return <ul className="friends-list">{incoming.map((entry) => renderRequest(entry, 'incoming'))}</ul>
-  }, [incoming, t])
-
-  const searchHint = query.trim().length > 0 && query.trim().length < 2 ? t('friends.search.hint') : null
-
   return (
-    <div className="friends-modal">
-      <div className="friends-tabs" role="tablist">
-        {(Object.keys(TAB_LABEL_KEYS) as TabKey[]).map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            role="tab"
-            aria-selected={tab === activeTab}
-            className={`friends-tab${tab === activeTab ? ' active' : ''}`}
-            onClick={() => setActiveTab(tab)}
-          >
-            {t(TAB_LABEL_KEYS[tab])}
-            {tab === 'incoming' && incoming.length > 0 ? <span className="friends-tab-badge">{incoming.length}</span> : null}
-          </button>
-        ))}
+    <div className="friends-search">
+      <label htmlFor="friendsSearch" className="friends-search-label">
+        {t('friends.search.label')}
+      </label>
+      <input
+        id="friendsSearch"
+        type="search"
+        className="friends-search-input"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        placeholder={t('friends.search.placeholder')}
+      />
+      <div className="friends-search-hint">
+        {searching ? t('friends.search.searching') : t('friends.search.hint')}
       </div>
-      <div className="friends-search">
-        <label htmlFor="friendSearch">{t('friends.search.label')}</label>
-        <input
-          id="friendSearch"
-          type="search"
-          placeholder={t('friends.search.placeholder')}
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          disabled={!active}
-        />
-        {searchHint ? <div className="friends-search-hint">{searchHint}</div> : null}
-      </div>
-      {searching ? <div className="friends-empty">{t('friends.search.searching')}</div> : null}
-      {!searching && results.length > 0 ? (
-        <ul className="friends-list friends-search-results">{results.map(renderSearchResult)}</ul>
+      {results.length > 0 ? <ul className="friends-list">{results.map(renderSearchResult)}</ul> : null}
+      {!searching && results.length === 0 && query.trim().length >= 2 && !searchError ? (
+        <div className="friends-empty">{t('friends.search.noResults')}</div>
       ) : null}
-      {!searching && searchError ? <div className="friends-error">{searchError}</div> : null}
-      <div className="friends-section" role="tabpanel">
-        {activeTab === 'friends' ? friendsContent : null}
-        {activeTab === 'outgoing' ? outgoingContent : null}
-        {activeTab === 'incoming' ? incomingContent : null}
-      </div>
       {friendlyError ? <div className="friends-error">{friendlyError}</div> : null}
     </div>
   )
-}
-
-interface FriendsModalProps {
-  open: boolean
-  controller: UseFriendsResult
-  onClose: () => void
-}
-
-export function FriendsModal({ open, controller, onClose }: FriendsModalProps) {
-  const { t } = useTranslation()
-  return (
-    <Modal open={open} title={t('friends.modal.title')} onClose={onClose} width="640px">
-      <FriendsPanel controller={controller} active={open} />
-    </Modal>
-  )
-}
-
-function getErrorMessage(code: string | null | undefined, t: ReturnType<typeof useTranslation>['t']) {
-  if (!code) return null
-  const key = ERROR_MESSAGE_KEYS[code]
-  return key ? t(key) : null
 }
