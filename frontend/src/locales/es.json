@@ -243,7 +243,8 @@
       "label": "Buscar jugadores",
       "placeholder": "Buscar por correo o apodo",
       "hint": "Introduce al menos 2 caracteres.",
-      "searching": "Buscando…"
+      "searching": "Buscando…",
+      "noResults": "No se encontraron jugadores."
     }
   },
   "auth": {
@@ -441,6 +442,94 @@
     "withdraw": {
       "sent": "Enviado {{amount}} SOL",
       "success": "Retiro completado con éxito"
+    }
+  },
+  "social": {
+    "title": "Social",
+    "tabs": {
+      "leaderboard": "Clasificación",
+      "search": "Buscar",
+      "profile": "Perfil",
+      "friends": "Amigos"
+    },
+    "leaderboard": {
+      "loading": "Cargando…",
+      "error": "No se pudo cargar la clasificación.",
+      "empty": "Aún no hay ganadores.",
+      "playersOnline": "Jugadores en línea",
+      "totalUsd": "Total pagado en USD",
+      "totalSol": "Total pagado en SOL",
+      "wins": "Victorias: {{count}}",
+      "solAmount": "{{amount}} SOL"
+    },
+    "profile": {
+      "loginPrompt": "Inicia sesión para ver tus estadísticas.",
+      "noEmail": "Correo no indicado",
+      "balance": "Saldo en juego",
+      "gamesPlayed": "Partidas jugadas",
+      "totalUsd": "Ganancias en USD",
+      "totalSol": "Ganancias en SOL",
+      "totalUnits": "Longitud total"
+    },
+    "friends": {
+      "loginPrompt": "Inicia sesión para gestionar tu lista de amigos."
+    },
+    "search": {
+      "loginPrompt": "Inicia sesión para buscar jugadores."
+    },
+    "actions": {
+      "signIn": "Iniciar sesión"
+    }
+  },
+  "serverBrowser": {
+    "title": "Explorador de servidores",
+    "actions": {
+      "login": "Iniciar sesión",
+      "settings": "Ajustes",
+      "logout": "Cerrar sesión"
+    },
+    "tabs": {
+      "account": "Cuenta",
+      "game": "Juego",
+      "legal": "Legal"
+    },
+    "account": {
+      "loginPrompt": "Inicia sesión para gestionar tu cuenta.",
+      "profileTitle": "Perfil",
+      "username": "Usuario",
+      "email": "Correo",
+      "noEmail": "Correo no indicado",
+      "nickname": "Apodo",
+      "saving": "Guardando…",
+      "save": "Guardar",
+      "commissionInfo": "Una comisión del {{percent}}% de cada apuesta alimenta el bote de premios.",
+      "inGameBalance": "Saldo en juego",
+      "walletTitle": "Billetera",
+      "walletAddress": "Dirección de billetera",
+      "walletUnknown": "No disponible",
+      "copyWallet": "Copiar",
+      "refresh": "Actualizar",
+      "refreshing": "Actualizando…",
+      "walletUsd": "Billetera USD",
+      "walletSol": "Billetera SOL"
+    },
+    "game": {
+      "sessionTitle": "Información de la sesión",
+      "skin": "Aspecto activo",
+      "bet": "Apuesta actual",
+      "noBet": "Sin apuesta",
+      "region": "Región",
+      "regionUnknown": "Sin especificar",
+      "regionValue": "Global",
+      "tipsTitle": "Consejos",
+      "tipsBody": "Juega con frecuencia para aumentar tu racha y desbloquear apuestas mayores."
+    },
+    "legal": {
+      "documentsTitle": "Documentos legales",
+      "terms": "Términos y condiciones",
+      "privacy": "Política de privacidad",
+      "contactTitle": "Contacto",
+      "contactBody": "¿Necesitas ayuda? Escríbenos a nuestro correo de soporte."
     }
   }
 }

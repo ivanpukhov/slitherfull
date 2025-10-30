@@ -348,5 +348,142 @@
       "sent": "Отправлено {{amount}} SOL",
       "success": "Вывод успешно завершён"
     }
+  },
+  "friends": {
+    "modal": {
+      "title": "Управление друзьями"
+    },
+    "tabs": {
+      "friends": "Мои друзья",
+      "outgoing": "Исходящие заявки",
+      "incoming": "Входящие заявки"
+    },
+    "errors": {
+      "unauthorized": "Войдите, чтобы управлять друзьями.",
+      "invalidPayload": "Что-то пошло не так. Попробуйте ещё раз.",
+      "cannotSelf": "Нельзя добавить себя.",
+      "userNotFound": "Игрок не найден.",
+      "alreadyFriends": "Вы уже друзья.",
+      "alreadyRequested": "Заявка уже отправлена.",
+      "requestFailed": "Не удалось отправить заявку.",
+      "unavailable": "Не получается загрузить список друзей.",
+      "searchFailed": "Не удалось выполнить поиск."
+    },
+    "feedback": {
+      "loading": "Загрузка друзей…",
+      "noFriends": "Пока нет друзей. Найдите игрока, чтобы начать.",
+      "noOutgoing": "Нет ожидающих заявок.",
+      "noIncoming": "Новых заявок пока нет.",
+      "searchFailed": "Ошибка поиска.",
+      "loadFailed": "Не удалось загрузить друзей.",
+      "actionFailed": "Не получилось выполнить действие. Попробуйте позже."
+    },
+    "labels": {
+      "since": "С {{date}}"
+    },
+    "actions": {
+      "accept": "Принять",
+      "addFriend": "Добавить"
+    },
+    "status": {
+      "pending": "В ожидании",
+      "friends": "Друзья",
+      "requestSent": "Заявка отправлена"
+    },
+    "search": {
+      "label": "Найти игроков",
+      "placeholder": "Поиск по email или нику",
+      "hint": "Введите минимум 2 символа.",
+      "searching": "Поиск…",
+      "noResults": "Игроки не найдены."
+    }
+  },
+  "social": {
+    "title": "Сообщество",
+    "tabs": {
+      "leaderboard": "Лидерборд",
+      "search": "Поиск",
+      "profile": "Профиль",
+      "friends": "Друзья"
+    },
+    "leaderboard": {
+      "loading": "Загрузка…",
+      "error": "Не удалось загрузить таблицу лидеров.",
+      "empty": "Пока нет победителей.",
+      "playersOnline": "Игроков онлайн",
+      "totalUsd": "Всего выплачено в USD",
+      "totalSol": "Всего выплачено в SOL",
+      "wins": "Побед: {{count}}",
+      "solAmount": "{{amount}} SOL"
+    },
+    "profile": {
+      "loginPrompt": "Войдите, чтобы увидеть статистику профиля.",
+      "noEmail": "E-mail не указан",
+      "balance": "Баланс в игре",
+      "gamesPlayed": "Сыграно игр",
+      "totalUsd": "Выигрыш в USD",
+      "totalSol": "Выигрыш в SOL",
+      "totalUnits": "Общая длина"
+    },
+    "friends": {
+      "loginPrompt": "Войдите, чтобы управлять списком друзей."
+    },
+    "search": {
+      "loginPrompt": "Войдите, чтобы искать игроков."
+    },
+    "actions": {
+      "signIn": "Войти"
+    }
+  },
+  "serverBrowser": {
+    "title": "Браузер серверов",
+    "actions": {
+      "login": "Войти",
+      "settings": "Настройки",
+      "logout": "Выйти"
+    },
+    "tabs": {
+      "account": "Аккаунт",
+      "game": "Игра",
+      "legal": "Правила"
+    },
+    "account": {
+      "loginPrompt": "Войдите, чтобы управлять аккаунтом.",
+      "profileTitle": "Профиль",
+      "username": "Имя пользователя",
+      "email": "E-mail",
+      "noEmail": "E-mail не указан",
+      "nickname": "Никнейм",
+      "saving": "Сохранение…",
+      "save": "Сохранить",
+      "commissionInfo": "Комиссия {{percent}}% с каждой ставки поддерживает призовой фонд.",
+      "inGameBalance": "Баланс в игре",
+      "walletTitle": "Кошелёк",
+      "walletAddress": "Адрес кошелька",
+      "walletUnknown": "Нет данных",
+      "copyWallet": "Копировать",
+      "refresh": "Обновить",
+      "refreshing": "Обновление…",
+      "walletUsd": "Кошелёк USD",
+      "walletSol": "Кошелёк SOL"
+    },
+    "game": {
+      "sessionTitle": "Сессия",
+      "skin": "Активный скин",
+      "bet": "Текущая ставка",
+      "noBet": "Ставка не выбрана",
+      "region": "Регион",
+      "regionUnknown": "Не указан",
+      "regionValue": "Глобальный",
+      "tipsTitle": "Подсказки",
+      "tipsBody": "Играйте чаще, чтобы повышать серию и открывать более крупные ставки."
+    },
+    "legal": {
+      "documentsTitle": "Правовые документы",
+      "terms": "Пользовательское соглашение",
+      "privacy": "Политика конфиденциальности",
+      "contactTitle": "Контакты",
+      "contactBody": "Нужна помощь? Напишите нам на почту поддержки."
+    }
   }
 }

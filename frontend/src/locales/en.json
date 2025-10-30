@@ -94,7 +94,7 @@
       "empty": "No winners yet"
     },
     "welcome": {
-      "label": "\uD83D\uDC4B Welcome,"
+      "label": "👋 Welcome,"
     },
     "hero": {
       "tagline": "No luck, no gambling - only your skill matters"
@@ -243,7 +243,8 @@
       "label": "Find players",
       "placeholder": "Search by email or nickname",
       "hint": "Enter at least 2 characters.",
-      "searching": "Searching…"
+      "searching": "Searching…",
+      "noResults": "No players found."
     }
   },
   "auth": {
@@ -441,6 +442,94 @@
     "withdraw": {
       "sent": "Sent {{amount}} SOL",
       "success": "Withdrawal completed successfully"
+    }
+  },
+  "social": {
+    "title": "Social",
+    "tabs": {
+      "leaderboard": "Leaderboard",
+      "search": "Search",
+      "profile": "Profile",
+      "friends": "Friends"
+    },
+    "leaderboard": {
+      "loading": "Loading…",
+      "error": "Unable to load leaderboard.",
+      "empty": "No winners yet.",
+      "playersOnline": "Players online",
+      "totalUsd": "Total USD paid",
+      "totalSol": "Total SOL paid",
+      "wins": "Wins: {{count}}",
+      "solAmount": "{{amount}} SOL"
+    },
+    "profile": {
+      "loginPrompt": "Sign in to view your profile statistics.",
+      "noEmail": "Email not set",
+      "balance": "In-game balance",
+      "gamesPlayed": "Games played",
+      "totalUsd": "Lifetime USD winnings",
+      "totalSol": "Lifetime SOL winnings",
+      "totalUnits": "Total length"
+    },
+    "friends": {
+      "loginPrompt": "Sign in to manage your friends list."
+    },
+    "search": {
+      "loginPrompt": "Sign in to search for players."
+    },
+    "actions": {
+      "signIn": "Sign in"
+    }
+  },
+  "serverBrowser": {
+    "title": "Server Browser",
+    "actions": {
+      "login": "Login",
+      "settings": "Settings",
+      "logout": "Logout"
+    },
+    "tabs": {
+      "account": "Account",
+      "game": "Game",
+      "legal": "Legal"
+    },
+    "account": {
+      "loginPrompt": "Sign in to manage your account.",
+      "profileTitle": "Profile",
+      "username": "Username",
+      "email": "Email",
+      "noEmail": "Email not set",
+      "nickname": "Nickname",
+      "saving": "Saving…",
+      "save": "Save",
+      "commissionInfo": "A {{percent}}% commission from each bet keeps the prize pool growing.",
+      "inGameBalance": "In-game balance",
+      "walletTitle": "Wallet",
+      "walletAddress": "Wallet address",
+      "walletUnknown": "Not available",
+      "copyWallet": "Copy",
+      "refresh": "Refresh",
+      "refreshing": "Refreshing…",
+      "walletUsd": "Wallet USD",
+      "walletSol": "Wallet SOL"
+    },
+    "game": {
+      "sessionTitle": "Session info",
+      "skin": "Active skin",
+      "bet": "Active bet",
+      "noBet": "No bet selected",
+      "region": "Region",
+      "regionUnknown": "Not set",
+      "regionValue": "Global",
+      "tipsTitle": "Game tips",
+      "tipsBody": "Join games to increase your streak and unlock higher bets."
+    },
+    "legal": {
+      "documentsTitle": "Legal documents",
+      "terms": "Terms & Conditions",
+      "privacy": "Privacy Policy",
+      "contactTitle": "Contact",
+      "contactBody": "Need help? Reach us at our support email."
     }
   }
 }
