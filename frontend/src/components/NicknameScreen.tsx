@@ -165,6 +165,7 @@ export function NicknameScreen({
     const [serverBrowserTab, setServerBrowserTab] = useState<ServerBrowserTab>('account')
     const [walletModalOpen, setWalletModalOpen] = useState(false)
     const [walletTab, setWalletTab] = useState<'deposit' | 'withdraw'>('deposit')
+    const [withdrawAmount, setWithdrawAmount] = useState('0.000')
     const [skinModalOpen, setSkinModalOpen] = useState(false)
     const skinListRef = useRef<HTMLDivElement>(null)
     const friendsController = useFriends(authToken ?? null)
@@ -251,6 +252,7 @@ export function NicknameScreen({
         if (withdrawStatus?.type === 'success') {
             setWithdrawAddress('')
             setWithdrawError(null)
+            setWithdrawAmount('0.000')
         }
     }, [withdrawStatus])
 
@@ -273,6 +275,18 @@ export function NicknameScreen({
             setWithdrawError(null)
         }
     }, [walletTab, withdrawError])
+
+    useEffect(() => {
+        if (!walletModalOpen || walletTab !== 'withdraw') {
+            return
+        }
+        const available = typeof walletSol === 'number' ? walletSol : 0
+        if (available > 0) {
+            setWithdrawAmount(available.toFixed(3))
+        } else {
+            setWithdrawAmount('0.000')
+        }
+    }, [walletModalOpen, walletTab, walletSol])
 
     useEffect(() => {
         if (socialModalOpen && socialTab === 'friends') {
@@ -513,6 +527,33 @@ export function NicknameScreen({
     const serverBrowserButtonLabel = isAuthenticated
         ? t('serverBrowser.actions.settings')
         : t('serverBrowser.actions.login')
+
+    const availableSol = typeof walletSol === 'number' ? walletSol : 0
+    const formattedAvailableSol = useMemo(() => (availableSol > 0 ? availableSol.toFixed(6) : '0.000000'), [availableSol])
+    const withdrawAmountValue = useMemo(() => {
+        const normalized = Number.parseFloat(withdrawAmount.replace(',', '.'))
+        if (Number.isFinite(normalized) && normalized > 0) {
+            return normalized
+        }
+        return 0
+    }, [withdrawAmount])
+    const withdrawPercent = useMemo(() => {
+        if (availableSol <= 0) return 0
+        return Math.max(0, Math.min(100, Math.round((withdrawAmountValue / availableSol) * 100)))
+    }, [availableSol, withdrawAmountValue])
+    const withdrawPercentLabel = useMemo(
+        () => t('hub.account.cashoutModal.percentage', { value: withdrawPercent }),
+        [t, withdrawPercent]
+    )
+    const withdrawNotice = useMemo(() => {
+        if (withdrawStatus) {
+            return withdrawStatus
+        }
+        if (walletError) {
+            return { type: 'error' as const, message: walletError }
+        }
+        return null
+    }, [walletError, withdrawStatus])
 
     return (
         <div id="nicknameScreen" className={visible ? 'overlay overlay--lobby' : 'overlay overlay--lobby hidden'}>
@@ -910,24 +951,6 @@ export function NicknameScreen({
                 {isAuthenticated ? (
                     <div className="hub-account">
                         <section className="hub-account-section">
-                            <div className="hub-wallet-summary">
-                                <div className="hub-wallet-item">
-                                    <span className="hub-wallet-label">{t('hub.account.inGameBalance')}</span>
-                                    <span className="hub-wallet-value">{formatUsd(balance)}</span>
-                                </div>
-                                {typeof walletSol === 'number' ? (
-                                    <div className="hub-wallet-item">
-                                        <span className="hub-wallet-label">{t('hub.account.walletSol')}</span>
-                                        <span className="hub-wallet-value">{formattedSol}</span>
-                                    </div>
-                                ) : null}
-                                {typeof derivedUsd === 'number' ? (
-                                    <div className="hub-wallet-item">
-                                        <span className="hub-wallet-label">{t('hub.account.walletUsd')}</span>
-                                        <span className="hub-wallet-value">{formattedUsd}</span>
-                                    </div>
-                                ) : null}
-                            </div>
                             <div className="hub-wallet-tabs" role="tablist">
                                 <button
                                     type="button"
@@ -980,53 +1003,147 @@ export function NicknameScreen({
                                     )}
                                 </div>
                             ) : (
-                                <div className="hub-wallet-panel">
-                                    <label htmlFor="hubWithdrawAddress">{t('lobby.withdraw.label')}</label>
-                                    <div className="wallet-withdraw-controls">
-                                        <input
-                                            id="hubWithdrawAddress"
-                                            type="text"
-                                            placeholder={t('lobby.withdraw.placeholder')}
-                                            value={withdrawAddress}
-                                            onChange={(event) => {
-                                                setWithdrawAddress(event.target.value)
-                                                if (withdrawError) setWithdrawError(null)
-                                            }}
-                                            onKeyDown={(event) => {
-                                                if (event.key === 'Enter') {
-                                                    event.preventDefault()
-                                                    handleWithdraw()
-                                                }
-                                            }}
-                                        />
-                                        <button
-                                            type="button"
-                                            className="wallet-withdraw-button"
-                                            onClick={handleWithdraw}
-                                            disabled={withdrawPending || !onWithdraw}
-                                        >
-                                            {withdrawPending ? t('lobby.withdraw.sending') : t('lobby.withdraw.submit')}
-                                        </button>
+                                <div className="hub-wallet-panel cashout-panel">
+                                    <div className="cashout-modal">
+                                        <header className="cashout-modal__header">
+                                            <div className="cashout-modal__title">
+                                                <span className="cashout-modal__icon">💸</span>
+                                                <div>
+                                                    <h3 className="cashout-modal__heading">{t('hub.account.cashoutModal.title')}</h3>
+                                                    <span className="cashout-modal__subtitle">{t('hub.account.cashoutModal.subtitle')}</span>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="cashout-modal__home"
+                                                onClick={() => setWalletModalOpen(false)}
+                                            >
+                                                {t('hub.account.cashoutModal.home')}
+                                            </button>
+                                        </header>
+                                        <section className="cashout-section">
+                                            <div className="cashout-balance">
+                                                <div className="cashout-balance__header">
+                                                    <span className="cashout-balance__label">{t('hub.account.cashoutModal.availableBalance')}</span>
+                                                    <button
+                                                        type="button"
+                                                        className="cashout-refresh"
+                                                        onClick={handleWalletRefresh}
+                                                        disabled={walletLoading}
+                                                    >
+                                                        {walletLoading
+                                                            ? t('lobby.wallet.refreshing')
+                                                            : t('hub.account.refreshBalance')}
+                                                    </button>
+                                                </div>
+                                                <div className="cashout-balance__values">
+                                                    <span className="cashout-balance__amount">{formattedAvailableSol} SOL</span>
+                                                    <span className="cashout-balance__usd">{formattedUsd}</span>
+                                                </div>
+                                            </div>
+                                        </section>
+                                        {withdrawNotice ? (
+                                            <div className={`cashout-alert ${withdrawNotice.type}`}>
+                                                <span className="cashout-alert__icon" aria-hidden="true">
+                                                    {withdrawNotice.type === 'success' ? '✅' : '⚠️'}
+                                                </span>
+                                                <div className="cashout-alert__body">
+                                                    <strong className="cashout-alert__title">
+                                                        {withdrawNotice.type === 'success'
+                                                            ? t('hub.account.cashoutModal.successTitle')
+                                                            : t('hub.account.cashoutModal.errorTitle')}
+                                                    </strong>
+                                                    <span>{withdrawNotice.message}</span>
+                                                </div>
+                                            </div>
+                                        ) : null}
+                                        <section className="cashout-section">
+                                            <label className="cashout-field__label" htmlFor="cashoutAmount">
+                                                {t('hub.account.cashoutModal.amountLabel')}
+                                            </label>
+                                            <div className="cashout-amount">
+                                                <input
+                                                    id="cashoutAmount"
+                                                    type="text"
+                                                    value={withdrawAmount}
+                                                    onChange={(event) => setWithdrawAmount(event.target.value)}
+                                                />
+                                                <div className="cashout-amount__controls">
+                                                    <span className="cashout-amount__currency">{t('hub.account.cashoutModal.usd')}</span>
+                                                    <button
+                                                        type="button"
+                                                        className="cashout-amount__swap"
+                                                        disabled
+                                                        aria-label={t('hub.account.cashoutModal.swapDisabled')}
+                                                    >
+                                                        ↔
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="cashout-amount__max"
+                                                        onClick={() => {
+                                                            if (availableSol > 0) {
+                                                                setWithdrawAmount(availableSol.toFixed(3))
+                                                            } else {
+                                                                setWithdrawAmount('0.000')
+                                                            }
+                                                        }}
+                                                    >
+                                                        {t('hub.account.cashoutModal.max')}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div className="cashout-progress" aria-hidden="true">
+                                                <div className="cashout-progress__track">
+                                                    <div className="cashout-progress__value" style={{ width: `${withdrawPercent}%` }} />
+                                                </div>
+                                                <span className="cashout-progress__label">{withdrawPercentLabel}</span>
+                                            </div>
+                                        </section>
+                                        <section className="cashout-section">
+                                            <label className="cashout-field__label" htmlFor="hubWithdrawAddress">
+                                                {t('hub.account.cashoutModal.destinationLabel')}
+                                            </label>
+                                            <input
+                                                id="hubWithdrawAddress"
+                                                type="text"
+                                                placeholder={t('lobby.withdraw.placeholder')}
+                                                value={withdrawAddress}
+                                                onChange={(event) => {
+                                                    setWithdrawAddress(event.target.value)
+                                                    if (withdrawError) setWithdrawError(null)
+                                                }}
+                                                onKeyDown={(event) => {
+                                                    if (event.key === 'Enter') {
+                                                        event.preventDefault()
+                                                        handleWithdraw()
+                                                    }
+                                                }}
+                                            />
+                                            {withdrawError ? (
+                                                <p className="cashout-field__error">{withdrawError}</p>
+                                            ) : null}
+                                        </section>
+                                        <div className="cashout-actions">
+                                            <button
+                                                type="button"
+                                                className="cashout-actions__cancel"
+                                                onClick={() => setWalletModalOpen(false)}
+                                            >
+                                                {t('hub.account.cashoutModal.cancel')}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="cashout-actions__submit"
+                                                onClick={handleWithdraw}
+                                                disabled={withdrawPending || !onWithdraw}
+                                            >
+                                                {withdrawPending
+                                                    ? t('lobby.withdraw.sending')
+                                                    : t('hub.account.cashoutModal.submit')}
+                                            </button>
+                                        </div>
                                     </div>
-                                    {withdrawError ? (
-                                        <p className="wallet-withdraw-status error">{withdrawError}</p>
-                                    ) : withdrawStatus ? (
-                                        <p className={`wallet-withdraw-status ${withdrawStatus.type}`}>
-                                            {withdrawStatus.message}
-                                        </p>
-                                    ) : null}
-                                    <button
-                                        type="button"
-                                        className="hub-wallet-refresh"
-                                        onClick={handleWalletRefresh}
-                                        disabled={walletLoading}
-                                    >
-                                        {walletLoading
-                                            ? t('lobby.wallet.refreshing')
-                                            : t('hub.account.refreshBalance')}
-                                    </button>
-                                    {walletError ? <div className="hub-wallet-error">{walletError}</div> : null}
-                                    <p className="hub-wallet-hint">{t('hub.account.withdrawHint')}</p>
                                 </div>
                             )}
                         </section>

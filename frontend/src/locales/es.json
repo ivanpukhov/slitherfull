@@ -196,6 +196,22 @@
       "withdrawHint": "Retira fondos a tu billetera personal de Solana.",
       "walletUnavailable": "La información de la billetera no está disponible.",
       "depositMessage": "Depositar en Snake Fans"
+      ,"cashoutModal": {
+        "title": "Retirar",
+        "subtitle": "Transfiere tu saldo a una billetera Solana.",
+        "home": "Inicio",
+        "availableBalance": "Saldo disponible",
+        "amountLabel": "Cantidad",
+        "usd": "USD",
+        "swapDisabled": "No es posible cambiar de moneda",
+        "max": "MAX",
+        "percentage": "{{value}}% del saldo disponible",
+        "destinationLabel": "Dirección de la billetera de destino",
+        "cancel": "Cancelar",
+        "submit": "Retirar",
+        "successTitle": "Solicitud de retiro enviada",
+        "errorTitle": "Se requiere atención"
+      }
     }
   },
   "friends": {
