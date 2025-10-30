@@ -164,9 +164,7 @@ export function SocialModal({
                 </div>
                 <div className="social-leaderboard__cell social-leaderboard__cell--amount" role="cell">
                   <div className="social-leaderboard__usd">{formatUsd(entry.totalUsd)}</div>
-                  <div className="social-leaderboard__sol">
-                    {t('social.leaderboard.solAmount', { amount: entry.totalSol.toFixed(3) })}
-                  </div>
+
                 </div>
               </div>
             ))
