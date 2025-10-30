@@ -154,14 +154,13 @@ export function NicknameScreen({
         return '—'
     }, [derivedUsd, usdFormatter])
 
-    const showWallet = Boolean(walletAddress)
-
     const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle')
     const copyResetTimer = useRef<number | null>(null)
     const [withdrawAddress, setWithdrawAddress] = useState('')
     const [withdrawError, setWithdrawError] = useState<string | null>(null)
     const [hubModalOpen, setHubModalOpen] = useState(false)
     const [hubTab, setHubTab] = useState<HubTab>('winners')
+    const [walletModalOpen, setWalletModalOpen] = useState(false)
     const [walletTab, setWalletTab] = useState<'deposit' | 'withdraw'>('deposit')
     const [skinModalOpen, setSkinModalOpen] = useState(false)
     const skinListRef = useRef<HTMLDivElement>(null)
@@ -282,14 +281,15 @@ export function NicknameScreen({
     useEffect(() => {
         if (!visible) {
             setHubModalOpen(false)
+            setWalletModalOpen(false)
         }
     }, [visible])
 
     useEffect(() => {
-        if (!hubModalOpen) {
+        if (!walletModalOpen) {
             setWalletTab('deposit')
         }
-    }, [hubModalOpen])
+    }, [walletModalOpen])
 
     useEffect(() => {
         if (walletTab !== 'withdraw' && withdrawError) {
@@ -447,16 +447,13 @@ export function NicknameScreen({
     )
 
     const handleOpenHub = useCallback(
-        (tab: HubTab, options?: { walletTab?: 'deposit' | 'withdraw' }) => {
+        (tab: HubTab) => {
             if (!isAuthenticated && (tab === 'friends' || tab === 'account')) {
                 onStart()
                 return
             }
             if (tab === 'account') {
-                setWalletTab(options?.walletTab ?? 'deposit')
                 setNicknameFeedback(null)
-            } else {
-                setWalletTab('deposit')
             }
             setHubTab(tab)
             setHubModalOpen(true)
@@ -466,9 +463,14 @@ export function NicknameScreen({
 
     const handleWalletOpen = useCallback(
         (tab: 'deposit' | 'withdraw' = 'deposit') => {
-            handleOpenHub('account', { walletTab: tab })
+            if (!isAuthenticated) {
+                onStart()
+                return
+            }
+            setWalletTab(tab)
+            setWalletModalOpen(true)
         },
-        [handleOpenHub]
+        [isAuthenticated, onStart]
     )
 
     const handleManageAffiliate = useCallback(() => {
@@ -861,7 +863,6 @@ export function NicknameScreen({
                                 onClick={() => {
                                     setHubTab(key)
                                     if (key === 'account') {
-                                        setWalletTab('deposit')
                                         setNicknameFeedback(null)
                                     }
                                 }}
@@ -964,109 +965,23 @@ export function NicknameScreen({
                                                 </div>
                                             ) : null}
                                         </div>
-                                        <div className="hub-wallet-tabs" role="tablist">
+                                        <div className="hub-wallet-tabs" role="group" aria-label={t('hub.account.walletSection')}>
                                             <button
                                                 type="button"
-                                                className={`hub-wallet-tab${walletTab === 'deposit' ? ' active' : ''}`}
-                                                aria-selected={walletTab === 'deposit'}
-                                                onClick={() => setWalletTab('deposit')}
+                                                className="hub-wallet-tab"
+                                                onClick={() => handleWalletOpen('deposit')}
                                             >
                                                 {t('hub.account.depositTab')}
                                             </button>
                                             <button
                                                 type="button"
-                                                className={`hub-wallet-tab${walletTab === 'withdraw' ? ' active' : ''}`}
-                                                aria-selected={walletTab === 'withdraw'}
-                                                onClick={() => setWalletTab('withdraw')}
+                                                className="hub-wallet-tab"
+                                                onClick={() => handleWalletOpen('withdraw')}
                                             >
                                                 {t('hub.account.withdrawTab')}
                                             </button>
                                         </div>
-                                        {walletTab === 'deposit' ? (
-                                            <div className="hub-wallet-panel">
-                                                {walletAddress ? (
-                                                    <>
-                                                        <div className="hub-wallet-qr">
-                                                            <QRCodeCanvas value={depositUri || ''} size={160} includeMargin />
-                                                        </div>
-                                                        <div className="hub-wallet-address" title={walletAddress}>
-                                                            <span className="hub-wallet-label">{t('hub.account.walletAddress')}</span>
-                                                            <div className="hub-wallet-address-row">
-                                                                <span className="hub-wallet-value">{walletAddress}</span>
-                                                                <button type="button" className="hub-wallet-copy" onClick={handleCopyWallet}>
-                                                                    {copyLabel}
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                        <button
-                                                            type="button"
-                                                            className="hub-wallet-refresh"
-                                                            onClick={handleWalletRefresh}
-                                                            disabled={walletLoading}
-                                                        >
-                                                            {walletLoading
-                                                                ? t('lobby.wallet.refreshing')
-                                                                : t('hub.account.refreshBalance')}
-                                                        </button>
-                                                        {walletError ? (
-                                                            <div className="hub-wallet-error">{walletError}</div>
-                                                        ) : null}
-                                                        <p className="hub-wallet-hint">{t('hub.account.depositHint')}</p>
-                                                    </>
-                                                ) : (
-                                                    <p className="hub-wallet-placeholder">{t('hub.account.walletUnavailable')}</p>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <div className="hub-wallet-panel">
-                                                <label htmlFor="hubWithdrawAddress">{t('lobby.withdraw.label')}</label>
-                                                <div className="wallet-withdraw-controls">
-                                                    <input
-                                                        id="hubWithdrawAddress"
-                                                        type="text"
-                                                        placeholder={t('lobby.withdraw.placeholder')}
-                                                        value={withdrawAddress}
-                                                        onChange={(event) => {
-                                                            setWithdrawAddress(event.target.value)
-                                                            if (withdrawError) setWithdrawError(null)
-                                                        }}
-                                                        onKeyDown={(event) => {
-                                                            if (event.key === 'Enter') {
-                                                                event.preventDefault()
-                                                                handleWithdraw()
-                                                            }
-                                                        }}
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        className="wallet-withdraw-button"
-                                                        onClick={handleWithdraw}
-                                                        disabled={withdrawPending || !onWithdraw}
-                                                    >
-                                                        {withdrawPending ? t('lobby.withdraw.sending') : t('lobby.withdraw.submit')}
-                                                    </button>
-                                                </div>
-                                                {withdrawError ? (
-                                                    <p className="wallet-withdraw-status error">{withdrawError}</p>
-                                                ) : withdrawStatus ? (
-                                                    <p className={`wallet-withdraw-status ${withdrawStatus.type}`}>
-                                                        {withdrawStatus.message}
-                                                    </p>
-                                                ) : null}
-                                                <button
-                                                    type="button"
-                                                    className="hub-wallet-refresh"
-                                                    onClick={handleWalletRefresh}
-                                                    disabled={walletLoading}
-                                                >
-                                                    {walletLoading
-                                                        ? t('lobby.wallet.refreshing')
-                                                        : t('hub.account.refreshBalance')}
-                                                </button>
-                                                {walletError ? <div className="hub-wallet-error">{walletError}</div> : null}
-                                                <p className="hub-wallet-hint">{t('hub.account.withdrawHint')}</p>
-                                            </div>
-                                        )}
+                                        {walletError ? <div className="hub-wallet-error">{walletError}</div> : null}
                                     </section>
                                 </div>
                             ) : (
@@ -1075,6 +990,141 @@ export function NicknameScreen({
                         ) : null}
                     </div>
                 </div>
+            </Modal>
+
+            <Modal
+                open={walletModalOpen}
+                title={t('hub.account.walletSection')}
+                onClose={() => setWalletModalOpen(false)}
+                width="560px"
+            >
+                {isAuthenticated ? (
+                    <div className="hub-account">
+                        <section className="hub-account-section">
+                            <div className="hub-wallet-summary">
+                                <div className="hub-wallet-item">
+                                    <span className="hub-wallet-label">{t('hub.account.inGameBalance')}</span>
+                                    <span className="hub-wallet-value">{formatUsd(balance)}</span>
+                                </div>
+                                {typeof walletSol === 'number' ? (
+                                    <div className="hub-wallet-item">
+                                        <span className="hub-wallet-label">{t('hub.account.walletSol')}</span>
+                                        <span className="hub-wallet-value">{formattedSol}</span>
+                                    </div>
+                                ) : null}
+                                {typeof derivedUsd === 'number' ? (
+                                    <div className="hub-wallet-item">
+                                        <span className="hub-wallet-label">{t('hub.account.walletUsd')}</span>
+                                        <span className="hub-wallet-value">{formattedUsd}</span>
+                                    </div>
+                                ) : null}
+                            </div>
+                            <div className="hub-wallet-tabs" role="tablist">
+                                <button
+                                    type="button"
+                                    className={`hub-wallet-tab${walletTab === 'deposit' ? ' active' : ''}`}
+                                    aria-selected={walletTab === 'deposit'}
+                                    onClick={() => setWalletTab('deposit')}
+                                >
+                                    {t('hub.account.depositTab')}
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`hub-wallet-tab${walletTab === 'withdraw' ? ' active' : ''}`}
+                                    aria-selected={walletTab === 'withdraw'}
+                                    onClick={() => setWalletTab('withdraw')}
+                                >
+                                    {t('hub.account.withdrawTab')}
+                                </button>
+                            </div>
+                            {walletTab === 'deposit' ? (
+                                <div className="hub-wallet-panel">
+                                    {walletAddress ? (
+                                        <>
+                                            <div className="hub-wallet-qr">
+                                                <QRCodeCanvas value={depositUri || ''} size={160} includeMargin />
+                                            </div>
+                                            <div className="hub-wallet-address" title={walletAddress}>
+                                                <span className="hub-wallet-label">{t('hub.account.walletAddress')}</span>
+                                                <div className="hub-wallet-address-row">
+                                                    <span className="hub-wallet-value">{walletAddress}</span>
+                                                    <button type="button" className="hub-wallet-copy" onClick={handleCopyWallet}>
+                                                        {copyLabel}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="hub-wallet-refresh"
+                                                onClick={handleWalletRefresh}
+                                                disabled={walletLoading}
+                                            >
+                                                {walletLoading
+                                                    ? t('lobby.wallet.refreshing')
+                                                    : t('hub.account.refreshBalance')}
+                                            </button>
+                                            {walletError ? <div className="hub-wallet-error">{walletError}</div> : null}
+                                            <p className="hub-wallet-hint">{t('hub.account.depositHint')}</p>
+                                        </>
+                                    ) : (
+                                        <p className="hub-wallet-placeholder">{t('hub.account.walletUnavailable')}</p>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="hub-wallet-panel">
+                                    <label htmlFor="hubWithdrawAddress">{t('lobby.withdraw.label')}</label>
+                                    <div className="wallet-withdraw-controls">
+                                        <input
+                                            id="hubWithdrawAddress"
+                                            type="text"
+                                            placeholder={t('lobby.withdraw.placeholder')}
+                                            value={withdrawAddress}
+                                            onChange={(event) => {
+                                                setWithdrawAddress(event.target.value)
+                                                if (withdrawError) setWithdrawError(null)
+                                            }}
+                                            onKeyDown={(event) => {
+                                                if (event.key === 'Enter') {
+                                                    event.preventDefault()
+                                                    handleWithdraw()
+                                                }
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            className="wallet-withdraw-button"
+                                            onClick={handleWithdraw}
+                                            disabled={withdrawPending || !onWithdraw}
+                                        >
+                                            {withdrawPending ? t('lobby.withdraw.sending') : t('lobby.withdraw.submit')}
+                                        </button>
+                                    </div>
+                                    {withdrawError ? (
+                                        <p className="wallet-withdraw-status error">{withdrawError}</p>
+                                    ) : withdrawStatus ? (
+                                        <p className={`wallet-withdraw-status ${withdrawStatus.type}`}>
+                                            {withdrawStatus.message}
+                                        </p>
+                                    ) : null}
+                                    <button
+                                        type="button"
+                                        className="hub-wallet-refresh"
+                                        onClick={handleWalletRefresh}
+                                        disabled={walletLoading}
+                                    >
+                                        {walletLoading
+                                            ? t('lobby.wallet.refreshing')
+                                            : t('hub.account.refreshBalance')}
+                                    </button>
+                                    {walletError ? <div className="hub-wallet-error">{walletError}</div> : null}
+                                    <p className="hub-wallet-hint">{t('hub.account.withdrawHint')}</p>
+                                </div>
+                            )}
+                        </section>
+                    </div>
+                ) : (
+                    <div className="hub-placeholder">{t('hub.account.loginPrompt')}</div>
+                )}
             </Modal>
         </div>
     )
