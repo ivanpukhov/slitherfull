@@ -5,7 +5,6 @@ import type { UseFriendsResult } from '../hooks/useFriends'
 import { getIntlLocale, useTranslation } from '../hooks/useTranslation'
 import { formatNumber, formatUsd } from '../utils/helpers'
 import { Modal } from './Modal'
-import { SnakePreview } from './SnakePreview'
 import { FriendsPanel, FriendSearchPanel } from './FriendsModal'
 import { PlayerStatsChart } from './PlayerStatsChart'
 
@@ -28,7 +27,6 @@ interface SocialModalProps {
   profileName: string
   profileEmail?: string | null
   inGameBalance: number
-  snakeColors: string[]
   totalWinningsUsd?: number
   totalWinningsSol?: number
   activePlayers?: number
@@ -51,7 +49,6 @@ export function SocialModal({
   profileName,
   profileEmail,
   inGameBalance,
-  snakeColors,
   totalWinningsUsd,
   totalWinningsSol,
   activePlayers
@@ -256,9 +253,6 @@ export function SocialModal({
       bodyClassName="social-modal__body"
     >
       <div className="social-modal">
-        <div className="social-modal__snake" aria-hidden="true">
-          <SnakePreview colors={snakeColors} width={420} height={180} length={120} />
-        </div>
         <div className="social-modal__tabs" role="tablist">
           {tabs.map(({ key, label, badge }) => (
             <button
