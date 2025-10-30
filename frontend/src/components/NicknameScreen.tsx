@@ -672,11 +672,8 @@ export function NicknameScreen({
                                     autoComplete="off"
                                     value={nickname}
                                     onChange={(event) => {
-                                        if (!nicknameLocked) {
-                                            onNicknameChange(event.target.value)
-                                        }
+                                        onNicknameChange(event.target.value)
                                     }}
-                                    disabled={nicknameLocked}
                                 />
                             </div>
 
