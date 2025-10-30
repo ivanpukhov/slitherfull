@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
+const { Op } = require('sequelize')
 const { User } = require('../models/User')
 const walletService = require('./walletService')
 
@@ -91,10 +92,37 @@ async function verifyToken(token) {
   }
 }
 
+async function changeNickname(userId, nickname) {
+  const normalizedNickname = typeof nickname === 'string' ? nickname.trim() : ''
+  if (!userId || !normalizedNickname) {
+    return { ok: false, error: 'invalid_nickname' }
+  }
+  if (normalizedNickname.length < 3 || normalizedNickname.length > 16) {
+    return { ok: false, error: 'nickname_length' }
+  }
+  const existing = await User.findOne({
+    where: {
+      nickname: normalizedNickname,
+      id: { [Op.ne]: userId }
+    }
+  })
+  if (existing) {
+    return { ok: false, error: 'nickname_taken' }
+  }
+  const user = await User.findByPk(userId)
+  if (!user) {
+    return { ok: false, error: 'user_not_found' }
+  }
+  user.nickname = normalizedNickname
+  await user.save({ fields: ['nickname'] })
+  return { ok: true, user: sanitizeUser(user) }
+}
+
 module.exports = {
   registerUser,
   loginUser,
   verifyToken,
   sanitizeUser,
-  issueAuthResponse
+  issueAuthResponse,
+  changeNickname
 }

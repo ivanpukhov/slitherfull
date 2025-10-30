@@ -109,6 +109,10 @@ const world = new World(cfg, kills, accountService)
 const sockets = new Map()
 const activeUsers = new Map()
 
+app.set('world', world)
+app.set('activeUsers', activeUsers)
+app.set('sockets', sockets)
+
 function send(ws, obj) {
     if (ws.readyState === WebSocket.OPEN) ws.send(encode(obj))
 }

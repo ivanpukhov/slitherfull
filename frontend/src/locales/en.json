@@ -145,6 +145,59 @@
       "lockedBody": "Sign in to view your game history."
     }
   },
+  "hub": {
+    "tabs": {
+      "winners": "Top winners",
+      "friends": "Friends",
+      "stats": "Statistics",
+      "account": "Account"
+    },
+    "titles": {
+      "winners": "Top winners",
+      "friends": "Friends",
+      "stats": "Statistics",
+      "account": "Account center"
+    },
+    "friends": {
+      "loginPrompt": "Sign in to manage your friends list."
+    },
+    "stats": {
+      "loginPrompt": "Sign in to view your personal statistics."
+    },
+    "account": {
+      "loginPrompt": "Sign in to manage your account.",
+      "profileSection": "Profile",
+      "email": "Email",
+      "nickname": "Nickname",
+      "saving": "Saving…",
+      "save": "Save",
+      "nicknameSaved": "Nickname updated successfully!",
+      "nicknameErrors": {
+        "generic": "Unable to update nickname. Try again later.",
+        "invalid": "Enter a valid nickname.",
+        "length": "Nickname must be 3–16 characters.",
+        "taken": "This nickname is already taken.",
+        "unauthorized": "Sign in to change your nickname.",
+        "network": "Network error. Try again.",
+        "server": "Server error. Try again later."
+      },
+      "commissionInfo": "A {{percent}}% commission from each bet keeps the prize pool growing.",
+      "walletSection": "Wallet",
+      "inGameBalance": "In-game balance",
+      "walletSol": "Wallet SOL",
+      "walletUsd": "Wallet USD",
+      "depositTab": "Deposit",
+      "withdrawTab": "Withdraw",
+      "depositButton": "Deposit",
+      "withdrawButton": "Withdraw",
+      "walletAddress": "Wallet address",
+      "refreshBalance": "Refresh balance",
+      "depositHint": "Scan the QR code to deposit SOL to your Snake Fans wallet.",
+      "withdrawHint": "Withdraw funds to your personal Solana wallet.",
+      "walletUnavailable": "Wallet information is unavailable.",
+      "depositMessage": "Deposit to Snake Fans"
+    }
+  },
   "friends": {
     "modal": {
       "title": "Manage friends"

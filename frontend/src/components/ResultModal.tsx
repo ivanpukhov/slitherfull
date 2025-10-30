@@ -1,5 +1,5 @@
 import type { LastResultState } from '../hooks/useGame'
-import { BET_AMOUNTS_CENTS, centsToUsdInput, sanitizeBetValue } from '../utils/helpers'
+import { BET_AMOUNTS_CENTS, centsToUsdInput, sanitizeBetValue, getBetTotalCost } from '../utils/helpers'
 import { Modal } from './Modal'
 import { useTranslation } from '../hooks/useTranslation'
 
@@ -36,11 +36,11 @@ export function ResultModal({
   const betOptions = BET_AMOUNTS_CENTS.map((value) => ({
     value,
     label: `$${centsToUsdInput(value)}`,
-    disabled: value > balanceCents
+    disabled: getBetTotalCost(value) > balanceCents
   }))
 
   const handleSelect = (value: number) => {
-    if (value > balanceCents) return
+    if (getBetTotalCost(value) > balanceCents) return
     onRetryBetChange(centsToUsdInput(value))
     onRetryBetBlur()
   }

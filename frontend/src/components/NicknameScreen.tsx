@@ -1,5 +1,14 @@
 import { type CSSProperties, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { BET_AMOUNTS_CENTS, centsToUsdInput, formatNumber, formatUsd, sanitizeBetValue } from '../utils/helpers'
+import {
+    BET_AMOUNTS_CENTS,
+    BET_COMMISSION_RATE,
+    centsToUsdInput,
+    formatNumber,
+    formatUsd,
+    sanitizeBetValue,
+    getBetTotalCost,
+    getBetCommission
+} from '../utils/helpers'
 import { SKIN_LABELS, SKINS } from '../hooks/useGame'
 import { useFriends } from '../hooks/useFriends'
 import { getIntlLocale, useTranslation } from '../hooks/useTranslation'
@@ -8,13 +17,18 @@ import type { WinningsLeaderboardEntry } from '../hooks/useWinningsLeaderboard'
 import { PlayerStatsChart } from './PlayerStatsChart'
 import { WinningsLeaderboardCard } from './Leaderboard'
 import { Modal } from './Modal'
-import { FriendsModal } from './FriendsModal'
+import { FriendsPanel } from './FriendsModal'
 import { SnakePreview } from './SnakePreview'
 import { LanguageSelector } from './LanguageSelector'
+import { useWalletContext } from '../hooks/useWalletContext'
+import type { AuthResult, AuthUser } from '../hooks/useAuth'
+import { QRCodeCanvas } from 'qrcode.react'
 import wallet from './../assets/wallet.svg'
 import castom from './../assets/castomize.svg'
 import leader from './../assets/leader.svg'
 import friend from './../assets/friend.svg'
+
+type HubTab = 'winners' | 'friends' | 'stats' | 'account'
 
 interface NicknameScreenProps {
     visible: boolean
@@ -23,7 +37,6 @@ interface NicknameScreenProps {
     nicknameLocked: boolean
     selectedSkin: string
     onSelectSkin: (skin: string) => void
-    skinName: string
     betValue: string
     onBetChange: (value: string) => void
     onBetBlur: () => void
@@ -34,12 +47,6 @@ interface NicknameScreenProps {
     startDisabled: boolean
     startDisabledHint?: string
     startLabel?: string
-    walletAddress?: string | null
-    walletSol?: number
-    walletUsd?: number | null
-    usdRate?: number | null
-    walletLoading?: boolean
-    onRefreshWallet?: () => void
     cashoutPending?: boolean
     transferPending?: boolean
     transferMessage?: string
@@ -57,6 +64,8 @@ interface NicknameScreenProps {
     totalWinningsUsd?: number
     totalWinningsSol?: number
     authToken?: string | null
+    authUser?: AuthUser | null
+    onUpdateNickname?: (nickname: string) => Promise<AuthResult>
 }
 
 export function NicknameScreen({
@@ -66,7 +75,6 @@ export function NicknameScreen({
                                    nicknameLocked,
                                    selectedSkin,
                                    onSelectSkin,
-                                   skinName,
                                    betValue,
                                    onBetChange,
                                    onBetBlur,
@@ -77,12 +85,6 @@ export function NicknameScreen({
                                    startDisabled,
                                    startDisabledHint,
                                    startLabel,
-                                   walletAddress,
-                                   walletSol,
-                                   walletUsd,
-                                   usdRate,
-                                   walletLoading,
-                                   onRefreshWallet,
                                    cashoutPending,
                                    transferPending,
                                    transferMessage,
@@ -99,9 +101,20 @@ export function NicknameScreen({
                                    activePlayers,
                                    totalWinningsUsd,
                                    totalWinningsSol,
-                                   authToken
+                                   authToken,
+                                   authUser,
+                                   onUpdateNickname
                                }: NicknameScreenProps) {
     const { t, locale } = useTranslation()
+    const wallet = useWalletContext()
+    const walletProfile = wallet.profile
+    const walletAddress = walletProfile?.walletAddress || authUser?.walletAddress || null
+    const walletSol = walletProfile?.sol
+    const walletUsd = walletProfile?.usd ?? null
+    const usdRate = walletProfile?.usdRate ?? null
+    const walletLoading = wallet.loading
+    const walletRefresh = wallet.refresh
+    const walletError = wallet.error
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault()
         if (startDisabled) return
@@ -147,14 +160,109 @@ export function NicknameScreen({
     const copyResetTimer = useRef<number | null>(null)
     const [withdrawAddress, setWithdrawAddress] = useState('')
     const [withdrawError, setWithdrawError] = useState<string | null>(null)
-    const [withdrawExpanded, setWithdrawExpanded] = useState(false)
-    const [walletModalOpen, setWalletModalOpen] = useState(false)
-    const [statsModalOpen, setStatsModalOpen] = useState(false)
-    const [winningsModalOpen, setWinningsModalOpen] = useState(false)
-    const [friendsModalOpen, setFriendsModalOpen] = useState(false)
+    const [hubModalOpen, setHubModalOpen] = useState(false)
+    const [hubTab, setHubTab] = useState<HubTab>('winners')
+    const [walletTab, setWalletTab] = useState<'deposit' | 'withdraw'>('deposit')
     const [skinModalOpen, setSkinModalOpen] = useState(false)
     const skinListRef = useRef<HTMLDivElement>(null)
     const friendsController = useFriends(authToken ?? null)
+    const [nicknameDraft, setNicknameDraft] = useState(authUser?.nickname ?? '')
+    const [nicknameFeedback, setNicknameFeedback] = useState<
+        { type: 'success' | 'error'; message: string } | null
+    >(null)
+    const [nicknameSaving, setNicknameSaving] = useState(false)
+    const incomingFriendRequests = friendsController.incoming?.length ?? 0
+
+    const hubTabs = useMemo(
+        () => [
+            { key: 'winners' as const, label: t('hub.tabs.winners') },
+            { key: 'friends' as const, label: t('hub.tabs.friends') },
+            { key: 'stats' as const, label: t('hub.tabs.stats') },
+            { key: 'account' as const, label: t('hub.tabs.account') }
+        ],
+        [t]
+    )
+
+    const hubTitle = useMemo(() => {
+        switch (hubTab) {
+            case 'winners':
+                return t('hub.titles.winners')
+            case 'friends':
+                return t('hub.titles.friends')
+            case 'stats':
+                return t('hub.titles.stats')
+            case 'account':
+                return t('hub.titles.account')
+            default:
+                return t('hub.titles.winners')
+        }
+    }, [hubTab, t])
+
+    const depositUri = useMemo(() => {
+        if (!walletAddress) return null
+        const normalized = walletAddress.trim()
+        if (!normalized) return null
+        const label = encodeURIComponent('Snake Fans')
+        const message = encodeURIComponent(t('hub.account.depositMessage'))
+        return `solana:${normalized}?label=${label}&message=${message}`
+    }, [t, walletAddress])
+
+    const nicknameSubmitDisabled = useMemo(() => {
+        const trimmed = nicknameDraft.trim()
+        if (!onUpdateNickname) return true
+        if (nicknameSaving) return true
+        if (!trimmed) return true
+        if (trimmed === (authUser?.nickname ?? '')) return true
+        return false
+    }, [authUser?.nickname, nicknameDraft, nicknameSaving, onUpdateNickname])
+
+    const resolveNicknameError = useCallback(
+        (code?: string | null) => {
+            if (!code) return t('hub.account.nicknameErrors.generic')
+            const map: Record<string, string> = {
+                invalid_nickname: t('hub.account.nicknameErrors.invalid'),
+                nickname_length: t('hub.account.nicknameErrors.length'),
+                nickname_taken: t('hub.account.nicknameErrors.taken'),
+                unauthorized: t('hub.account.nicknameErrors.unauthorized'),
+                network_error: t('hub.account.nicknameErrors.network'),
+                server_error: t('hub.account.nicknameErrors.server')
+            }
+            return map[code] ?? t('hub.account.nicknameErrors.generic')
+        },
+        [t]
+    )
+
+    const handleNicknameSubmit = useCallback(async () => {
+        if (!onUpdateNickname) return
+        const trimmed = nicknameDraft.trim()
+        if (!trimmed) {
+            setNicknameFeedback({ type: 'error', message: resolveNicknameError('invalid_nickname') })
+            return
+        }
+        if (trimmed.length < 3 || trimmed.length > 16) {
+            setNicknameFeedback({ type: 'error', message: resolveNicknameError('nickname_length') })
+            return
+        }
+        setNicknameSaving(true)
+        setNicknameFeedback(null)
+        try {
+            const result = await onUpdateNickname(trimmed)
+            if (result.ok) {
+                setNicknameFeedback({ type: 'success', message: t('hub.account.nicknameSaved') })
+                setNicknameDraft(trimmed)
+                onNicknameChange(trimmed)
+            } else {
+                setNicknameFeedback({
+                    type: 'error',
+                    message: resolveNicknameError(result.error)
+                })
+            }
+        } catch (error) {
+            setNicknameFeedback({ type: 'error', message: resolveNicknameError('network_error') })
+        } finally {
+            setNicknameSaving(false)
+        }
+    }, [nicknameDraft, onNicknameChange, onUpdateNickname, resolveNicknameError, t])
 
     useEffect(() => {
         return () => {
@@ -172,22 +280,33 @@ export function NicknameScreen({
     }, [withdrawStatus])
 
     useEffect(() => {
-        if (!isAuthenticated && friendsModalOpen) {
-            setFriendsModalOpen(false)
-        }
-    }, [friendsModalOpen, isAuthenticated])
-
-    useEffect(() => {
-        if (!isAuthenticated) {
-            setWithdrawExpanded(false)
-        }
-    }, [isAuthenticated])
-
-    useEffect(() => {
         if (!visible) {
-            setWithdrawExpanded(false)
+            setHubModalOpen(false)
         }
     }, [visible])
+
+    useEffect(() => {
+        if (!hubModalOpen) {
+            setWalletTab('deposit')
+        }
+    }, [hubModalOpen])
+
+    useEffect(() => {
+        if (walletTab !== 'withdraw' && withdrawError) {
+            setWithdrawError(null)
+        }
+    }, [walletTab, withdrawError])
+
+    useEffect(() => {
+        if (hubModalOpen && hubTab === 'friends') {
+            friendsController.refresh()
+        }
+    }, [friendsController, hubModalOpen, hubTab])
+
+    useEffect(() => {
+        setNicknameDraft(authUser?.nickname ?? '')
+        setNicknameFeedback(null)
+    }, [authUser?.nickname])
 
     useEffect(() => {
         if (!visible && skinModalOpen) {
@@ -295,7 +414,7 @@ export function NicknameScreen({
             BET_AMOUNTS_CENTS.map((value) => ({
                 value,
                 label: `$${centsToUsdInput(value)}`,
-                disabled: value > spendableBalance
+                disabled: getBetTotalCost(value) > spendableBalance
             })),
         [spendableBalance]
     )
@@ -305,7 +424,7 @@ export function NicknameScreen({
     )
     const handleBetSelect = useCallback(
         (valueCents: number) => {
-            if (valueCents > spendableBalance) return
+            if (getBetTotalCost(valueCents) > spendableBalance) return
             onBetChange(centsToUsdInput(valueCents))
         },
         [onBetChange, spendableBalance]
@@ -327,24 +446,30 @@ export function NicknameScreen({
         [onSelectSkin]
     )
 
-    const handleWalletOpen = useCallback(() => {
-        if (isAuthenticated) {
-            setWalletModalOpen(true)
-        } else {
-            onStart()
-        }
-    }, [isAuthenticated, onStart])
+    const handleOpenHub = useCallback(
+        (tab: HubTab, options?: { walletTab?: 'deposit' | 'withdraw' }) => {
+            if (!isAuthenticated && (tab === 'friends' || tab === 'account')) {
+                onStart()
+                return
+            }
+            if (tab === 'account') {
+                setWalletTab(options?.walletTab ?? 'deposit')
+                setNicknameFeedback(null)
+            } else {
+                setWalletTab('deposit')
+            }
+            setHubTab(tab)
+            setHubModalOpen(true)
+        },
+        [isAuthenticated, onStart]
+    )
 
-    const handleToggleWithdraw = useCallback(() => {
-        if (!isAuthenticated) {
-            onStart()
-            return
-        }
-        setWithdrawExpanded((prev) => !prev)
-        if (withdrawError) {
-            setWithdrawError(null)
-        }
-    }, [isAuthenticated, onStart, withdrawError])
+    const handleWalletOpen = useCallback(
+        (tab: 'deposit' | 'withdraw' = 'deposit') => {
+            handleOpenHub('account', { walletTab: tab })
+        },
+        [handleOpenHub]
+    )
 
     const handleManageAffiliate = useCallback(() => {
         if (typeof window !== 'undefined') {
@@ -359,12 +484,22 @@ export function NicknameScreen({
     }, [])
 
     const handleOpenFriends = useCallback(() => {
-        if (!isAuthenticated) {
-            onStart()
-            return
+        handleOpenHub('friends')
+    }, [handleOpenHub])
+
+    const handleOpenStats = useCallback(() => {
+        handleOpenHub('stats')
+    }, [handleOpenHub])
+
+    const handleOpenWinners = useCallback(() => {
+        handleOpenHub('winners')
+    }, [handleOpenHub])
+
+    const handleWalletRefresh = useCallback(() => {
+        if (typeof walletRefresh === 'function') {
+            walletRefresh()
         }
-        setFriendsModalOpen(true)
-    }, [isAuthenticated, onStart])
+    }, [walletRefresh])
 
     const leaderboardEntries = useMemo(() => winningsEntries.slice(0, 5), [winningsEntries])
     const leaderboardLoading = Boolean(winningsLoading && leaderboardEntries.length === 0)
@@ -462,7 +597,7 @@ export function NicknameScreen({
                                 <button
                                     type="button"
                                     className="friends-card-button gray"
-                                    onClick={() => setWinningsModalOpen(true)}
+                                    onClick={handleOpenWinners}
                                 >
                                     {t('leaderboard.winnings.title')}
                                 </button>
@@ -585,7 +720,7 @@ export function NicknameScreen({
                         <button
                             type="button"
                             className="friends-card-button gray"
-                            onClick={() => (isAuthenticated ? setStatsModalOpen(true) : onStart())}
+                            onClick={handleOpenStats}
                         >
                             {t('lobby.actions.viewStats')}
                         </button>
@@ -619,61 +754,23 @@ export function NicknameScreen({
                                 <button
                                     type="button"
                                     className="friends-card-button green"
-                                    onClick={handleWalletOpen}
+                                    onClick={() => handleWalletOpen('deposit')}
                                     disabled={walletLoading && isAuthenticated}
                                 >
                                     {walletLoading && isAuthenticated
                                         ? t('lobby.wallet.refreshing')
-                                        : t('lobby.wallet.addFunds')}
+                                        : t('hub.account.depositButton')}
                                 </button>
                                 <button
                                     type="button"
                                     className="friends-card-button  blue"
-                                    onClick={handleToggleWithdraw}
+                                    onClick={() => handleWalletOpen('withdraw')}
                                     disabled={!isAuthenticated}
                                 >
-                                    {withdrawExpanded ? t('lobby.wallet.hideWithdraw') : t('lobby.wallet.cashOut')}
+                                    {t('hub.account.withdrawButton')}
                                 </button>
                             </div>
-                            {withdrawExpanded && isAuthenticated ? (
-                                <div className="wallet-withdraw">
-                                    <label htmlFor="withdrawAddress">{t('lobby.withdraw.label')}</label>
-                                    <div className="wallet-withdraw-controls">
-                                        <input
-                                            id="withdrawAddress"
-                                            type="text"
-                                            placeholder={t('lobby.withdraw.placeholder')}
-                                            value={withdrawAddress}
-                                            onChange={(event) => {
-                                                setWithdrawAddress(event.target.value)
-                                                if (withdrawError) setWithdrawError(null)
-                                            }}
-                                            onKeyDown={(event) => {
-                                                if (event.key === 'Enter') {
-                                                    event.preventDefault()
-                                                    handleWithdraw()
-                                                }
-                                            }}
-                                        />
-                                        <button
-                                            type="button"
-                                            className="wallet-withdraw-button"
-                                            onClick={handleWithdraw}
-                                            disabled={withdrawPending || !onWithdraw}
-                                        >
-                                            {withdrawPending ? t('lobby.withdraw.sending') : t('lobby.withdraw.submit')}
-                                        </button>
-                                    </div>
-                                    {withdrawError ? (
-                                        <p className="wallet-withdraw-status error">{withdrawError}</p>
-                                    ) : withdrawStatus ? (
-                                        <p className={`wallet-withdraw-status ${withdrawStatus.type}`}>
-                                            {withdrawStatus.message}
-                                        </p>
-                                    ) : null}
-                                </div>
-                            ) : null}
-                            {!withdrawExpanded && withdrawStatus ? (
+                            {withdrawStatus ? (
                                 <p className={`wallet-withdraw-status wallet-withdraw-status--summary ${withdrawStatus.type}`}>
                                     {withdrawStatus.message}
                                 </p>
@@ -750,96 +847,238 @@ export function NicknameScreen({
             </Modal>
 
             <Modal
-                open={walletModalOpen}
-                title={t('lobby.wallet.modalTitle')}
-                onClose={() => setWalletModalOpen(false)}
-
+                open={hubModalOpen}
+                title={hubTitle}
+                onClose={() => setHubModalOpen(false)}
+                width="720px"
             >
-                <div className="wallet-section wallet-modal-section">
-                    <div className="wallet-row">
-                        <span className="wallet-label">{t('lobby.wallet.inGameBalance')}</span>
-                        <span className="wallet-value">{formatUsd(balance)}</span>
+                <div className="hub-modal">
+                    <div className="hub-tabs" role="tablist">
+                        {hubTabs.map(({ key, label }) => (
+                            <button
+                                key={key}
+                                type="button"
+                                role="tab"
+                                aria-selected={hubTab === key}
+                                className={`hub-tab${hubTab === key ? ' active' : ''}`}
+                                onClick={() => {
+                                    setHubTab(key)
+                                    if (key === 'account') {
+                                        setWalletTab('deposit')
+                                        setNicknameFeedback(null)
+                                    }
+                                }}
+                            >
+                                {label}
+                                {key === 'friends' && incomingFriendRequests > 0 ? (
+                                    <span className="hub-tab-badge">{incomingFriendRequests}</span>
+                                ) : null}
+                            </button>
+                        ))}
                     </div>
-                    {showWallet ? (
-                        <>
-                            <div className="wallet-row">
-                                <span className="wallet-label">{t('lobby.wallet.solLabel')}</span>
-                                <span className="wallet-value">{formattedSol}</span>
-                            </div>
-                            <div className="wallet-row">
-                                <span className="wallet-label">{t('lobby.wallet.usdLabel')}</span>
-                                <span className="wallet-value">{formattedUsd}</span>
-                            </div>
-                            <div className="wallet-address" title={walletAddress ?? ''}>
-                                <div className="wallet-address-text">
-                                    <span className="wallet-label">{t('lobby.wallet.addressLabel')}</span>
-                                    <span className="wallet-hash">{walletAddress}</span>
+                    <div className="hub-panels">
+                        {hubTab === 'winners' ? (
+                            <WinningsLeaderboardCard
+                                entries={winningsEntries}
+                                loading={winningsLoading}
+                                error={winningsError ?? null}
+                                priceHint={winningsPriceHint}
+                            />
+                        ) : null}
+                        {hubTab === 'friends' ? (
+                            isAuthenticated ? (
+                                <FriendsPanel
+                                    controller={friendsController}
+                                    active={hubModalOpen && hubTab === 'friends'}
+                                />
+                            ) : (
+                                <div className="hub-placeholder">{t('hub.friends.loginPrompt')}</div>
+                            )
+                        ) : null}
+                        {hubTab === 'stats' ? (
+                            isAuthenticated ? (
+                                <PlayerStatsChart
+                                    series={playerStats?.series ?? []}
+                                    loading={playerStatsLoading}
+                                    totalUsd={playerStats?.totals?.usd ?? 0}
+                                    totalSol={playerStats?.totals?.sol ?? 0}
+                                />
+                            ) : (
+                                <div className="hub-placeholder">{t('hub.stats.loginPrompt')}</div>
+                            )
+                        ) : null}
+                        {hubTab === 'account' ? (
+                            isAuthenticated ? (
+                                <div className="hub-account">
+                                    <section className="hub-account-section">
+                                        <h3>{t('hub.account.profileSection')}</h3>
+                                        <div className="hub-account-field">
+                                            <span className="hub-account-label">{t('hub.account.email')}</span>
+                                            <span className="hub-account-value">{authUser?.email ?? '—'}</span>
+                                        </div>
+                                        <div className="hub-account-field">
+                                            <span className="hub-account-label">{t('hub.account.nickname')}</span>
+                                            <div className="hub-account-nickname">
+                                                <input
+                                                    type="text"
+                                                    maxLength={16}
+                                                    value={nicknameDraft}
+                                                    onChange={(event) => setNicknameDraft(event.target.value)}
+                                                    disabled={nicknameSaving || !onUpdateNickname}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="hub-account-save"
+                                                    onClick={handleNicknameSubmit}
+                                                    disabled={nicknameSubmitDisabled}
+                                                >
+                                                    {nicknameSaving ? t('hub.account.saving') : t('hub.account.save')}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        {nicknameFeedback ? (
+                                            <div className={`hub-account-feedback ${nicknameFeedback.type}`}>
+                                                {nicknameFeedback.message}
+                                            </div>
+                                        ) : null}
+                                        <p className="hub-account-info">
+                                            {t('hub.account.commissionInfo', {
+                                                percent: Math.round(BET_COMMISSION_RATE * 100)
+                                            })}
+                                        </p>
+                                    </section>
+                                    <section className="hub-account-section">
+                                        <h3>{t('hub.account.walletSection')}</h3>
+                                        <div className="hub-wallet-summary">
+                                            <div className="hub-wallet-item">
+                                                <span className="hub-wallet-label">{t('hub.account.inGameBalance')}</span>
+                                                <span className="hub-wallet-value">{formatUsd(balance)}</span>
+                                            </div>
+                                            {typeof walletSol === 'number' ? (
+                                                <div className="hub-wallet-item">
+                                                    <span className="hub-wallet-label">{t('hub.account.walletSol')}</span>
+                                                    <span className="hub-wallet-value">{formattedSol}</span>
+                                                </div>
+                                            ) : null}
+                                            {typeof derivedUsd === 'number' ? (
+                                                <div className="hub-wallet-item">
+                                                    <span className="hub-wallet-label">{t('hub.account.walletUsd')}</span>
+                                                    <span className="hub-wallet-value">{formattedUsd}</span>
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                        <div className="hub-wallet-tabs" role="tablist">
+                                            <button
+                                                type="button"
+                                                className={`hub-wallet-tab${walletTab === 'deposit' ? ' active' : ''}`}
+                                                aria-selected={walletTab === 'deposit'}
+                                                onClick={() => setWalletTab('deposit')}
+                                            >
+                                                {t('hub.account.depositTab')}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`hub-wallet-tab${walletTab === 'withdraw' ? ' active' : ''}`}
+                                                aria-selected={walletTab === 'withdraw'}
+                                                onClick={() => setWalletTab('withdraw')}
+                                            >
+                                                {t('hub.account.withdrawTab')}
+                                            </button>
+                                        </div>
+                                        {walletTab === 'deposit' ? (
+                                            <div className="hub-wallet-panel">
+                                                {walletAddress ? (
+                                                    <>
+                                                        <div className="hub-wallet-qr">
+                                                            <QRCodeCanvas value={depositUri || ''} size={160} includeMargin />
+                                                        </div>
+                                                        <div className="hub-wallet-address" title={walletAddress}>
+                                                            <span className="hub-wallet-label">{t('hub.account.walletAddress')}</span>
+                                                            <div className="hub-wallet-address-row">
+                                                                <span className="hub-wallet-value">{walletAddress}</span>
+                                                                <button type="button" className="hub-wallet-copy" onClick={handleCopyWallet}>
+                                                                    {copyLabel}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            className="hub-wallet-refresh"
+                                                            onClick={handleWalletRefresh}
+                                                            disabled={walletLoading}
+                                                        >
+                                                            {walletLoading
+                                                                ? t('lobby.wallet.refreshing')
+                                                                : t('hub.account.refreshBalance')}
+                                                        </button>
+                                                        {walletError ? (
+                                                            <div className="hub-wallet-error">{walletError}</div>
+                                                        ) : null}
+                                                        <p className="hub-wallet-hint">{t('hub.account.depositHint')}</p>
+                                                    </>
+                                                ) : (
+                                                    <p className="hub-wallet-placeholder">{t('hub.account.walletUnavailable')}</p>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="hub-wallet-panel">
+                                                <label htmlFor="hubWithdrawAddress">{t('lobby.withdraw.label')}</label>
+                                                <div className="wallet-withdraw-controls">
+                                                    <input
+                                                        id="hubWithdrawAddress"
+                                                        type="text"
+                                                        placeholder={t('lobby.withdraw.placeholder')}
+                                                        value={withdrawAddress}
+                                                        onChange={(event) => {
+                                                            setWithdrawAddress(event.target.value)
+                                                            if (withdrawError) setWithdrawError(null)
+                                                        }}
+                                                        onKeyDown={(event) => {
+                                                            if (event.key === 'Enter') {
+                                                                event.preventDefault()
+                                                                handleWithdraw()
+                                                            }
+                                                        }}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className="wallet-withdraw-button"
+                                                        onClick={handleWithdraw}
+                                                        disabled={withdrawPending || !onWithdraw}
+                                                    >
+                                                        {withdrawPending ? t('lobby.withdraw.sending') : t('lobby.withdraw.submit')}
+                                                    </button>
+                                                </div>
+                                                {withdrawError ? (
+                                                    <p className="wallet-withdraw-status error">{withdrawError}</p>
+                                                ) : withdrawStatus ? (
+                                                    <p className={`wallet-withdraw-status ${withdrawStatus.type}`}>
+                                                        {withdrawStatus.message}
+                                                    </p>
+                                                ) : null}
+                                                <button
+                                                    type="button"
+                                                    className="hub-wallet-refresh"
+                                                    onClick={handleWalletRefresh}
+                                                    disabled={walletLoading}
+                                                >
+                                                    {walletLoading
+                                                        ? t('lobby.wallet.refreshing')
+                                                        : t('hub.account.refreshBalance')}
+                                                </button>
+                                                {walletError ? <div className="hub-wallet-error">{walletError}</div> : null}
+                                                <p className="hub-wallet-hint">{t('hub.account.withdrawHint')}</p>
+                                            </div>
+                                        )}
+                                    </section>
                                 </div>
-                                <button type="button" className="wallet-copy-button" onClick={handleCopyWallet}>
-                                    {copyStatus === 'copied'
-                                        ? t('lobby.wallet.copyButton.copied')
-                                        : copyStatus === 'error'
-                                            ? t('lobby.wallet.copyButton.error')
-                                            : t('lobby.wallet.copyButton.default')}
-                                </button>
-                            </div>
-                            <div className="wallet-actions">
-                                <button
-                                    type="button"
-                                    className="wallet-refresh-button"
-                                    onClick={onRefreshWallet}
-                                    disabled={walletLoading}
-                                >
-                                    {walletLoading ? t('lobby.wallet.refreshing') : t('lobby.wallet.refresh')}
-                                </button>
-                            </div>
-                            <p className="wallet-placeholder">
-                                {t('lobby.wallet.withdrawHint')}
-                            </p>
-                        </>
-                    ) : (
-                        <p className="wallet-placeholder">{t('lobby.wallet.signInHint')}</p>
-                    )}
+                            ) : (
+                                <div className="hub-placeholder">{t('hub.account.loginPrompt')}</div>
+                            )
+                        ) : null}
+                    </div>
                 </div>
             </Modal>
-            <Modal
-                open={statsModalOpen}
-                title={t('lobby.statsModal.title')}
-                onClose={() => setStatsModalOpen(false)}
-                width="580px"
-            >
-                {isAuthenticated ? (
-                    <PlayerStatsChart
-                        series={playerStats?.series ?? []}
-                        loading={playerStatsLoading}
-                        totalUsd={playerStats?.totals?.usd ?? 0}
-                        totalSol={playerStats?.totals?.sol ?? 0}
-                    />
-                ) : (
-                    <div className="stats-card stats-card-locked modal-placeholder">
-                        <div className="stats-card-title">{t('lobby.statsModal.lockedTitle')}</div>
-                        <div className="stats-card-body placeholder">{t('lobby.statsModal.lockedBody')}</div>
-                    </div>
-                )}
-            </Modal>
-            <Modal
-                open={winningsModalOpen}
-                title={t('leaderboard.winnings.title')}
-                onClose={() => setWinningsModalOpen(false)}
-
-            >
-                <WinningsLeaderboardCard
-                    entries={winningsEntries}
-                    loading={winningsLoading}
-                    error={winningsError ?? null}
-                    priceHint={winningsPriceHint}
-                />
-            </Modal>
-            <FriendsModal
-                open={friendsModalOpen}
-                controller={friendsController}
-                onClose={() => setFriendsModalOpen(false)}
-            />
         </div>
     )
 }

@@ -145,6 +145,59 @@
       "lockedBody": "Inicia sesión para ver tu historial de partidas."
     }
   },
+  "hub": {
+    "tabs": {
+      "winners": "Mejores ganadores",
+      "friends": "Amigos",
+      "stats": "Estadísticas",
+      "account": "Cuenta"
+    },
+    "titles": {
+      "winners": "Mejores ganadores",
+      "friends": "Amigos",
+      "stats": "Estadísticas",
+      "account": "Centro de cuenta"
+    },
+    "friends": {
+      "loginPrompt": "Inicia sesión para gestionar tu lista de amigos."
+    },
+    "stats": {
+      "loginPrompt": "Inicia sesión para ver tus estadísticas personales."
+    },
+    "account": {
+      "loginPrompt": "Inicia sesión para administrar tu cuenta.",
+      "profileSection": "Perfil",
+      "email": "Correo electrónico",
+      "nickname": "Apodo",
+      "saving": "Guardando…",
+      "save": "Guardar",
+      "nicknameSaved": "¡Apodo actualizado correctamente!",
+      "nicknameErrors": {
+        "generic": "No se pudo actualizar el apodo. Inténtalo más tarde.",
+        "invalid": "Introduce un apodo válido.",
+        "length": "El apodo debe tener entre 3 y 16 caracteres.",
+        "taken": "Ese apodo ya está en uso.",
+        "unauthorized": "Inicia sesión para cambiar tu apodo.",
+        "network": "Error de red. Inténtalo de nuevo.",
+        "server": "Error del servidor. Inténtalo más tarde."
+      },
+      "commissionInfo": "Una comisión del {{percent}}% de cada apuesta alimenta el bote de premios.",
+      "walletSection": "Billetera",
+      "inGameBalance": "Saldo en juego",
+      "walletSol": "SOL en billetera",
+      "walletUsd": "USD en billetera",
+      "depositTab": "Depositar",
+      "withdrawTab": "Retirar",
+      "depositButton": "Depositar",
+      "withdrawButton": "Retirar",
+      "walletAddress": "Dirección de la billetera",
+      "refreshBalance": "Actualizar saldo",
+      "depositHint": "Escanea el código QR para depositar SOL en tu billetera de Snake Fans.",
+      "withdrawHint": "Retira fondos a tu billetera personal de Solana.",
+      "walletUnavailable": "La información de la billetera no está disponible.",
+      "depositMessage": "Depositar en Snake Fans"
+    }
+  },
   "friends": {
     "modal": {
       "title": "Gestionar amigos"
