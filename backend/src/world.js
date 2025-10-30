@@ -10,8 +10,10 @@ const {
 } = require('./protocol')
 
 const BET_AMOUNTS_CENTS = [100, 500, 2000]
+const BET_COMMISSION_RATE = 0.2
 const GOLDEN_FOOD_VALUE_CENTS = 20
 const GOLDEN_FOOD_COLOR = '#facc15'
+const GOLDEN_FOOD_FEE_CENTS = GOLDEN_FOOD_VALUE_CENTS
 
 const SKIN_PRESETS = {
     default: ['#38bdf8'],
@@ -238,7 +240,8 @@ class World {
             balance,
             currentBet: 0,
             cashedOut: false,
-            userId: context.userId || null
+            userId: context.userId || null,
+            commission: 0
         }
         p.dir = p.angle
         p.targetAngle = p.angle
@@ -246,6 +249,21 @@ class World {
         const key = this.playerSpatial.add(id, p.x, p.y)
         this.playerCells.set(id, key)
         return p
+    }
+
+    updatePlayerNicknameByUserId(userId, nickname) {
+        if (!userId) return false
+        let updated = false
+        const normalized = typeof nickname === 'string' ? nickname.trim() : ''
+        for (const player of this.players.values()) {
+            if (Number(player.userId) === Number(userId)) {
+                if (normalized) {
+                    player.name = normalized
+                }
+                updated = true
+            }
+        }
+        return updated
     }
 
     removePlayer(id) {
@@ -469,6 +487,7 @@ class World {
 
         const bounty = Math.max(0, Math.floor(victim.currentBet || 0))
         victim.currentBet = 0
+        victim.commission = 0
 
         const cellKey = this.playerCells.get(victim.id)
         this.playerSpatial.removeKey(victim.id, cellKey)
@@ -485,26 +504,29 @@ class World {
 
         let lengthRemaining = totalLength
 
-        if (bounty >= GOLDEN_FOOD_VALUE_CENTS) {
-            const goldenPieces = Math.max(1, Math.floor(bounty / GOLDEN_FOOD_VALUE_CENTS))
-            const stride = Math.max(1, Math.floor(points.length / goldenPieces))
-            for (let i = 0; i < goldenPieces; i++) {
-                const index = Math.max(0, points.length - 1 - i * stride)
-                const target = points[index]
-                const clamped = projectToCircle(this.centerX, this.centerY, this.radius, target.x, target.y)
-                const piecesLeft = goldenPieces - i
-                let segmentValue = 0
-                if (lengthRemaining > 0 && piecesLeft > 0) {
-                    segmentValue = Math.max(1, Math.floor(lengthRemaining / piecesLeft))
-                    segmentValue = Math.min(lengthRemaining, segmentValue)
-                    lengthRemaining -= segmentValue
+        const goldenBudget = Math.max(0, bounty - GOLDEN_FOOD_FEE_CENTS)
+        if (goldenBudget >= GOLDEN_FOOD_VALUE_CENTS) {
+            const goldenPieces = Math.max(0, Math.floor(goldenBudget / GOLDEN_FOOD_VALUE_CENTS))
+            if (goldenPieces > 0) {
+                const stride = Math.max(1, Math.floor(points.length / goldenPieces))
+                for (let i = 0; i < goldenPieces; i++) {
+                    const index = Math.max(0, points.length - 1 - i * stride)
+                    const target = points[index]
+                    const clamped = projectToCircle(this.centerX, this.centerY, this.radius, target.x, target.y)
+                    const piecesLeft = goldenPieces - i
+                    let segmentValue = 0
+                    if (lengthRemaining > 0 && piecesLeft > 0) {
+                        segmentValue = Math.max(1, Math.floor(lengthRemaining / piecesLeft))
+                        segmentValue = Math.min(lengthRemaining, segmentValue)
+                        lengthRemaining -= segmentValue
+                    }
+                    this.spawnFoodAt(clamped.x, clamped.y, Math.max(1, segmentValue), {
+                        color: GOLDEN_FOOD_COLOR,
+                        big: true,
+                        betValue: GOLDEN_FOOD_VALUE_CENTS
+                    })
+                    if (this.foods.size >= this.maxFood) break
                 }
-                this.spawnFoodAt(clamped.x, clamped.y, Math.max(1, segmentValue), {
-                    color: GOLDEN_FOOD_COLOR,
-                    big: true,
-                    betValue: GOLDEN_FOOD_VALUE_CENTS
-                })
-                if (this.foods.size >= this.maxFood) break
             }
         }
 
@@ -574,24 +596,27 @@ class World {
             return { ok: false, error: 'bet_exists' }
         }
         const balance = Math.max(0, Math.floor(p.balance || 0))
-        if (balance < bet) {
+        const commission = Math.max(0, Math.round(bet * BET_COMMISSION_RATE))
+        const totalCost = bet + commission
+        if (balance < totalCost) {
             return { ok: false, error: 'insufficient_balance' }
         }
         try {
             if (p.userId) {
-                const refreshed = await walletService.transferUserToGame(p.userId, bet)
+                const refreshed = await walletService.transferUserToGame(p.userId, totalCost)
                 if (refreshed && typeof refreshed.units === 'number') {
                     p.balance = Math.max(0, Math.floor(refreshed.units))
                 } else {
-                    p.balance = Math.max(0, balance - bet)
+                    p.balance = Math.max(0, balance - totalCost)
                 }
             } else {
-                p.balance = balance - bet
+                p.balance = balance - totalCost
             }
         } catch (err) {
             return { ok: false, error: err.message === 'insufficient_funds' ? 'insufficient_balance' : 'transfer_failed' }
         }
         p.currentBet = bet
+        p.commission = commission
         try {
             if (this.accountStore && p.userId) {
                 await this.accountStore.updateBalance(p.userId, Math.max(0, Math.floor(p.balance)))
@@ -599,13 +624,14 @@ class World {
         } catch (err) {
             if (p.userId) {
                 try {
-                    await walletService.transferGameToUser(p.userId, bet)
+                    await walletService.transferGameToUser(p.userId, totalCost)
                 } catch (transferErr) {
                     console.error('Failed to revert bet transfer', transferErr)
                 }
             }
             p.balance = balance
             p.currentBet = 0
+            p.commission = 0
             return { ok: false, error: 'balance_persist_failed' }
         }
         this.notifyBalance(p)
@@ -646,6 +672,7 @@ class World {
             return { ok: false, error: 'balance_persist_failed' }
         }
         p.currentBet = 0
+        p.commission = 0
         p.cashedOut = true
         p.alive = false
         p.boost = false

@@ -141,6 +141,42 @@ export function useAuth() {
     setUser((prev) => (prev ? { ...prev, balance } : prev))
   }, [])
 
+  const updateNickname = useCallback(
+    async (nickname: string): Promise<AuthResult> => {
+      if (!token) {
+        return { ok: false, error: 'unauthorized' }
+      }
+      const normalized = typeof nickname === 'string' ? nickname.trim() : ''
+      if (!normalized) {
+        return { ok: false, error: 'invalid_nickname' }
+      }
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/nickname`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ nickname: normalized })
+        })
+        if (!response.ok) {
+          const error = await safeError(response)
+          return { ok: false, error }
+        }
+        const data = await response.json()
+        if (data?.user) {
+          setUser(data.user)
+          setStatus('authenticated')
+          return { ok: true }
+        }
+        return { ok: false, error: 'server_error' }
+      } catch (err) {
+        return { ok: false, error: 'network_error' }
+      }
+    },
+    [token]
+  )
+
   const ready = useMemo(() => status !== 'checking', [status])
 
   return {
@@ -151,7 +187,8 @@ export function useAuth() {
     login,
     register,
     logout,
-    syncBalance
+    syncBalance,
+    updateNickname
   }
 }
 

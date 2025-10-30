@@ -182,6 +182,59 @@
       "hint": "Выберите оформление змейки"
     }
   },
+  "hub": {
+    "tabs": {
+      "winners": "Топ победителей",
+      "friends": "Друзья",
+      "stats": "Статистика",
+      "account": "Аккаунт"
+    },
+    "titles": {
+      "winners": "Топ победителей",
+      "friends": "Друзья",
+      "stats": "Статистика",
+      "account": "Центр аккаунта"
+    },
+    "friends": {
+      "loginPrompt": "Войдите, чтобы управлять списком друзей."
+    },
+    "stats": {
+      "loginPrompt": "Войдите, чтобы увидеть личную статистику."
+    },
+    "account": {
+      "loginPrompt": "Войдите, чтобы управлять аккаунтом.",
+      "profileSection": "Профиль",
+      "email": "Email",
+      "nickname": "Никнейм",
+      "saving": "Сохраняем…",
+      "save": "Сохранить",
+      "nicknameSaved": "Никнейм обновлён!",
+      "nicknameErrors": {
+        "generic": "Не удалось обновить никнейм. Попробуйте позже.",
+        "invalid": "Введите корректный никнейм.",
+        "length": "Никнейм должен содержать от 3 до 16 символов.",
+        "taken": "Этот ник уже занят.",
+        "unauthorized": "Войдите, чтобы менять никнейм.",
+        "network": "Ошибка сети. Попробуйте ещё раз.",
+        "server": "Ошибка сервера. Попробуйте позже."
+      },
+      "commissionInfo": "Комиссия {{percent}}% с каждой ставки пополняет призовой фонд.",
+      "walletSection": "Кошелёк",
+      "inGameBalance": "Баланс в игре",
+      "walletSol": "Кошелёк SOL",
+      "walletUsd": "Кошелёк USD",
+      "depositTab": "Пополнить",
+      "withdrawTab": "Вывести",
+      "depositButton": "Пополнить",
+      "withdrawButton": "Вывести",
+      "walletAddress": "Адрес кошелька",
+      "refreshBalance": "Обновить баланс",
+      "depositHint": "Отсканируйте QR-код, чтобы пополнить кошелёк Snake Fans SOL.",
+      "withdrawHint": "Выводите средства на свой кошелёк Solana.",
+      "walletUnavailable": "Данные кошелька недоступны.",
+      "depositMessage": "Пополнение Snake Fans"
+    }
+  },
   "deathScreen": {
     "newBetLabel": "Новая ставка",
     "betHint": {

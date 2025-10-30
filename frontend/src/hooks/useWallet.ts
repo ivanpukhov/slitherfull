@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { translate } from './useTranslation'
 
 export interface WalletProfile {
@@ -200,16 +200,21 @@ export function useWallet({ token }: UseWalletOptions) {
     [profile, token]
   )
 
-  return {
-    profile,
-    loading,
-    error,
-    refresh,
-    requestAirdrop,
-    fetchProfile,
-    withdrawAll
-  }
+  return useMemo(
+    () => ({
+      profile,
+      loading,
+      error,
+      refresh,
+      requestAirdrop,
+      fetchProfile,
+      withdrawAll
+    }),
+    [profile, loading, error, refresh, requestAirdrop, fetchProfile, withdrawAll]
+  )
 }
+
+export type UseWalletController = ReturnType<typeof useWallet>
 
 function getWithdrawErrorMessage(code: string) {
   const keyMap: Record<string, string> = {

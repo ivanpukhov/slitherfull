@@ -6,6 +6,7 @@ export function formatNumber(value: number | null | undefined): string {
 }
 
 export const BET_AMOUNTS_CENTS = [100, 500, 2000]
+export const BET_COMMISSION_RATE = 0.2
 
 export function formatUsd(valueCents: number | null | undefined): string {
   const cents = Math.max(0, Math.floor(Number.isFinite(valueCents as number) ? (valueCents as number) : 0))
@@ -24,9 +25,19 @@ export function centsToUsdInput(valueCents: number): string {
   return (cents / 100).toString().replace(/\.00$/, '').replace(/,(00)?$/, '')
 }
 
+export function getBetCommission(valueCents: number): number {
+  const base = Math.max(0, Math.floor(Number(valueCents) || 0))
+  return Math.max(0, Math.round(base * BET_COMMISSION_RATE))
+}
+
+export function getBetTotalCost(valueCents: number): number {
+  const base = Math.max(0, Math.floor(Number(valueCents) || 0))
+  return base + getBetCommission(base)
+}
+
 export function sanitizeBetValue(value: number | string | null | undefined, maxBalanceCents: number): number {
   const max = Math.max(0, Math.floor(maxBalanceCents || 0))
-  const available = BET_AMOUNTS_CENTS.filter((option) => option <= max)
+  const available = BET_AMOUNTS_CENTS.filter((option) => getBetTotalCost(option) <= max)
   if (!available.length) {
     return 0
   }
@@ -41,7 +52,7 @@ export function sanitizeBetValue(value: number | string | null | undefined, maxB
   if (!Number.isFinite(candidate)) {
     return available[0]
   }
-  if (BET_AMOUNTS_CENTS.includes(candidate)) {
+  if (BET_AMOUNTS_CENTS.includes(candidate) && getBetTotalCost(candidate) <= max) {
     return candidate
   }
   const candidates = available.filter((option) => option <= candidate)

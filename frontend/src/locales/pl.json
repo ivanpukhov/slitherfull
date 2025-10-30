@@ -145,6 +145,59 @@
       "lockedBody": "Zaloguj się, aby zobaczyć historię gier."
     }
   },
+  "hub": {
+    "tabs": {
+      "winners": "Najlepsi zwycięzcy",
+      "friends": "Przyjaciele",
+      "stats": "Statystyki",
+      "account": "Konto"
+    },
+    "titles": {
+      "winners": "Najlepsi zwycięzcy",
+      "friends": "Przyjaciele",
+      "stats": "Statystyki",
+      "account": "Centrum konta"
+    },
+    "friends": {
+      "loginPrompt": "Zaloguj się, aby zarządzać listą znajomych."
+    },
+    "stats": {
+      "loginPrompt": "Zaloguj się, aby zobaczyć swoje statystyki."
+    },
+    "account": {
+      "loginPrompt": "Zaloguj się, aby zarządzać kontem.",
+      "profileSection": "Profil",
+      "email": "E-mail",
+      "nickname": "Pseudonim",
+      "saving": "Zapisywanie…",
+      "save": "Zapisz",
+      "nicknameSaved": "Pseudonim został zaktualizowany!",
+      "nicknameErrors": {
+        "generic": "Nie udało się zaktualizować pseudonimu. Spróbuj później.",
+        "invalid": "Wprowadź prawidłowy pseudonim.",
+        "length": "Pseudonim musi mieć od 3 do 16 znaków.",
+        "taken": "Ten pseudonim jest już zajęty.",
+        "unauthorized": "Zaloguj się, aby zmienić pseudonim.",
+        "network": "Błąd sieci. Spróbuj ponownie.",
+        "server": "Błąd serwera. Spróbuj ponownie później."
+      },
+      "commissionInfo": "Komisja {{percent}}% z każdego zakładu zasila pulę nagród.",
+      "walletSection": "Portfel",
+      "inGameBalance": "Saldo w grze",
+      "walletSol": "Portfel SOL",
+      "walletUsd": "Portfel USD",
+      "depositTab": "Wpłać",
+      "withdrawTab": "Wypłać",
+      "depositButton": "Wpłać",
+      "withdrawButton": "Wypłać",
+      "walletAddress": "Adres portfela",
+      "refreshBalance": "Odśwież saldo",
+      "depositHint": "Zeskanuj kod QR, aby wpłacić SOL do portfela Snake Fans.",
+      "withdrawHint": "Wypłać środki na swój portfel Solana.",
+      "walletUnavailable": "Informacje o portfelu są niedostępne.",
+      "depositMessage": "Wpłata do Snake Fans"
+    }
+  },
   "friends": {
     "modal": {
       "title": "Zarządzaj znajomymi"

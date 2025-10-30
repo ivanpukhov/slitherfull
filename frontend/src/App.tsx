@@ -3,9 +3,10 @@ import { useGame } from './hooks/useGame'
 import { useCanvas } from './hooks/useCanvas'
 import { useConnection } from './hooks/useConnection'
 import { usePointerControls } from './hooks/usePointerControls'
-import { sanitizeBetValue, centsToUsdInput, BET_AMOUNTS_CENTS } from './utils/helpers'
+import { sanitizeBetValue, centsToUsdInput, BET_AMOUNTS_CENTS, getBetTotalCost } from './utils/helpers'
 import { useAuth } from './hooks/useAuth'
 import { useWallet } from './hooks/useWallet'
+import { WalletProvider } from './hooks/useWalletContext'
 import { useWinningsLeaderboard } from './hooks/useWinningsLeaderboard'
 import { usePlayerStats } from './hooks/usePlayerStats'
 import { getIntlLocale, useTranslation } from './hooks/useTranslation'
@@ -155,7 +156,6 @@ function GameView() {
 
   useEffect(() => {
     if (auth.status === 'authenticated' && auth.user) {
-      controller.setNicknameLock(true)
       const wasSynced = accountStateSyncedRef.current
       if (!wasSynced) {
         controller.setAccountState({
@@ -167,36 +167,31 @@ function GameView() {
         accountStateSyncedRef.current = true
       }
       const available = Math.max(0, Math.floor(auth.user.balance))
+      const affordableOptions = BET_AMOUNTS_CENTS.filter((option) => getBetTotalCost(option) <= available)
       if (game.nickname !== auth.user.nickname) {
         setNickname(auth.user.nickname)
       }
-      if (available <= 0) {
+      if (available <= 0 || affordableOptions.length === 0) {
         if (game.betValue !== '') setBetValue('')
         if (game.retryBetValue !== '') setRetryBetValue('')
       } else {
-        const smallestBet = BET_AMOUNTS_CENTS.find((option) => option <= available) ?? 0
-        if (!smallestBet) {
-          if (game.betValue !== '') setBetValue('')
-          if (game.retryBetValue !== '') setRetryBetValue('')
+        const smallestBet = affordableOptions[0]
+        if (!game.betValue && !wasSynced) {
+          setBetValue(centsToUsdInput(smallestBet))
         } else {
-          if (!game.betValue && !wasSynced) {
-            setBetValue(centsToUsdInput(smallestBet))
-          } else {
-            const normalizedBet = getBetDisplay(game.betValue, available)
-            if (normalizedBet !== game.betValue) {
-              setBetValue(normalizedBet)
-            }
+          const normalizedBet = getBetDisplay(game.betValue, available)
+          if (normalizedBet !== game.betValue) {
+            setBetValue(normalizedBet)
           }
-          const normalizedRetryBet = getBetDisplay(game.retryBetValue, available)
-          if (normalizedRetryBet !== game.retryBetValue) {
-            setRetryBetValue(normalizedRetryBet)
-          }
+        }
+        const normalizedRetryBet = getBetDisplay(game.retryBetValue, available)
+        if (normalizedRetryBet !== game.retryBetValue) {
+          setRetryBetValue(normalizedRetryBet)
         }
       }
       setAuthModalOpen(false)
     } else if (auth.status === 'unauthenticated') {
       accountStateSyncedRef.current = false
-      controller.setNicknameLock(false)
       controller.setAccountState({ balance: 0, currentBet: 0, total: 0, cashedOut: false })
       if (game.nickname !== '') {
         setNickname('')
@@ -247,7 +242,7 @@ function GameView() {
     if (sanitized > 0) {
       game.setBetValue(centsToUsdInput(sanitized))
     } else {
-      const smallest = BET_AMOUNTS_CENTS.find((option) => option <= effectiveBetBalance)
+      const smallest = BET_AMOUNTS_CENTS.find((option) => getBetTotalCost(option) <= effectiveBetBalance)
       game.setBetValue(smallest ? centsToUsdInput(smallest) : '')
     }
   }, [effectiveBetBalance, game])
@@ -262,7 +257,7 @@ function GameView() {
     if (sanitized > 0) {
       setRetryBetValue(centsToUsdInput(sanitized))
     } else {
-      const smallest = BET_AMOUNTS_CENTS.find((option) => option <= effectiveBetBalance)
+      const smallest = BET_AMOUNTS_CENTS.find((option) => getBetTotalCost(option) <= effectiveBetBalance)
       setRetryBetValue(smallest ? centsToUsdInput(smallest) : '')
     }
   }, [effectiveBetBalance, game, setRetryBetValue])
@@ -275,7 +270,7 @@ function GameView() {
     const balance = effectiveBetBalance
     let betAmount = sanitizeBetValue(game.betValue, balance)
     if (betAmount <= 0) {
-      const fallback = BET_AMOUNTS_CENTS.find((option) => option <= balance) ?? 0
+      const fallback = BET_AMOUNTS_CENTS.find((option) => getBetTotalCost(option) <= balance) ?? 0
       betAmount = fallback
     }
     if (betAmount > 0) {
@@ -289,13 +284,13 @@ function GameView() {
 
   const handleRetry = useCallback(() => {
     const balance = effectiveBetBalance
-    if (balance <= 0) {
+    if (balance < getBetTotalCost(BET_AMOUNTS_CENTS[0])) {
       window.location.reload()
       return
     }
     let betAmount = sanitizeBetValue(game.retryBetValue || balance, balance)
     if (betAmount <= 0) {
-      const fallback = BET_AMOUNTS_CENTS.find((option) => option <= balance) ?? 0
+      const fallback = BET_AMOUNTS_CENTS.find((option) => getBetTotalCost(option) <= balance) ?? 0
       betAmount = fallback
     }
     if (betAmount <= 0) return
@@ -305,10 +300,6 @@ function GameView() {
     clearLastResult()
     setNicknameVisible(false)
   }, [clearLastResult, connection, effectiveBetBalance, game, setNicknameVisible, setRetryBetValue])
-
-  const handleWalletRefresh = useCallback(() => {
-    wallet.refresh()
-  }, [wallet])
 
   const isAuthenticated = auth.status === 'authenticated' && Boolean(auth.user)
   useEffect(() => {
@@ -328,11 +319,11 @@ function GameView() {
     auth.status === 'checking' ||
     game.cashout.pending ||
     game.transfer.pending ||
-    (isAuthenticated && game.account.balance < BET_AMOUNTS_CENTS[0])
+    (isAuthenticated && game.account.balance < getBetTotalCost(BET_AMOUNTS_CENTS[0]))
   const startHint = useMemo(() => {
     if (game.cashout.pending) return t('app.startHint.cashoutPending')
     if (game.transfer.pending) return t('app.startHint.transferPending')
-    if (isAuthenticated && game.account.balance < BET_AMOUNTS_CENTS[0])
+    if (isAuthenticated && game.account.balance < getBetTotalCost(BET_AMOUNTS_CENTS[0]))
       return t('app.startHint.insufficientFunds')
     return undefined
   }, [game.account.balance, game.cashout.pending, game.transfer.pending, isAuthenticated, t])
@@ -341,7 +332,8 @@ function GameView() {
   const inLobby = game.nicknameScreenVisible
 
   return (
-    <div className="game-root">
+    <WalletProvider value={wallet}>
+      <div className="game-root">
       <AuthModal
         open={authModalOpen}
         status={auth.status}
@@ -371,7 +363,6 @@ function GameView() {
         nicknameLocked={game.nicknameLocked}
         selectedSkin={game.selectedSkin}
         onSelectSkin={game.setSelectedSkin}
-        skinName={game.skinName}
         betValue={game.betValue}
         onBetChange={handleBetChange}
         onBetBlur={handleBetBlur}
@@ -382,12 +373,6 @@ function GameView() {
         startDisabled={startDisabled}
         startLabel={startLabel}
         startDisabledHint={startHint}
-        walletAddress={wallet.profile?.walletAddress || auth.user?.walletAddress || null}
-        walletSol={wallet.profile?.sol}
-        walletUsd={wallet.profile?.usd ?? null}
-        usdRate={wallet.profile?.usdRate ?? null}
-        walletLoading={wallet.loading}
-        onRefreshWallet={handleWalletRefresh}
         cashoutPending={game.cashout.pending}
         transferPending={game.transfer.pending}
         transferMessage={game.transfer.message}
@@ -405,6 +390,8 @@ function GameView() {
         totalWinningsUsd={totalWinningsUsd}
         totalWinningsSol={totalWinningsSol}
         authToken={auth.token}
+        authUser={auth.user}
+        onUpdateNickname={auth.updateNickname}
       />
       <ResultModal
         open={Boolean(game.lastResult)}
@@ -415,7 +402,7 @@ function GameView() {
         onRetryBetBlur={handleRetryBetBlur}
         onRetry={handleRetry}
         onClose={clearLastResult}
-        retryDisabled={game.account.balance <= 0}
+        retryDisabled={game.account.balance < getBetTotalCost(BET_AMOUNTS_CENTS[0])}
       />
       {game.transfer.pending && (
         <div className="transfer-overlay">
@@ -425,7 +412,8 @@ function GameView() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </WalletProvider>
   )
 }
 

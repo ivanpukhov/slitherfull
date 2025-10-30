@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Modal } from './Modal'
 import {
   type FriendRequestEntry,
   type FriendSearchResult,
@@ -28,13 +27,12 @@ const ERROR_MESSAGE_KEYS: Record<string, string> = {
   search_failed: 'friends.errors.searchFailed'
 }
 
-interface FriendsModalProps {
-  open: boolean
+interface FriendsPanelProps {
   controller: UseFriendsResult
-  onClose: () => void
+  active: boolean
 }
 
-export function FriendsModal({ open, controller, onClose }: FriendsModalProps) {
+export function FriendsPanel({ controller, active }: FriendsPanelProps) {
   const { friends, outgoing, incoming, loading, error, refresh, search, sendRequest, acceptRequest } = controller
   const [activeTab, setActiveTab] = useState<TabKey>('friends')
   const [query, setQuery] = useState('')
@@ -46,17 +44,18 @@ export function FriendsModal({ open, controller, onClose }: FriendsModalProps) {
   const { t } = useTranslation()
 
   useEffect(() => {
-    if (!open) return
+    if (!active) return
     refresh()
-  }, [open, refresh])
+  }, [active, refresh])
 
   useEffect(() => {
-    if (!open) {
+    if (!active) {
       setActiveTab('friends')
       setQuery('')
       setResults([])
       setSearchError(null)
       setActionError(null)
+      setSearching(false)
       return
     }
     if (query.trim().length < 2) {
@@ -87,7 +86,7 @@ export function FriendsModal({ open, controller, onClose }: FriendsModalProps) {
         debounceRef.current = null
       }
     }
-  }, [open, query, search])
+  }, [active, query, search, t])
 
   const friendlyError = useMemo(() => {
     if (actionError) return getErrorMessage(actionError, t) || t('friends.feedback.actionFailed')
@@ -206,46 +205,60 @@ export function FriendsModal({ open, controller, onClose }: FriendsModalProps) {
   const searchHint = query.trim().length > 0 && query.trim().length < 2 ? t('friends.search.hint') : null
 
   return (
-    <Modal open={open} title={t('friends.modal.title')} onClose={onClose} width="640px">
-      <div className="friends-modal">
-        <div className="friends-tabs" role="tablist">
-          {(Object.keys(TAB_LABEL_KEYS) as TabKey[]).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              role="tab"
-              aria-selected={tab === activeTab}
-              className={`friends-tab${tab === activeTab ? ' active' : ''}`}
-              onClick={() => setActiveTab(tab)}
-            >
-              {t(TAB_LABEL_KEYS[tab])}
-              {tab === 'incoming' && incoming.length > 0 ? <span className="friends-tab-badge">{incoming.length}</span> : null}
-            </button>
-          ))}
-        </div>
-        <div className="friends-search">
-          <label htmlFor="friendSearch">{t('friends.search.label')}</label>
-          <input
-            id="friendSearch"
-            type="search"
-            placeholder={t('friends.search.placeholder')}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-          {searchHint ? <div className="friends-search-hint">{searchHint}</div> : null}
-        </div>
-        {searching ? <div className="friends-empty">{t('friends.search.searching')}</div> : null}
-        {!searching && results.length > 0 ? (
-          <ul className="friends-list friends-search-results">{results.map(renderSearchResult)}</ul>
-        ) : null}
-        {!searching && searchError ? <div className="friends-error">{searchError}</div> : null}
-        <div className="friends-section" role="tabpanel">
-          {activeTab === 'friends' ? friendsContent : null}
-          {activeTab === 'outgoing' ? outgoingContent : null}
-          {activeTab === 'incoming' ? incomingContent : null}
-        </div>
-        {friendlyError ? <div className="friends-error">{friendlyError}</div> : null}
+    <div className="friends-modal">
+      <div className="friends-tabs" role="tablist">
+        {(Object.keys(TAB_LABEL_KEYS) as TabKey[]).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            role="tab"
+            aria-selected={tab === activeTab}
+            className={`friends-tab${tab === activeTab ? ' active' : ''}`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {t(TAB_LABEL_KEYS[tab])}
+            {tab === 'incoming' && incoming.length > 0 ? <span className="friends-tab-badge">{incoming.length}</span> : null}
+          </button>
+        ))}
       </div>
+      <div className="friends-search">
+        <label htmlFor="friendSearch">{t('friends.search.label')}</label>
+        <input
+          id="friendSearch"
+          type="search"
+          placeholder={t('friends.search.placeholder')}
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          disabled={!active}
+        />
+        {searchHint ? <div className="friends-search-hint">{searchHint}</div> : null}
+      </div>
+      {searching ? <div className="friends-empty">{t('friends.search.searching')}</div> : null}
+      {!searching && results.length > 0 ? (
+        <ul className="friends-list friends-search-results">{results.map(renderSearchResult)}</ul>
+      ) : null}
+      {!searching && searchError ? <div className="friends-error">{searchError}</div> : null}
+      <div className="friends-section" role="tabpanel">
+        {activeTab === 'friends' ? friendsContent : null}
+        {activeTab === 'outgoing' ? outgoingContent : null}
+        {activeTab === 'incoming' ? incomingContent : null}
+      </div>
+      {friendlyError ? <div className="friends-error">{friendlyError}</div> : null}
+    </div>
+  )
+}
+
+interface FriendsModalProps {
+  open: boolean
+  controller: UseFriendsResult
+  onClose: () => void
+}
+
+export function FriendsModal({ open, controller, onClose }: FriendsModalProps) {
+  const { t } = useTranslation()
+  return (
+    <Modal open={open} title={t('friends.modal.title')} onClose={onClose} width="640px">
+      <FriendsPanel controller={controller} active={open} />
     </Modal>
   )
 }
