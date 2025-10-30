@@ -857,7 +857,6 @@ export function NicknameScreen({
 
             >
                 <div className="skin-modal">
-                    <p className="skin-modal__hint">{t('lobby.skinModal.hint')}</p>
                     <div id="skinList" ref={skinListRef} className="damn-skin-grid">
                         {Object.entries(SKINS).map(([skin, colors]) => {
                             const labelKey = SKIN_LABELS[skin] || 'game.skins.default'
