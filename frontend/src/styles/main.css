@@ -22,12 +22,17 @@
     --color-border: rgba(250, 204, 21, 0.18);
     --color-border-strong: rgba(250, 204, 21, 0.3);
     --color-accent: #FFF94E;
-    --color-accent-strong: #f59e0b;
-    --color-accent-glow: rgba(244, 197, 66, 0.35);
+    --color-accent-strong: #FFE75B;
+    --color-accent-glow: rgba(255, 249, 78, 0.35);
     --color-secondary: #facc15;
     --color-text-primary: #f8fafc;
-    --color-text-muted: rgba(226, 232, 240, 0.68);
-    --color-text-soft: rgba(148, 163, 184, 0.75);
+    --color-text-muted: rgba(255, 255, 255, 0.68);
+    --color-text-soft: rgba(255, 255, 255, 0.55);
+    --modal-surface: #111;
+    --modal-surface-alt: #1a1a1a;
+    --modal-border: rgba(255, 249, 78, 0.18);
+    --modal-border-strong: rgba(255, 249, 78, 0.32);
+    --modal-backdrop: rgba(0, 0, 0, 0.72);
 }
 
 * {
@@ -550,7 +555,8 @@ canvas {
 .modal-backdrop {
     position: fixed;
     inset: 0;
-    backdrop-filter: blur(14px);
+    background: var(--modal-backdrop);
+    backdrop-filter: blur(20px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -566,12 +572,11 @@ canvas {
     max-height: 90vh;
     overflow: hidden;
     animation: modal-pop 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-
-    border-radius: 10px;
-    border: 0.5px solid rgba(196, 196, 196, 0.25);
-    background: #111;
-    box-shadow: 0 4px 0 0 #121212;
-    backdrop-filter: blur(6px);
+    border-radius: 20px;
+    border: 1px solid var(--modal-border);
+    background: linear-gradient(160deg, rgba(17, 17, 17, 0.96), rgba(26, 26, 26, 0.98));
+    box-shadow: 0 26px 60px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 249, 78, 0.08);
+    backdrop-filter: blur(12px);
 }
 
 .modal-header {
@@ -579,13 +584,15 @@ canvas {
     justify-content: space-between;
     align-items: center;
     gap: 16px;
-    padding: 22px 28px 0;
+    padding: 28px 32px 16px;
+    border-bottom: 1px solid rgba(255, 249, 78, 0.08);
 }
 
 .modal-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #f8fafc;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--color-text-primary);
     flex: 1;
 }
 
@@ -596,31 +603,32 @@ canvas {
 }
 
 .modal-close {
-    border: none;
-    background: rgba(12, 12, 18, 0.7);
-    color: rgba(253, 224, 138, 0.82);
-    border-radius: 999px;
-    width: 32px;
-    height: 32px;
+    border: 1px solid rgba(255, 249, 78, 0.2);
+    background: rgba(26, 26, 26, 0.85);
+    color: var(--color-text-primary);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
     font-size: 20px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s ease, transform 0.2s ease;
+    transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .modal-close:hover {
     transform: translateY(-1px);
-    background: rgba(244, 197, 66, 0.4);
-    color: #fef3c7;
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #111;
 }
 
 .modal-body {
-    padding: 18px 28px 28px;
+    padding: 24px 32px 32px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 20px;
 }
 
 .modal-placeholder {
@@ -1034,18 +1042,16 @@ canvas {
 
 .auth-overlay {
     z-index: 20;
-    background: radial-gradient(circle at 50% 30%, rgba(245, 158, 11, 0.28), rgba(2, 2, 4, 0.92));
+    background: radial-gradient(circle at 50% 30%, rgba(255, 249, 78, 0.16), rgba(6, 6, 6, 0.92));
 }
 
 .card {
     position: relative;
-    background: linear-gradient(160deg, rgba(8, 8, 14, 0.94), rgba(16, 16, 24, 0.98));
-    border-radius: 32px;
+    background: linear-gradient(160deg, rgba(17, 17, 17, 0.96), rgba(26, 26, 26, 0.98));
+    border-radius: 28px;
     padding: clamp(28px, 4vw, 40px);
-    border: 1px solid rgba(244, 197, 66, 0.22);
-    box-shadow: 0 40px 90px rgba(0, 0, 0, 0.65),
-    0 0 0 1px rgba(244, 197, 66, 0.12),
-    0 0 46px rgba(245, 158, 11, 0.12);
+    border: 1px solid var(--modal-border);
+    box-shadow: 0 32px 72px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 249, 78, 0.06);
     text-align: left;
     width: min(420px, 90vw);
     overflow: hidden;
@@ -1062,18 +1068,18 @@ canvas {
     inset: -40% -20% auto auto;
     width: 320px;
     height: 320px;
-    background: radial-gradient(circle, rgba(244, 197, 66, 0.3), rgba(244, 197, 66, 0));
-    filter: blur(40px);
-    opacity: 0.75;
+    background: radial-gradient(circle, rgba(255, 249, 78, 0.2), rgba(255, 249, 78, 0));
+    filter: blur(42px);
+    opacity: 0.7;
 }
 
 .card::after {
     inset: auto -30% -40% auto;
     width: 240px;
     height: 240px;
-    background: radial-gradient(circle, rgba(245, 158, 11, 0.26), rgba(245, 158, 11, 0));
-    filter: blur(32px);
-    opacity: 0.65;
+    background: radial-gradient(circle, rgba(255, 249, 78, 0.18), rgba(255, 249, 78, 0));
+    filter: blur(34px);
+    opacity: 0.55;
 }
 
 .lobby-card {
@@ -3030,12 +3036,15 @@ canvas {
     top: 12px;
     right: 12px;
     border: none;
-    background: transparent;
-    color: rgba(226, 232, 240, 0.75);
+    background: rgba(26, 26, 26, 0.8);
+    border-radius: 999px;
+    border: 1px solid rgba(255, 249, 78, 0.18);
+    color: rgba(255, 255, 255, 0.75);
     font-size: 24px;
     line-height: 1;
     cursor: pointer;
     padding: 4px;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .auth-close:disabled {
@@ -3043,19 +3052,26 @@ canvas {
     opacity: 0.5;
 }
 
+.auth-close:not(:disabled):hover {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #111;
+}
+
 .card h2 {
-    margin: 0 0 16px;
-    font-size: 10px;
+    margin: 0 0 18px;
+    font-size: 24px;
     font-weight: 700;
-    color: #f8fafc;
+    letter-spacing: 0.01em;
+    color: var(--color-text-primary);
 }
 
 .auth-toggle {
     display: inline-flex;
-    background: rgba(15, 23, 42, 0.65);
+    background: rgba(26, 26, 26, 0.9);
     border-radius: 999px;
     padding: 4px;
-    border: 1px solid rgba(59, 76, 103, 0.45);
+    border: 1px solid rgba(255, 249, 78, 0.18);
     margin-bottom: 18px;
     gap: 4px;
 }
@@ -3064,7 +3080,7 @@ canvas {
     border: none;
     border-radius: 999px;
     background: transparent;
-    color: rgba(148, 163, 184, 0.85);
+    color: rgba(255, 255, 255, 0.65);
     font-weight: 600;
     padding: 8px 18px;
     cursor: pointer;
@@ -3072,8 +3088,8 @@ canvas {
 }
 
 .auth-toggle button.active {
-    background: rgba(34, 197, 94, 0.2);
-    color: #f8fafc;
+    background: var(--color-accent);
+    color: #111;
 }
 
 .auth-toggle button:disabled {
@@ -3084,7 +3100,7 @@ canvas {
 .auth-hint {
     margin-top: 0;
     margin-bottom: 22px;
-    color: rgba(148, 163, 184, 0.85);
+    color: rgba(255, 255, 255, 0.64);
     font-size: 14px;
     line-height: 1.5;
 }
@@ -3095,7 +3111,7 @@ canvas {
     margin-bottom: 6px;
     font-size: 14px;
     font-weight: 600;
-    color: rgba(226, 232, 240, 0.9);
+    color: rgba(255, 255, 255, 0.82);
 }
 
 .auth-card input[type="email"],
@@ -3104,19 +3120,20 @@ canvas {
     width: 100%;
     padding: 12px 14px;
     border-radius: 14px;
-    border: 1px solid rgba(59, 76, 103, 0.45);
-    background: rgba(7, 13, 23, 0.95);
-    color: #f8fafc;
+    border: 1px solid rgba(255, 249, 78, 0.16);
+    background: rgba(17, 17, 17, 0.92);
+    color: var(--color-text-primary);
     font-size: 15px;
     margin-bottom: 16px;
     outline: none;
-    transition: border-color 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .auth-card input[type="email"]:focus,
 .auth-card input[type="password"]:focus,
 .auth-card input[type="text"]:focus {
-    border-color: rgba(96, 165, 250, 0.7);
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(255, 249, 78, 0.12);
 }
 
 .auth-error {
@@ -3132,7 +3149,7 @@ canvas {
 .auth-status {
     margin-top: 14px;
     font-size: 13px;
-    color: rgba(148, 163, 184, 0.9);
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .auth-legal {
@@ -3140,18 +3157,18 @@ canvas {
     margin-bottom: 0;
     font-size: 12px;
     line-height: 1.5;
-    color: rgba(148, 163, 184, 0.85);
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .auth-legal-link {
-    color: rgba(96, 165, 250, 0.95);
+    color: var(--color-accent);
     text-decoration: underline;
     font-weight: 600;
 }
 
 .auth-legal-link:hover,
 .auth-legal-link:focus-visible {
-    color: rgba(129, 199, 255, 0.95);
+    color: rgba(255, 249, 78, 0.85);
 }
 
 .card p {
@@ -3197,25 +3214,25 @@ canvas {
 button.primary {
     width: 100%;
     padding: 14px 16px;
-    border-radius: 8px;
+    border-radius: 10px;
     border: none;
     font-size: 17px;
     font-weight: 700;
-    color: #020617;
-    background: linear-gradient(135deg, #22d3ee, #6366f1 55%, #a855f7 100%);
+    color: #111;
+    background: linear-gradient(135deg, var(--color-accent), rgba(255, 249, 78, 0.8));
     cursor: pointer;
-    box-shadow: 0 18px 42px rgba(99, 102, 241, 0.35);
+    box-shadow: 0 16px 38px rgba(255, 249, 78, 0.25);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     touch-action: manipulation;
 }
 
 button.primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 24px 52px rgba(99, 102, 241, 0.42);
+    box-shadow: 0 24px 48px rgba(255, 249, 78, 0.3);
 }
 
 button.primary:focus-visible {
-    outline: 3px solid rgba(244, 197, 66, 0.6);
+    outline: 3px solid rgba(255, 249, 78, 0.55);
     outline-offset: 2px;
 }
 
@@ -4769,28 +4786,32 @@ section.damn-card.damn-card--customize{
 .friends-tab {
     flex: 1;
     padding: 10px 12px;
-    border: 1px solid rgba(148, 163, 184, 0.14);
+    border: 1px solid rgba(255, 249, 78, 0.16);
     border-radius: 12px;
-    background: rgba(15, 23, 42, 0.55);
-    color: var(--color-text-primary);
+    background: rgba(26, 26, 26, 0.88);
+    color: rgba(255, 255, 255, 0.78);
     font-size: 14px;
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    transition: background 0.2s ease;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .friends-tab.active {
-    background: linear-gradient(115deg, #f4c542, #fbbf24);
+    background: var(--color-accent);
+    color: #111;
+    border-color: var(--color-accent);
+    box-shadow: 0 12px 26px rgba(255, 249, 78, 0.24);
 }
 
 .friends-tab-badge {
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(255, 249, 78, 0.14);
     border-radius: 999px;
     padding: 2px 8px;
     font-size: 12px;
+    color: var(--color-accent);
 }
 
 .friends-search {
@@ -4808,8 +4829,8 @@ section.damn-card.damn-card--customize{
 .friends-search input {
     padding: 10px 12px;
     border-radius: 10px;
-    border: 1px solid rgba(148, 163, 184, 0.16);
-    background: #111;
+    border: 1px solid rgba(255, 249, 78, 0.16);
+    background: rgba(17, 17, 17, 0.92);
     color: var(--color-text-primary);
 }
 
@@ -4841,8 +4862,8 @@ section.damn-card.damn-card--customize{
     align-items: center;
     justify-content: space-between;
     padding: 10px 12px;
-    background: #111;
-    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: linear-gradient(160deg, rgba(17, 17, 17, 0.92), rgba(26, 26, 26, 0.94));
+    border: 1px solid rgba(255, 249, 78, 0.14);
     border-radius: 10px;
     gap: 12px;
 }
@@ -4882,15 +4903,17 @@ section.damn-card.damn-card--customize{
 .friends-action {
     padding: 6px 12px;
     border-radius: 8px;
-    border: 1px solid rgba(99, 102, 241, 0.8);
-    background: rgba(244, 197, 66, 0.1);
-    color: #fff;
+    border: 1px solid rgba(255, 249, 78, 0.3);
+    background: rgba(255, 249, 78, 0.12);
+    color: var(--color-text-primary);
     font-size: 13px;
-    transition: background 0.2s ease;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .friends-action:hover {
-    background: rgba(244, 197, 66, 0.25);
+    background: rgba(255, 249, 78, 0.22);
+    border-color: var(--color-accent);
+    color: #111;
 }
 
 .friends-empty {
@@ -4924,9 +4947,9 @@ section.damn-card.damn-card--customize{
 
 /* Social modal */
 .modal-window--social {
-    background: rgba(15, 23, 42, 0.92);
-    border: 1px solid rgba(148, 163, 184, 0.22);
-    box-shadow: 0 32px 60px rgba(2, 6, 23, 0.6);
+    background: linear-gradient(160deg, rgba(17, 17, 17, 0.98), rgba(26, 26, 26, 0.98));
+    border: 1px solid var(--modal-border-strong);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 249, 78, 0.08);
 }
 
 .social-modal__body {
@@ -4967,24 +4990,25 @@ section.damn-card.damn-card--customize{
 }
 
 .social-tab {
-    border: none;
+    border: 1px solid rgba(255, 249, 78, 0.18);
     border-radius: 12px;
     padding: 10px 18px;
-    background: rgba(30, 41, 59, 0.72);
-    color: #e2e8f0;
+    background: rgba(26, 26, 26, 0.9);
+    color: rgba(255, 255, 255, 0.78);
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     position: relative;
 }
 
 .social-tab.active {
-    background: linear-gradient(135deg, #facc15, #f97316);
-    color: #0f172a;
-    box-shadow: 0 12px 28px rgba(250, 204, 21, 0.35);
+    background: var(--color-accent);
+    color: #111;
+    box-shadow: 0 12px 28px rgba(255, 249, 78, 0.28);
+    border-color: var(--color-accent);
 }
 
 .social-tab__badge {
@@ -4994,14 +5018,14 @@ section.damn-card.damn-card--customize{
     min-width: 20px;
     height: 20px;
     border-radius: 999px;
-    background: #f97316;
-    color: #fff;
+    background: var(--color-accent);
+    color: #111;
     font-size: 11px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0 6px;
-    box-shadow: 0 6px 16px rgba(249, 115, 22, 0.4);
+    box-shadow: 0 6px 16px rgba(255, 249, 78, 0.3);
 }
 
 .social-modal__content {
@@ -5016,10 +5040,11 @@ section.damn-card.damn-card--customize{
     display: flex;
     flex-direction: column;
     gap: 18px;
-    background: rgba(15, 23, 42, 0.75);
-    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: linear-gradient(150deg, rgba(17, 17, 17, 0.92), rgba(26, 26, 26, 0.94));
+    border: 1px solid rgba(255, 249, 78, 0.14);
     border-radius: 20px;
     padding: 24px;
+    box-shadow: inset 0 0 0 1px rgba(255, 249, 78, 0.05);
 }
 
 .social-leaderboard__meta {
@@ -5035,20 +5060,20 @@ section.damn-card.damn-card--customize{
 }
 
 .social-leaderboard__label {
-    color: rgba(226, 232, 240, 0.7);
+    color: rgba(255, 255, 255, 0.55);
     font-size: 12px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
 
 .social-leaderboard__value {
-    color: #f8fafc;
+    color: var(--color-text-primary);
     font-size: 20px;
     font-weight: 600;
 }
 
 .social-leaderboard__hint {
-    color: rgba(148, 163, 184, 0.75);
+    color: rgba(255, 255, 255, 0.5);
     font-size: 12px;
 }
 
@@ -5062,10 +5087,10 @@ section.damn-card.damn-card--customize{
     display: grid;
     grid-template-columns: 48px 1fr 160px;
     align-items: center;
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(26, 26, 26, 0.88);
     border-radius: 16px;
     padding: 12px 18px;
-    border: 1px solid rgba(148, 163, 184, 0.12);
+    border: 1px solid rgba(255, 249, 78, 0.12);
 }
 
 .social-leaderboard__cell--rank {
@@ -5077,41 +5102,43 @@ section.damn-card.damn-card--customize{
 .social-leaderboard__nickname {
     font-size: 15px;
     font-weight: 600;
-    color: #f8fafc;
+    color: var(--color-text-primary);
 }
 
 .social-leaderboard__wins {
     font-size: 12px;
-    color: rgba(226, 232, 240, 0.7);
+    color: rgba(255, 255, 255, 0.55);
 }
 
 .social-leaderboard__usd {
     font-size: 16px;
     font-weight: 600;
-    color: #f8fafc;
+    color: var(--color-text-primary);
 }
 
 .social-leaderboard__sol {
     font-size: 12px;
-    color: rgba(148, 163, 184, 0.8);
+    color: rgba(255, 255, 255, 0.48);
 }
 
 .social-leaderboard__placeholder {
     padding: 24px;
     border-radius: 16px;
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(17, 17, 17, 0.9);
     text-align: center;
-    color: rgba(148, 163, 184, 0.8);
+    color: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 249, 78, 0.12);
 }
 
 .social-profile {
     display: flex;
     flex-direction: column;
     gap: 18px;
-    background: rgba(15, 23, 42, 0.75);
-    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: linear-gradient(150deg, rgba(17, 17, 17, 0.92), rgba(26, 26, 26, 0.94));
+    border: 1px solid rgba(255, 249, 78, 0.14);
     border-radius: 20px;
     padding: 24px;
+    box-shadow: inset 0 0 0 1px rgba(255, 249, 78, 0.05);
 }
 
 .social-profile__header {
@@ -5131,12 +5158,12 @@ section.damn-card.damn-card--customize{
 .social-profile__name {
     font-size: 20px;
     font-weight: 700;
-    color: #f8fafc;
+    color: var(--color-text-primary);
 }
 
 .social-profile__email {
     font-size: 13px;
-    color: rgba(148, 163, 184, 0.85);
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .social-profile__balance {
@@ -5148,14 +5175,14 @@ section.damn-card.damn-card--customize{
 
 .social-profile__balance-label {
     font-size: 12px;
-    color: rgba(148, 163, 184, 0.75);
+    color: rgba(255, 255, 255, 0.55);
     text-transform: uppercase;
 }
 
 .social-profile__balance-value {
     font-size: 18px;
     font-weight: 600;
-    color: #facc15;
+    color: var(--color-accent);
 }
 
 .social-profile__stats {
@@ -5170,13 +5197,13 @@ section.damn-card.damn-card--customize{
     gap: 4px;
     padding: 14px 16px;
     border-radius: 16px;
-    background: rgba(30, 41, 59, 0.55);
-    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(26, 26, 26, 0.85);
+    border: 1px solid rgba(255, 249, 78, 0.12);
 }
 
 .social-profile__stat-label {
     font-size: 12px;
-    color: rgba(226, 232, 240, 0.65);
+    color: rgba(255, 255, 255, 0.55);
     text-transform: uppercase;
     letter-spacing: 0.06em;
 }
@@ -5184,16 +5211,16 @@ section.damn-card.damn-card--customize{
 .social-profile__stat-value {
     font-size: 18px;
     font-weight: 600;
-    color: #f8fafc;
+    color: var(--color-text-primary);
 }
 
 .social-placeholder {
     padding: 36px;
     border-radius: 20px;
-    background: rgba(15, 23, 42, 0.68);
-    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: linear-gradient(160deg, rgba(17, 17, 17, 0.9), rgba(26, 26, 26, 0.92));
+    border: 1px solid rgba(255, 249, 78, 0.16);
     text-align: center;
-    color: rgba(226, 232, 240, 0.8);
+    color: rgba(255, 255, 255, 0.72);
     display: flex;
     flex-direction: column;
     gap: 18px;
@@ -5204,26 +5231,27 @@ section.damn-card.damn-card--customize{
     border: none;
     border-radius: 12px;
     padding: 12px 20px;
-    background: linear-gradient(135deg, #facc15, #f97316);
-    color: #0f172a;
+    background: linear-gradient(135deg, var(--color-accent), rgba(255, 249, 78, 0.85));
+    color: #111;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     cursor: pointer;
-    box-shadow: 0 16px 32px rgba(250, 204, 21, 0.3);
+    box-shadow: 0 16px 32px rgba(255, 249, 78, 0.22);
 }
 
 .social-primary:hover,
 .social-primary:focus-visible {
     transform: translateY(-1px);
     outline: none;
+    background: linear-gradient(135deg, rgba(255, 249, 78, 0.92), rgba(255, 249, 78, 0.8));
 }
 
 /* Server browser */
 .modal-window--server-browser {
-    background: rgba(11, 15, 28, 0.96);
-    border: 1px solid rgba(148, 163, 184, 0.24);
-    box-shadow: 0 32px 64px rgba(2, 6, 23, 0.65);
+    background: linear-gradient(160deg, rgba(17, 17, 17, 0.98), rgba(26, 26, 26, 0.98));
+    border: 1px solid var(--modal-border-strong);
+    box-shadow: 0 30px 64px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 249, 78, 0.08);
 }
 
 .server-browser__body {
@@ -5258,23 +5286,24 @@ section.damn-card.damn-card--customize{
 }
 
 .server-browser__tab {
-    border: none;
+    border: 1px solid rgba(255, 249, 78, 0.16);
     border-radius: 12px;
     padding: 10px 18px;
-    background: rgba(30, 41, 59, 0.72);
-    color: #e2e8f0;
+    background: rgba(26, 26, 26, 0.9);
+    color: rgba(255, 255, 255, 0.78);
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .server-browser__tab.active {
-    background: linear-gradient(135deg, rgba(94, 234, 212, 0.9), rgba(59, 130, 246, 0.9));
-    color: #0f172a;
-    box-shadow: 0 14px 30px rgba(59, 130, 246, 0.35);
+    background: var(--color-accent);
+    color: #111;
+    box-shadow: 0 14px 30px rgba(255, 249, 78, 0.28);
+    border-color: var(--color-accent);
 }
 
 .server-browser__content {
@@ -5292,20 +5321,21 @@ section.damn-card.damn-card--customize{
 }
 
 .server-browser__section {
-    background: rgba(15, 23, 42, 0.78);
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    border-radius: 20px;
+    background: linear-gradient(150deg, rgba(17, 17, 17, 0.92), rgba(26, 26, 26, 0.94));
+    border: 1px solid rgba(255, 249, 78, 0.14);
+    border-radius: 18px;
     padding: 20px;
     display: flex;
     flex-direction: column;
     gap: 16px;
+    box-shadow: inset 0 0 0 1px rgba(255, 249, 78, 0.05);
 }
 
 .server-browser__section h3 {
     margin: 0;
     font-size: 16px;
     font-weight: 600;
-    color: #f8fafc;
+    color: var(--color-text-primary);
 }
 
 .server-browser__field {
@@ -5325,13 +5355,13 @@ section.damn-card.damn-card--customize{
     font-size: 12px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: rgba(148, 163, 184, 0.75);
+    color: rgba(255, 255, 255, 0.48);
 }
 
 .server-browser__value {
     font-size: 15px;
     font-weight: 600;
-    color: #f8fafc;
+    color: var(--color-text-primary);
     word-break: break-all;
 }
 
@@ -5346,23 +5376,24 @@ section.damn-card.damn-card--customize{
 }
 
 .server-browser__icon-button {
-    border: none;
+    border: 1px solid rgba(255, 249, 78, 0.2);
     border-radius: 10px;
     padding: 8px 14px;
     font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    background: rgba(30, 41, 59, 0.8);
-    color: #e2e8f0;
+    background: rgba(26, 26, 26, 0.9);
+    color: rgba(255, 255, 255, 0.78);
     cursor: pointer;
-    transition: transform 0.2s ease, background 0.2s ease;
+    transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .server-browser__icon-button:hover,
 .server-browser__icon-button:focus-visible {
-    background: rgba(59, 130, 246, 0.75);
-    color: #0f172a;
+    background: var(--color-accent);
+    color: #111;
+    border-color: var(--color-accent);
     transform: translateY(-1px);
     outline: none;
 }
@@ -5376,14 +5407,16 @@ section.damn-card.damn-card--customize{
     letter-spacing: 0.08em;
     text-transform: uppercase;
     cursor: pointer;
-    background: linear-gradient(135deg, #facc15, #f97316);
-    color: #0f172a;
+    background: linear-gradient(135deg, var(--color-accent), rgba(255, 249, 78, 0.85));
+    color: #111;
+    box-shadow: 0 12px 26px rgba(255, 249, 78, 0.22);
 }
 
 .server-browser__action--ghost {
-    background: rgba(30, 41, 59, 0.88);
-    color: #e2e8f0;
-    border: 1px solid rgba(148, 163, 184, 0.32);
+    background: rgba(26, 26, 26, 0.9);
+    color: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(255, 249, 78, 0.22);
+    box-shadow: none;
 }
 
 .server-browser__nickname {
@@ -5394,11 +5427,11 @@ section.damn-card.damn-card--customize{
 
 .server-browser__nickname input {
     flex: 1;
-    border: 1px solid rgba(148, 163, 184, 0.25);
-    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 249, 78, 0.18);
+    background: rgba(17, 17, 17, 0.92);
     border-radius: 12px;
     padding: 10px 14px;
-    color: #f8fafc;
+    color: var(--color-text-primary);
 }
 
 .server-browser__nickname input:disabled {
@@ -5420,7 +5453,7 @@ section.damn-card.damn-card--customize{
 
 .server-browser__hint {
     font-size: 12px;
-    color: rgba(148, 163, 184, 0.75);
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .server-browser__links {
@@ -5433,7 +5466,7 @@ section.damn-card.damn-card--customize{
 }
 
 .server-browser__links a {
-    color: #38bdf8;
+    color: var(--color-accent);
     text-decoration: none;
     font-weight: 500;
 }
@@ -5441,9 +5474,9 @@ section.damn-card.damn-card--customize{
 .server-browser__placeholder {
     padding: 36px;
     border-radius: 20px;
-    background: rgba(15, 23, 42, 0.68);
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    color: rgba(226, 232, 240, 0.8);
+    background: linear-gradient(160deg, rgba(17, 17, 17, 0.9), rgba(26, 26, 26, 0.92));
+    border: 1px solid rgba(255, 249, 78, 0.16);
+    color: rgba(255, 255, 255, 0.75);
     text-align: center;
 }
 
@@ -5453,15 +5486,15 @@ section.damn-card.damn-card--customize{
     justify-content: center;
     padding: 10px 18px;
     border-radius: 12px;
-    background: rgba(59, 130, 246, 0.18);
-    color: #93c5fd;
+    background: rgba(255, 249, 78, 0.12);
+    color: var(--color-accent);
     text-decoration: none;
 }
 
 .server-browser__cta:hover,
 .server-browser__cta:focus-visible {
-    background: rgba(59, 130, 246, 0.28);
-    color: #bfdbfe;
+    background: rgba(255, 249, 78, 0.22);
+    color: rgba(255, 249, 78, 0.88);
 }
 
 .server-browser__placeholder .social-primary {
