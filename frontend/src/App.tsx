@@ -33,6 +33,8 @@ function GameView() {
   const [withdrawPending, setWithdrawPending] = useState(false)
   const [withdrawStatus, setWithdrawStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [authModalOpen, setAuthModalOpen] = useState(false)
+  const [startProcessing, setStartProcessing] = useState(false)
+  const [nicknameUpdateError, setNicknameUpdateError] = useState<string | null>(null)
   const connection = useConnection({
     controller: game.controller,
     token: auth.token,
@@ -228,6 +230,17 @@ function GameView() {
     }
   }, [wallet.profile, auth.status, auth.syncBalance])
 
+  useEffect(() => {
+    setNicknameUpdateError(null)
+  }, [game.nickname])
+
+  useEffect(() => {
+    if (auth.status !== 'authenticated') {
+      setNicknameUpdateError(null)
+      setStartProcessing(false)
+    }
+  }, [auth.status])
+
   const handleNicknameChange = useCallback((value: string) => {
     game.setNickname(value)
   }, [game])
@@ -262,25 +275,77 @@ function GameView() {
     }
   }, [effectiveBetBalance, game, setRetryBetValue])
 
-  const handleStart = useCallback(() => {
+  const resolveNicknameError = useCallback(
+    (code?: string | null) => {
+      if (!code) return t('hub.account.nicknameErrors.generic')
+      const map: Record<string, string> = {
+        invalid_nickname: t('hub.account.nicknameErrors.invalid'),
+        nickname_length: t('hub.account.nicknameErrors.length'),
+        nickname_taken: t('hub.account.nicknameErrors.taken'),
+        unauthorized: t('hub.account.nicknameErrors.unauthorized'),
+        network_error: t('hub.account.nicknameErrors.network'),
+        server_error: t('hub.account.nicknameErrors.server'),
+        user_not_found: t('hub.account.nicknameErrors.server')
+      }
+      return map[code] ?? t('hub.account.nicknameErrors.generic')
+    },
+    [t]
+  )
+
+  const handleStart = useCallback(async () => {
     if (auth.status !== 'authenticated' || !auth.user) {
       return
     }
-    const name = game.nickname.trim() || auth.user.nickname
-    const balance = effectiveBetBalance
-    let betAmount = sanitizeBetValue(game.betValue, balance)
-    if (betAmount <= 0) {
-      const fallback = BET_AMOUNTS_CENTS.find((option) => getBetTotalCost(option) <= balance) ?? 0
-      betAmount = fallback
+    setNicknameUpdateError(null)
+    setStartProcessing(true)
+    try {
+      const trimmedName = game.nickname.trim() || auth.user.nickname
+      if (!trimmedName) {
+        return
+      }
+      if (trimmedName !== auth.user.nickname) {
+        const result = await auth.updateNickname(trimmedName)
+        if (!result.ok) {
+          if (result.error === 'unauthorized') {
+            auth.logout()
+          }
+          setNicknameUpdateError(resolveNicknameError(result.error))
+          return
+        }
+      }
+      if (game.nickname !== trimmedName) {
+        setNickname(trimmedName)
+      }
+      const balance = effectiveBetBalance
+      let betAmount = sanitizeBetValue(game.betValue, balance)
+      if (betAmount <= 0) {
+        const fallback = BET_AMOUNTS_CENTS.find((option) => getBetTotalCost(option) <= balance) ?? 0
+        betAmount = fallback
+      }
+      if (betAmount > 0) {
+        game.setBetValue(centsToUsdInput(betAmount))
+      } else {
+        game.setBetValue('')
+      }
+      clearLastResult()
+      connection.startGame(trimmedName, game.selectedSkin, betAmount > 0 ? betAmount : null)
+    } catch (error) {
+      setNicknameUpdateError((prev) => prev ?? resolveNicknameError('network_error'))
+    } finally {
+      setStartProcessing(false)
     }
-    if (betAmount > 0) {
-      game.setBetValue(centsToUsdInput(betAmount))
-    } else {
-      game.setBetValue('')
-    }
-    clearLastResult()
-    connection.startGame(name, game.selectedSkin, betAmount > 0 ? betAmount : null)
-  }, [auth.status, auth.user, clearLastResult, connection, effectiveBetBalance, game])
+  }, [
+    auth.logout,
+    auth.status,
+    auth.updateNickname,
+    auth.user,
+    clearLastResult,
+    connection,
+    effectiveBetBalance,
+    game,
+    resolveNicknameError,
+    setNickname
+  ])
 
   const handleRetry = useCallback(() => {
     const balance = effectiveBetBalance
@@ -309,24 +374,36 @@ function GameView() {
     }
   }, [isAuthenticated])
   const startLabel = useMemo(() => {
+    if (startProcessing) return t('hub.account.saving')
     if (game.cashout.pending) return t('app.startLabel.cashoutPending')
     if (game.transfer.pending) return t('app.startLabel.transferPending')
     if (auth.status === 'checking') return t('app.startLabel.checking')
     return isAuthenticated ? t('app.startLabel.play') : t('app.startLabel.login')
-  }, [auth.status, game.cashout.pending, game.transfer.pending, isAuthenticated, t])
+  }, [auth.status, game.cashout.pending, game.transfer.pending, isAuthenticated, startProcessing, t])
 
   const startDisabled =
     auth.status === 'checking' ||
     game.cashout.pending ||
     game.transfer.pending ||
+    startProcessing ||
     (isAuthenticated && game.account.balance < getBetTotalCost(BET_AMOUNTS_CENTS[0]))
   const startHint = useMemo(() => {
+    if (startProcessing) return t('hub.account.saving')
+    if (nicknameUpdateError) return nicknameUpdateError
     if (game.cashout.pending) return t('app.startHint.cashoutPending')
     if (game.transfer.pending) return t('app.startHint.transferPending')
     if (isAuthenticated && game.account.balance < getBetTotalCost(BET_AMOUNTS_CENTS[0]))
       return t('app.startHint.insufficientFunds')
     return undefined
-  }, [game.account.balance, game.cashout.pending, game.transfer.pending, isAuthenticated, t])
+  }, [
+    game.account.balance,
+    game.cashout.pending,
+    game.transfer.pending,
+    isAuthenticated,
+    nicknameUpdateError,
+    startProcessing,
+    t
+  ])
 
   const handlePrimaryAction = isAuthenticated ? handleStart : () => setAuthModalOpen(true)
   const inLobby = game.nicknameScreenVisible

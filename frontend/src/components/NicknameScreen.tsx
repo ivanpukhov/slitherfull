@@ -43,7 +43,7 @@ interface NicknameScreenProps {
     balance: number
     bettingBalance?: number
     currentBet: number
-    onStart: () => void
+    onStart: () => void | Promise<void>
     startDisabled: boolean
     startDisabledHint?: string
     startLabel?: string
