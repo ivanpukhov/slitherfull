@@ -232,7 +232,23 @@
       "depositHint": "Отсканируйте QR-код, чтобы пополнить кошелёк Snake Fans SOL.",
       "withdrawHint": "Выводите средства на свой кошелёк Solana.",
       "walletUnavailable": "Данные кошелька недоступны.",
-      "depositMessage": "Пополнение Snake Fans"
+      "depositMessage": "Пополнение Snake Fans",
+      "cashoutModal": {
+        "title": "Вывод средств",
+        "subtitle": "Переведите баланс на кошелёк Solana.",
+        "home": "На главную",
+        "availableBalance": "Доступный баланс",
+        "amountLabel": "Сумма",
+        "usd": "USD",
+        "swapDisabled": "Переключение валюты недоступно",
+        "max": "MAX",
+        "percentage": "{{value}}% от доступного баланса",
+        "destinationLabel": "Адрес кошелька получателя",
+        "cancel": "Отмена",
+        "submit": "Вывести",
+        "successTitle": "Запрос на вывод отправлен",
+        "errorTitle": "Требуется внимание"
+      }
     }
   },
   "deathScreen": {

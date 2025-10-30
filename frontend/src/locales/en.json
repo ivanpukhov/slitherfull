@@ -196,6 +196,22 @@
       "withdrawHint": "Withdraw funds to your personal Solana wallet.",
       "walletUnavailable": "Wallet information is unavailable.",
       "depositMessage": "Deposit to Snake Fans"
+      ,"cashoutModal": {
+        "title": "Cash out",
+        "subtitle": "Transfer your balance to a Solana wallet.",
+        "home": "Home",
+        "availableBalance": "Available Balance",
+        "amountLabel": "Amount",
+        "usd": "USD",
+        "swapDisabled": "Currency switch is unavailable",
+        "max": "MAX",
+        "percentage": "{{value}}% of available balance",
+        "destinationLabel": "Destination Wallet Address",
+        "cancel": "Cancel",
+        "submit": "Cash Out",
+        "successTitle": "Cashout request sent",
+        "errorTitle": "Action required"
+      }
     }
   },
   "friends": {

@@ -2861,6 +2861,319 @@ canvas {
     gap: 16px;
 }
 
+.cashout-panel {
+    padding: 0;
+}
+
+.cashout-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 24px;
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(30, 30, 45, 0.92) 0%, rgba(11, 11, 22, 0.94) 100%);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.35);
+}
+
+.cashout-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.cashout-modal__title {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.cashout-modal__icon {
+    font-size: 26px;
+    filter: drop-shadow(0 6px 16px rgba(168, 85, 247, 0.45));
+}
+
+.cashout-modal__heading {
+    font-size: 22px;
+    font-weight: 700;
+    color: #f9fafb;
+    margin: 0;
+}
+
+.cashout-modal__subtitle {
+    font-size: 13px;
+    color: rgba(203, 213, 225, 0.7);
+}
+
+.cashout-modal__home {
+    padding: 8px 18px;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(15, 23, 42, 0.65);
+    color: #e2e8f0;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.cashout-modal__home:hover {
+    border-color: rgba(129, 140, 248, 0.65);
+    transform: translateY(-1px);
+}
+
+.cashout-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cashout-balance {
+    padding: 18px;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cashout-balance__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.cashout-balance__label {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(226, 232, 240, 0.85);
+}
+
+.cashout-refresh {
+    padding: 6px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(15, 23, 42, 0.4);
+    color: #e2e8f0;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 140ms ease, transform 140ms ease;
+}
+
+.cashout-refresh:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.cashout-refresh:not(:disabled):hover {
+    border-color: rgba(59, 130, 246, 0.6);
+    transform: translateY(-1px);
+}
+
+.cashout-balance__values {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cashout-balance__amount {
+    font-size: 28px;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.cashout-balance__usd {
+    font-size: 14px;
+    color: rgba(148, 163, 184, 0.9);
+}
+
+.cashout-alert {
+    display: flex;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: rgba(30, 41, 59, 0.6);
+    color: #e2e8f0;
+    align-items: flex-start;
+}
+
+.cashout-alert.success {
+    border-color: rgba(74, 222, 128, 0.35);
+    background: rgba(34, 197, 94, 0.12);
+    color: #bbf7d0;
+}
+
+.cashout-alert.error {
+    border-color: rgba(248, 113, 113, 0.35);
+    background: rgba(248, 113, 113, 0.12);
+    color: #fecaca;
+}
+
+.cashout-alert__icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.cashout-alert__body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cashout-alert__title {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.cashout-field__label {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(148, 163, 184, 0.8);
+}
+
+.cashout-amount {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: stretch;
+    gap: 12px;
+}
+
+.cashout-amount input {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(15, 23, 42, 0.45);
+    color: #f8fafc;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.cashout-amount__controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cashout-amount__currency {
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(30, 64, 175, 0.25);
+    color: #c7d2fe;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.cashout-amount__swap,
+.cashout-amount__max {
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: rgba(15, 23, 42, 0.4);
+    color: #e2e8f0;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 140ms ease, transform 140ms ease;
+}
+
+.cashout-amount__swap:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.cashout-amount__swap:not(:disabled):hover,
+.cashout-amount__max:hover {
+    border-color: rgba(129, 140, 248, 0.5);
+    transform: translateY(-1px);
+}
+
+.cashout-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cashout-progress__track {
+    position: relative;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.2);
+    overflow: hidden;
+}
+
+.cashout-progress__value {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #8b5cf6 0%, #38bdf8 100%);
+}
+
+.cashout-progress__label {
+    font-size: 12px;
+    color: rgba(148, 163, 184, 0.85);
+}
+
+.cashout-field__error {
+    font-size: 13px;
+    color: #fda4af;
+}
+
+.cashout-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.cashout-actions__cancel,
+.cashout-actions__submit {
+    padding: 12px 22px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.cashout-actions__cancel {
+    background: rgba(15, 23, 42, 0.6);
+    color: rgba(226, 232, 240, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.24);
+}
+
+.cashout-actions__cancel:hover {
+    transform: translateY(-1px);
+}
+
+.cashout-actions__submit {
+    background: linear-gradient(90deg, #8b5cf6 0%, #22d3ee 100%);
+    color: #0f172a;
+    box-shadow: 0 12px 24px rgba(34, 211, 238, 0.25);
+}
+
+.cashout-actions__submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+.cashout-actions__submit:not(:disabled):hover {
+    transform: translateY(-1px);
+}
+
 .hub-wallet-qr {
     align-self: center;
     padding: 12px;

@@ -196,6 +196,22 @@
       "withdrawHint": "Wypłać środki na swój portfel Solana.",
       "walletUnavailable": "Informacje o portfelu są niedostępne.",
       "depositMessage": "Wpłata do Snake Fans"
+      ,"cashoutModal": {
+        "title": "Wypłata",
+        "subtitle": "Przelej środki na portfel Solana.",
+        "home": "Strona główna",
+        "availableBalance": "Dostępne saldo",
+        "amountLabel": "Kwota",
+        "usd": "USD",
+        "swapDisabled": "Zmiana waluty jest niedostępna",
+        "max": "MAKS",
+        "percentage": "{{value}}% dostępnego salda",
+        "destinationLabel": "Docelowy adres portfela",
+        "cancel": "Anuluj",
+        "submit": "Wypłać",
+        "successTitle": "Żądanie wypłaty wysłane",
+        "errorTitle": "Wymagana uwaga"
+      }
     }
   },
   "friends": {
