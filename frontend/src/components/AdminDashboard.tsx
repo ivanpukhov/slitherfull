@@ -33,7 +33,7 @@ const TRANSFER_ERROR_MESSAGE_KEYS: Record<string, string> = {
   same_user_transfer: 'admin.transfers.errors.sameUser'
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://191.101.184.209:8080'
 const STORAGE_KEY = 'admin_basic_token'
 
 export function AdminDashboard() {

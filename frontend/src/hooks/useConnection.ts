@@ -3,7 +3,7 @@ import { sanitizeBetValue, safeParse } from '../utils/helpers'
 import type { GameController } from './useGame'
 import { translate } from './useTranslation'
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080'
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://191.101.184.209:8080'
 const PING_INTERVAL = 3500
 
 function nowMs(): number {

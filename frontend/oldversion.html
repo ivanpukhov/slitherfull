@@ -1187,7 +1187,7 @@
         function connect(name, skin) {
             const origin = (typeof location !== 'undefined' && location.origin && location.origin !== 'null')
                 ? location.origin.replace(/^http/, 'ws')
-                : 'ws://localhost:8080'
+                : 'ws://191.101.184.209:8080'
             ws = new WebSocket(origin)
             ws.onopen = () => {
                 ws.send(JSON.stringify({ type: 'join', name, skin }))

@@ -25,7 +25,7 @@ npm start
 ```
 The server loads configuration from `.env`, syncs the SQLite schema (no migrations required) and exposes:
 - REST endpoints under `/api/auth` for register/login/me.
-- A WebSocket endpoint for the game loop (`ws://localhost:8080` by default).
+- A WebSocket endpoint for the game loop (`ws://191.101.184.209:8080` by default).
 
 ### 3. Frontend
 ```bash

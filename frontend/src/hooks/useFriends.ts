@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://191.101.184.209:8080'
 
 export interface FriendSummary {
   id: number

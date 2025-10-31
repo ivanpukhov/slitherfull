@@ -16,7 +16,7 @@ export interface WinningsLeaderboardData {
   generatedAt: string
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://191.101.184.209:8080'
 
 export function useWinningsLeaderboard(refreshIntervalMs = 60_000) {
   const [data, setData] = useState<WinningsLeaderboardData | null>(null)
