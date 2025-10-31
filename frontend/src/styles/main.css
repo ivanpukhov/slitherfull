@@ -53,6 +53,24 @@
     }
 }
 
+@media (max-width: 420px) {
+    :root {
+        --layout-horizontal: clamp(10px, 6vw, 18px);
+        --layout-horizontal-tight: clamp(8px, 5vw, 16px);
+        --layout-vertical: clamp(10px, 5vh, 40px);
+        --layout-vertical-tight: clamp(8px, 4vh, 28px);
+    }
+}
+
+@media (max-width: 360px) {
+    :root {
+        --layout-horizontal: clamp(8px, 5vw, 14px);
+        --layout-horizontal-tight: clamp(6px, 4.5vw, 12px);
+        --layout-vertical: clamp(8px, 5vh, 32px);
+        --layout-vertical-tight: clamp(6px, 4vh, 24px);
+    }
+}
+
 * {
     box-sizing: border-box;
 }
@@ -3789,16 +3807,22 @@ body.is-touch #scorePanel {
     bottom: auto;
     transform: translateX(-50%);
     min-width: 0;
-    width: min(420px, calc(100vw - 32px));
+    width: min(360px, calc(100vw - 24px));
     padding: 12px 16px;
     border-radius: 16px;
-    background: rgba(10, 10, 18, 0.9);
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(244, 197, 66, 0.14);
+    background: rgba(8, 10, 20, 0.92);
+    border: 1px solid rgba(255, 249, 78, 0.14);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(18px);
     pointer-events: none;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+        "label meta"
+        "value value"
+        "performance performance";
+    align-items: center;
+    gap: 6px 12px;
 }
 
 body.is-touch #scorePanel::before,
@@ -3807,49 +3831,82 @@ body.is-touch #scorePanel::after {
 }
 
 body.is-touch #scorePanel .label {
+    grid-area: label;
+    align-self: center;
     font-size: 11px;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     color: rgba(244, 197, 66, 0.78);
+    text-transform: uppercase;
 }
 
 body.is-touch #scoreValue {
+    grid-area: value;
     margin-top: 2px;
-    font-size: clamp(26px, 11vw, 38px);
-    text-shadow: 0 0 14px rgba(244, 197, 66, 0.35);
+    font-size: clamp(28px, 11vw, 38px);
+    text-shadow: 0 0 16px rgba(244, 197, 66, 0.38);
 }
 
 body.is-touch #scoreMeta {
-    display: block;
-    margin-top: 6px;
-    font-size: clamp(12px, 3.8vw, 13px);
-    color: rgba(226, 232, 240, 0.78);
+    grid-area: meta;
+    margin: 0;
+    font-size: clamp(11px, 3.6vw, 13px);
+    color: rgba(226, 232, 240, 0.8);
     line-height: 1.35;
+    text-align: right;
+    word-break: break-word;
+    white-space: normal;
 }
 
 body.is-touch #scorePanel .performance {
-    margin-top: 12px;
+    grid-area: performance;
+    margin-top: 4px;
+    width: 100%;
 }
 
 body.is-touch #scorePanel .performance-metrics {
     gap: 6px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+    width: 100%;
+}
+
+body.is-touch #scorePanel .performance-label {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    opacity: 0.85;
+}
+
+body.is-touch #scorePanel .performance-metrics .metric {
+    justify-content: center;
+    text-align: center;
+    font-size: 11px;
+    padding: 6px 10px;
+    background: rgba(15, 23, 42, 0.6);
+    border-color: rgba(94, 234, 212, 0.22);
+}
+
+body.is-touch #scorePanel .performance-metrics .metric.warning {
+    border-color: rgba(251, 191, 36, 0.5);
+    background: rgba(45, 25, 10, 0.55);
 }
 
 body.is-touch #leaderboard {
     position: fixed;
     left: 50%;
     transform: translateX(-50%);
-    bottom: calc(var(--safe-bottom) + 116px);
-    width: min(420px, calc(100vw - 32px));
-    background: rgba(10, 10, 18, 0.92);
+    bottom: calc(var(--safe-bottom) + clamp(80px, 18vh, 132px));
+    width: min(360px, calc(100vw - 24px));
+    background: rgba(8, 10, 20, 0.9);
     border-radius: 18px;
-    padding: 16px 18px 18px;
-    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(244, 197, 66, 0.16);
+    padding: 14px 16px 16px;
+    border: 1px solid rgba(255, 249, 78, 0.14);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
     display: flex !important;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     pointer-events: auto;
-    backdrop-filter: blur(22px);
-    max-height: min(360px, 52vh);
+    backdrop-filter: blur(18px);
+    max-height: min(320px, 48vh);
     overflow: hidden;
     z-index: 9;
 }
@@ -3861,6 +3918,7 @@ body.is-touch #leaderboard::before {
 body.is-touch #leaderboard .leaderboard-header {
     margin-bottom: 0;
     justify-content: space-between;
+    align-items: center;
 }
 
 body.is-touch #leaderboard .title {
@@ -3877,15 +3935,56 @@ body.is-touch #leaderboardList {
     scroll-behavior: smooth;
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable both-edges;
 }
 
 body.is-touch #leaderboardList li {
     font-size: 12px;
     padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(12, 18, 30, 0.78);
+    border: 1px solid rgba(253, 224, 138, 0.16);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+}
+
+body.is-touch #leaderboardList li .info {
+    max-width: none;
+    width: 100%;
+}
+
+body.is-touch #leaderboardList li .name {
+    display: block;
+    white-space: normal;
+    line-height: 1.35;
+}
+
+body.is-touch #leaderboardList li .amounts {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
 }
 
 body.is-touch #leaderboardList li .amount-length {
     font-size: 15px;
+}
+
+body.is-touch #leaderboardList li .amount-label {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+}
+
+body.is-touch #leaderboardList li .bet {
+    font-size: 10px;
+    letter-spacing: 0.05em;
+}
+
+body.is-touch #leaderboardList li.placeholder {
+    padding: 14px;
+    text-align: center;
 }
 
 body.is-touch #cashoutControl {
@@ -3893,14 +3992,34 @@ body.is-touch #cashoutControl {
     left: 50%;
     bottom: calc(var(--safe-bottom) + 16px);
     transform: translateX(-50%);
-    width: min(420px, calc(100vw - 32px));
+    width: min(360px, calc(100vw - 24px));
     pointer-events: auto;
     gap: 10px;
+    align-items: stretch;
+    background: rgba(8, 10, 20, 0.92);
+    border: 1px solid rgba(255, 249, 78, 0.14);
+    border-radius: 18px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(18px);
+    padding: 12px 16px 14px;
 }
 
 body.is-touch #cashoutControl .cashout-hint {
     max-width: none;
     text-align: center;
+    font-size: 11px;
+    line-height: 1.45;
+    color: rgba(148, 163, 184, 0.8);
+}
+
+body.is-touch .cashout-button {
+    width: 100%;
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: clamp(15px, 5vw, 18px);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    box-shadow: 0 18px 40px rgba(249, 115, 22, 0.35);
 }
 
 #deathScreen .card {
@@ -4043,6 +4162,37 @@ body.is-touch #cashoutControl .cashout-hint {
 
     body.is-touch #scorePanel {
         width: auto;
+    }
+}
+
+@media (max-width: 360px) {
+    body.is-touch #scorePanel,
+    body.is-touch #leaderboard,
+    body.is-touch #cashoutControl {
+        width: calc(100vw - 16px);
+    }
+
+    body.is-touch #scorePanel {
+        padding: 10px 12px;
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "label"
+            "value"
+            "meta"
+            "performance";
+        gap: 6px;
+    }
+
+    body.is-touch #scoreMeta {
+        text-align: left;
+    }
+
+    body.is-touch #leaderboard {
+        padding: 12px;
+    }
+
+    body.is-touch #cashoutControl {
+        padding: 12px;
     }
 }
 
