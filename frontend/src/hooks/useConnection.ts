@@ -166,7 +166,7 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
             if (pendingBet !== null && ws.readyState === WebSocket.OPEN) {
               const desired = sanitizeBetValue(pendingBet, controller.getAccount().balance)
               if (desired > 0) {
-                controller.setTransferState(true, translate('game.transfer.pendingMessage'))
+                controller.setTransferState(true, translate('game.transfer.pendingMessage'), 'pending')
                 ws.send(JSON.stringify({ type: 'set_bet', amount: desired }))
               }
               controller.setPendingBet(null)
@@ -185,7 +185,11 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
               }
             }
             if (controller.getUI().transfer.pending) {
-              controller.setTransferState(false)
+              controller.setTransferState(
+                false,
+                translate('game.transfer.success.generic'),
+                'success'
+              )
             }
             controller.applySnapshot(message)
           }
@@ -197,19 +201,27 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
             if (typeof message.balance === 'number') {
               onBalanceUpdate?.(Math.max(0, Math.floor(message.balance)))
             }
-            controller.setTransferState(false)
+            controller.setTransferState(false, translate('game.transfer.success.generic'), 'success')
           }
           if (message.type === 'cashout_confirmed') {
             controller.showCashout(message.balance)
             if (typeof message.balance === 'number') {
               onBalanceUpdate?.(Math.max(0, Math.floor(message.balance)))
             }
-            controller.setTransferState(false)
+            controller.setTransferState(
+              false,
+              translate('game.transfer.success.cashout'),
+              'success'
+            )
           }
           if (message.type === 'error' && message.code === 'cashout_failed') {
             controller.setCashoutPending(false)
             controller.resetCashoutHold()
-            controller.setTransferState(false)
+            controller.setTransferState(
+              false,
+              translate('game.transfer.error.cashout'),
+              'error'
+            )
           }
           if (message.type === 'error' && (message.code === 'auth_required' || message.code === 'invalid_token')) {
             controller.setNicknameVisible(true)
@@ -226,15 +238,27 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
           }
           if (message.type === 'error' && message.code === 'insufficient_balance') {
             controller.setNicknameVisible(true)
-            controller.setTransferState(false)
+            controller.setTransferState(
+              false,
+              translate('game.transfer.error.insufficientBalance'),
+              'error'
+            )
           }
           if (message.type === 'error' && message.code === 'balance_persist_failed') {
             controller.setNicknameVisible(true)
             controller.applyBalanceUpdate({ balance: controller.getAccount().balance })
-            controller.setTransferState(false)
+            controller.setTransferState(
+              false,
+              translate('game.transfer.error.persistence'),
+              'error'
+            )
           }
           if (message.type === 'error' && message.code === 'transfer_failed') {
-            controller.setTransferState(false)
+            controller.setTransferState(
+              false,
+              translate('game.transfer.error.generic'),
+              'error'
+            )
           }
         }
       },
@@ -244,7 +268,7 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
   const requestRespawn = useCallback((betAmount: number) => {
     const ws = wsRef.current
     if (!ws || ws.readyState !== WebSocket.OPEN) return
-    controller.setTransferState(true, translate('game.transfer.pendingMessage'))
+    controller.setTransferState(true, translate('game.transfer.pendingMessage'), 'pending')
     ws.send(JSON.stringify({ type: 'set_bet', amount: betAmount }))
     ws.send(JSON.stringify({ type: 'respawn' }))
   }, [])

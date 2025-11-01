@@ -425,7 +425,17 @@
       "balanceSummary": "Your balance is now {{amount}}."
     },
     "transfer": {
-      "pendingMessage": "Transferring funds…"
+      "pendingMessage": "Transferring funds…",
+      "success": {
+        "generic": "Balance synced successfully.",
+        "cashout": "Cashout completed successfully."
+      },
+      "error": {
+        "cashout": "Cashout failed. Please try again.",
+        "insufficientBalance": "Not enough balance to complete the transfer.",
+        "persistence": "Failed to save the updated balance. Please try again.",
+        "generic": "Transfer failed. Please try again."
+      }
     },
     "boost": {
       "on": "Boost: on",

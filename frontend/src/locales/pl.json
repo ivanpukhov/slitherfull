@@ -418,7 +418,17 @@
       "balanceSummary": "Twoje saldo wynosi teraz {{amount}}."
     },
     "transfer": {
-      "pendingMessage": "Przesyłanie środków…"
+      "pendingMessage": "Przesyłanie środków…",
+      "success": {
+        "generic": "Saldo zostało pomyślnie zsynchronizowane.",
+        "cashout": "Wypłata zakończona pomyślnie."
+      },
+      "error": {
+        "cashout": "Nie udało się zrealizować wypłaty. Spróbuj ponownie.",
+        "insufficientBalance": "Za mało środków, aby dokończyć transfer.",
+        "persistence": "Nie udało się zapisać zaktualizowanego salda. Spróbuj ponownie.",
+        "generic": "Transfer nie powiódł się. Spróbuj ponownie."
+      }
     },
     "boost": {
       "on": "Dopalacz: aktywny",

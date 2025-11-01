@@ -425,7 +425,17 @@
       "balanceSummary": "Tu saldo ahora es {{amount}}."
     },
     "transfer": {
-      "pendingMessage": "Transfiriendo fondos…"
+      "pendingMessage": "Transfiriendo fondos…",
+      "success": {
+        "generic": "Saldo sincronizado correctamente.",
+        "cashout": "Retiro completado correctamente."
+      },
+      "error": {
+        "cashout": "El retiro falló. Inténtalo de nuevo.",
+        "insufficientBalance": "No hay saldo suficiente para completar la transferencia.",
+        "persistence": "No se pudo guardar el saldo actualizado. Inténtalo de nuevo.",
+        "generic": "La transferencia falló. Inténtalo de nuevo."
+      }
     },
     "boost": {
       "on": "Impulso: activo",
