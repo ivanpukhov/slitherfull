@@ -4218,6 +4218,10 @@ body.is-touch .cashout-button {
     .damn-wallet__actions {
         width: 100%;
     }
+
+    .friends-card-button{
+        width: 90vw
+    }
 }
 
 .damn-lobby__topbar {
