@@ -4805,7 +4805,9 @@ body.is-touch .cashout-button {
     display: flex;
     justify-content: space-between;
     gap: 12px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
 }
 
 
