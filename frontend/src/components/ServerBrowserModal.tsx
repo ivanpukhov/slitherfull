@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import { formatUsd } from '../utils/helpers'
 import { useTranslation } from '../hooks/useTranslation'
 import { Modal } from './Modal'
-import { SnakePreview } from './SnakePreview'
 
 export type ServerBrowserTab = 'account' | 'game' | 'legal'
 
@@ -24,7 +23,6 @@ interface ServerBrowserModalProps {
   onCopyWallet?: () => void
   walletCopyLabel?: string
   inGameBalance: number
-  snakeColors: string[]
   selectedSkinLabel: string
   betValue: string
   serverRegion?: string
@@ -55,7 +53,6 @@ export function ServerBrowserModal({
   onCopyWallet,
   walletCopyLabel,
   inGameBalance,
-  snakeColors,
   selectedSkinLabel,
   betValue,
   serverRegion,
@@ -261,9 +258,6 @@ export function ServerBrowserModal({
       headerActions={headerAction}
     >
       <div className="server-browser">
-        <div className="server-browser__snake" aria-hidden="true">
-          <SnakePreview colors={snakeColors} width={420} height={180} length={120} />
-        </div>
         <div className="server-browser__tabs" role="tablist">
           <button
             type="button"
