@@ -3733,9 +3733,9 @@ body.is-touch #scorePanel {
     bottom: auto;
     transform: translateX(-50%);
     min-width: 0;
-    width: min(22rem, calc(100vw - 2 * var(--layout-horizontal-tight)));
-    padding: clamp(0.75rem, 0.65rem + 0.8vw, 1.05rem) clamp(1rem, 0.85rem + 1.2vw, 1.4rem);
-    border-radius: clamp(1rem, 0.9rem + 0.6vw, 1.3rem);
+    width: min(16rem, calc(100vw - 2 * var(--layout-horizontal-tight)));
+    padding: clamp(0.55rem, 0.45rem + 0.6vw, 0.85rem) clamp(0.75rem, 0.65rem + 0.8vw, 1.05rem);
+    border-radius: clamp(0.75rem, 0.7rem + 0.4vw, 1.05rem);
     background: rgba(8, 10, 20, 0.92);
     border: 1px solid rgba(255, 249, 78, 0.14);
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
@@ -3748,7 +3748,7 @@ body.is-touch #scorePanel {
         "value value"
         "performance performance";
     align-items: center;
-    gap: clamp(0.35rem, 0.3rem + 0.4vw, 0.6rem) clamp(0.5rem, 0.45rem + 0.6vw, 0.85rem);
+    gap: clamp(0.25rem, 0.2rem + 0.3vw, 0.45rem) clamp(0.35rem, 0.3rem + 0.5vw, 0.65rem);
 }
 
 body.is-touch #scorePanel::before,
@@ -3768,14 +3768,14 @@ body.is-touch #scorePanel .label {
 body.is-touch #scoreValue {
     grid-area: value;
     margin-top: 2px;
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-xl);
     text-shadow: 0 0 16px rgba(244, 197, 66, 0.38);
 }
 
 body.is-touch #scoreMeta {
     grid-area: meta;
     margin: 0;
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-2xs);
     color: rgba(226, 232, 240, 0.8);
     line-height: 1.35;
     text-align: right;
@@ -3785,14 +3785,14 @@ body.is-touch #scoreMeta {
 
 body.is-touch #scorePanel .performance {
     grid-area: performance;
-    margin-top: 4px;
+    margin-top: 2px;
     width: 100%;
 }
 
 body.is-touch #scorePanel .performance-metrics {
-    gap: clamp(0.35rem, 0.3rem + 0.4vw, 0.6rem);
+    gap: clamp(0.25rem, 0.2rem + 0.3vw, 0.45rem);
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
     width: 100%;
 }
 
@@ -3805,9 +3805,9 @@ body.is-touch #scorePanel .performance-label {
 body.is-touch #scorePanel .performance-metrics .metric {
     justify-content: center;
     text-align: center;
-    font-size: var(--font-size-xs);
-    padding: clamp(0.4rem, 0.35rem + 0.4vw, 0.6rem) clamp(0.55rem, 0.5rem + 0.4vw, 0.8rem);
-    background: rgba(15, 23, 42, 0.6);
+    font-size: var(--font-size-2xs);
+    padding: clamp(0.3rem, 0.25rem + 0.2vw, 0.45rem) clamp(0.45rem, 0.4rem + 0.3vw, 0.65rem);
+    background: rgba(15, 23, 42, 0.5);
     border-color: rgba(94, 234, 212, 0.22);
 }
 
@@ -3821,18 +3821,18 @@ body.is-touch #leaderboard {
     left: 50%;
     transform: translateX(-50%);
     bottom: calc(var(--safe-bottom) + clamp(80px, 18vh, 132px));
-    width: min(22rem, calc(100vw - 2 * var(--layout-horizontal-tight)));
+    width: min(16rem, calc(100vw - 2 * var(--layout-horizontal-tight)));
     background: rgba(8, 10, 20, 0.9);
-    border-radius: clamp(1.1rem, 1rem + 0.6vw, 1.5rem);
-    padding: clamp(0.9rem, 0.8rem + 0.9vw, 1.4rem) clamp(1rem, 0.85rem + 1.2vw, 1.5rem) clamp(1rem, 0.9rem + 0.9vw, 1.6rem);
+    border-radius: clamp(0.85rem, 0.8rem + 0.4vw, 1.2rem);
+    padding: clamp(0.65rem, 0.55rem + 0.7vw, 1.05rem) clamp(0.75rem, 0.65rem + 0.8vw, 1.2rem) clamp(0.75rem, 0.65rem + 0.7vw, 1.2rem);
     border: 1px solid rgba(255, 249, 78, 0.14);
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
     display: flex !important;
     flex-direction: column;
-    gap: clamp(0.6rem, 0.5rem + 0.4vw, 0.9rem);
+    gap: clamp(0.4rem, 0.35rem + 0.4vw, 0.7rem);
     pointer-events: auto;
     backdrop-filter: blur(18px);
-    max-height: min(320px, 48vh);
+    max-height: min(240px, 42vh);
     overflow: hidden;
     z-index: 9;
 }
@@ -3865,15 +3865,15 @@ body.is-touch #leaderboardList {
 }
 
 body.is-touch #leaderboardList li {
-    font-size: var(--font-size-xs);
-    padding: clamp(0.6rem, 0.5rem + 0.4vw, 0.85rem) clamp(0.75rem, 0.65rem + 0.5vw, 1.1rem);
-    border-radius: clamp(0.85rem, 0.75rem + 0.4vw, 1.2rem);
-    background: rgba(12, 18, 30, 0.78);
+    font-size: var(--font-size-2xs);
+    padding: clamp(0.45rem, 0.4rem + 0.3vw, 0.65rem) clamp(0.55rem, 0.5rem + 0.4vw, 0.85rem);
+    border-radius: clamp(0.7rem, 0.65rem + 0.35vw, 1rem);
+    background: rgba(12, 18, 30, 0.74);
     border: 1px solid rgba(253, 224, 138, 0.16);
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: clamp(0.4rem, 0.35rem + 0.4vw, 0.7rem);
+    gap: clamp(0.3rem, 0.25rem + 0.3vw, 0.5rem);
 }
 
 body.is-touch #leaderboardList li .info {
@@ -3891,11 +3891,11 @@ body.is-touch #leaderboardList li .amounts {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    gap: clamp(0.5rem, 0.4rem + 0.4vw, 0.75rem);
+    gap: clamp(0.35rem, 0.3rem + 0.3vw, 0.55rem);
 }
 
 body.is-touch #leaderboardList li .amount-length {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-md);
 }
 
 body.is-touch #leaderboardList li .amount-label {
@@ -3918,31 +3918,31 @@ body.is-touch #cashoutControl {
     left: 50%;
     bottom: calc(var(--safe-bottom) + 16px);
     transform: translateX(-50%);
-    width: min(22rem, calc(100vw - 2 * var(--layout-horizontal-tight)));
+    width: min(16rem, calc(100vw - 2 * var(--layout-horizontal-tight)));
     pointer-events: auto;
-    gap: 10px;
+    gap: 8px;
     align-items: stretch;
     background: rgba(8, 10, 20, 0.92);
     border: 1px solid rgba(255, 249, 78, 0.14);
-    border-radius: 18px;
+    border-radius: 14px;
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
     backdrop-filter: blur(18px);
-    padding: 12px 16px 14px;
+    padding: 10px 14px 12px;
 }
 
 body.is-touch #cashoutControl .cashout-hint {
     max-width: none;
     text-align: center;
-    font-size: 11px;
+    font-size: 10px;
     line-height: 1.45;
     color: rgba(148, 163, 184, 0.8);
 }
 
 body.is-touch .cashout-button {
     width: 100%;
-    border-radius: 14px;
-    padding: 14px 16px;
-    font-size: clamp(15px, 5vw, 18px);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: clamp(13px, 4.8vw, 15px);
     font-weight: 700;
     letter-spacing: 0.04em;
     box-shadow: 0 18px 40px rgba(249, 115, 22, 0.35);
@@ -4087,7 +4087,8 @@ body.is-touch .cashout-button {
     }
 
     body.is-touch #scorePanel {
-        width: auto;
+        width: min(16rem, calc(100vw - 2 * var(--layout-horizontal-tight)));
+        max-width: calc(100vw - 2 * var(--layout-horizontal-tight));
     }
 }
 
@@ -4095,7 +4096,7 @@ body.is-touch .cashout-button {
     body.is-touch #scorePanel,
     body.is-touch #leaderboard,
     body.is-touch #cashoutControl {
-        width: calc(100vw - 16px);
+        max-width: calc(100vw - 16px);
     }
 
     body.is-touch #scorePanel {
