@@ -51,7 +51,7 @@
       "copyStatus": {
         "copied": "Skopiowano!",
         "error": "Spróbuj ponownie",
-        "default": "Kopiuj adres"
+        "default": "Kopiuj "
       },
       "title": "Portfel",
       "refreshing": "Odświeżanie…",
@@ -191,7 +191,7 @@
       "depositButton": "Wpłać",
       "withdrawButton": "Wypłać",
       "walletAddress": "Adres portfela",
-      "refreshBalance": "Odśwież saldo",
+      "refreshBalance": "Odśwież",
       "depositHint": "Zeskanuj kod QR, aby wpłacić SOL do portfela Snake Fans.",
       "withdrawHint": "Wypłać środki na swój portfel Solana.",
       "walletUnavailable": "Informacje o portfelu są niedostępne.",

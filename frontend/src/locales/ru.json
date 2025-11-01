@@ -51,7 +51,7 @@
       "copyStatus": {
         "copied": "Скопировано!",
         "error": "Повторите",
-        "default": "Копировать адрес"
+        "default": "Копировать"
       },
       "title": "Кошелёк",
       "refreshing": "Обновляем…",
@@ -228,7 +228,7 @@
       "depositButton": "Пополнить",
       "withdrawButton": "Вывести",
       "walletAddress": "Адрес кошелька",
-      "refreshBalance": "Обновить баланс",
+      "refreshBalance": "Обновить ",
       "depositHint": "Отсканируйте QR-код, чтобы пополнить кошелёк Snake Fans SOL.",
       "withdrawHint": "Выводите средства на свой кошелёк Solana.",
       "walletUnavailable": "Данные кошелька недоступны.",

@@ -138,51 +138,13 @@ export function ServerBrowserModal({
               </div>
             ) : null}
           </div>
-          <p className="server-browser__hint">
-            {t('serverBrowser.account.commissionInfo', { percent: commissionPercent ?? 0 })}
-          </p>
+
           <div className="server-browser__field">
             <span className="server-browser__label">{t('serverBrowser.account.inGameBalance')}</span>
             <span className="server-browser__value">{formatUsd(inGameBalance)}</span>
           </div>
         </section>
-        <section className="server-browser__section">
-          <h3>{t('serverBrowser.account.walletTitle')}</h3>
-          <div className="server-browser__field server-browser__field--row">
-            <div>
-              <span className="server-browser__label">{t('serverBrowser.account.walletAddress')}</span>
-              <span className="server-browser__value server-browser__value--mono">
-                {walletAddress ?? t('serverBrowser.account.walletUnknown')}
-              </span>
-            </div>
-            <div className="server-browser__buttons">
-              <button
-                type="button"
-                className="server-browser__icon-button"
-                onClick={onCopyWallet}
-                disabled={!walletAddress}
-              >
-                {walletCopyLabel ?? t('serverBrowser.account.copyWallet')}
-              </button>
-              <button
-                type="button"
-                className="server-browser__icon-button"
-                onClick={onRefreshWallet}
-                disabled={walletLoading}
-              >
-                {walletLoading ? t('serverBrowser.account.refreshing') : t('serverBrowser.account.refresh')}
-              </button>
-            </div>
-          </div>
-          <div className="server-browser__field">
-            <span className="server-browser__label">{t('serverBrowser.account.walletUsd')}</span>
-            <span className="server-browser__value">{walletUsdDisplay}</span>
-          </div>
-          <div className="server-browser__field">
-            <span className="server-browser__label">{t('serverBrowser.account.walletSol')}</span>
-            <span className="server-browser__value">{walletSolDisplay}</span>
-          </div>
-        </section>
+
       </div>
     )
   }

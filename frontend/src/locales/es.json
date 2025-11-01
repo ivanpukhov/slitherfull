@@ -51,7 +51,7 @@
       "copyStatus": {
         "copied": "¡Copiado!",
         "error": "Intenta de nuevo",
-        "default": "Copiar dirección"
+        "default": "Copiar"
       },
       "title": "Billetera",
       "refreshing": "Actualizando…",
@@ -191,7 +191,7 @@
       "depositButton": "Depositar",
       "withdrawButton": "Retirar",
       "walletAddress": "Dirección de la billetera",
-      "refreshBalance": "Actualizar saldo",
+      "refreshBalance": "Actualizar",
       "depositHint": "Escanea el código QR para depositar SOL en tu billetera de Snake Fans.",
       "withdrawHint": "Retira fondos a tu billetera personal de Solana.",
       "walletUnavailable": "La información de la billetera no está disponible.",
