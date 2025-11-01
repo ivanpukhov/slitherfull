@@ -22,6 +22,7 @@ import type { AuthResult, AuthUser } from '../hooks/useAuth'
 import { QRCodeCanvas } from 'qrcode.react'
 import { SocialModal, type SocialTab } from './SocialModal'
 import { ServerBrowserModal, type ServerBrowserTab } from './ServerBrowserModal'
+import { useToast } from '../hooks/useToast'
 import wallet from './../assets/wallet.svg'
 import castom from './../assets/castomize.svg'
 import leader from './../assets/leader.svg'
@@ -49,7 +50,6 @@ interface NicknameScreenProps {
     transferMessage?: string
     onWithdraw?: (destination: string) => Promise<void> | void
     withdrawPending?: boolean
-    withdrawStatus?: { type: 'success' | 'error'; message: string } | null
     playerStats?: PlayerStatsData | null
     playerStatsLoading?: boolean
     isAuthenticated?: boolean
@@ -89,7 +89,6 @@ export function NicknameScreen({
                                    transferMessage,
                                    onWithdraw,
                                    withdrawPending,
-                                   withdrawStatus,
                                    playerStats,
                                    playerStatsLoading,
                                    isAuthenticated,
@@ -108,6 +107,7 @@ export function NicknameScreen({
                                }: NicknameScreenProps) {
     const { t, locale } = useTranslation()
     const wallet = useWalletContext()
+    const { pushToast } = useToast()
     const walletProfile = wallet.profile
     const walletAddress = walletProfile?.walletAddress || authUser?.walletAddress || null
     const walletSol = walletProfile?.sol
@@ -116,6 +116,7 @@ export function NicknameScreen({
     const walletLoading = wallet.loading
     const walletRefresh = wallet.refresh
     const walletError = wallet.error
+    const lastWalletErrorRef = useRef<string | null>(null)
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault()
         if (startDisabled) return
@@ -249,14 +250,6 @@ export function NicknameScreen({
     }, [])
 
     useEffect(() => {
-        if (withdrawStatus?.type === 'success') {
-            setWithdrawAddress('')
-            setWithdrawError(null)
-            setWithdrawAmount('0.000')
-        }
-    }, [withdrawStatus])
-
-    useEffect(() => {
         if (!visible) {
             setSocialModalOpen(false)
             setServerBrowserOpen(false)
@@ -275,6 +268,15 @@ export function NicknameScreen({
             setWithdrawError(null)
         }
     }, [walletTab, withdrawError])
+
+    useEffect(() => {
+        if (walletError && lastWalletErrorRef.current !== walletError) {
+            pushToast({ type: 'error', message: walletError })
+            lastWalletErrorRef.current = walletError
+        } else if (!walletError) {
+            lastWalletErrorRef.current = null
+        }
+    }, [pushToast, walletError])
 
     useEffect(() => {
         if (!walletModalOpen || walletTab !== 'withdraw') {
@@ -365,6 +367,8 @@ export function NicknameScreen({
         setWithdrawError(null)
         try {
             await onWithdraw(target)
+            setWithdrawAddress('')
+            setWithdrawAmount('0.000')
         } catch (error) {
             // handled upstream
         }
@@ -544,16 +548,6 @@ export function NicknameScreen({
         () => t('hub.account.cashoutModal.percentage', { value: withdrawPercent }),
         [t, withdrawPercent]
     )
-    const withdrawNotice = useMemo(() => {
-        if (withdrawStatus) {
-            return withdrawStatus
-        }
-        if (walletError) {
-            return { type: 'error' as const, message: walletError }
-        }
-        return null
-    }, [walletError, withdrawStatus])
-
     return (
         <div id="nicknameScreen" className={visible ? 'overlay overlay--lobby' : 'overlay overlay--lobby hidden'}>
             <div className="damn-lobby">
@@ -810,11 +804,6 @@ export function NicknameScreen({
                                     {t('hub.account.withdrawButton')}
                                 </button>
                             </div>
-                            {withdrawStatus ? (
-                                <p className={`wallet-withdraw-status wallet-withdraw-status--summary ${withdrawStatus.type}`}>
-                                    {withdrawStatus.message}
-                                </p>
-                            ) : null}
                         </section>
 
                         <section className="damn-card damn-card--customize" style={customizeStyle}>
@@ -1029,21 +1018,6 @@ export function NicknameScreen({
                                                 </div>
                                             </div>
                                         </section>
-                                        {withdrawNotice ? (
-                                            <div className={`cashout-alert ${withdrawNotice.type}`}>
-                                                <span className="cashout-alert__icon" aria-hidden="true">
-                                                    {withdrawNotice.type === 'success' ? '✅' : '⚠️'}
-                                                </span>
-                                                <div className="cashout-alert__body">
-                                                    <strong className="cashout-alert__title">
-                                                        {withdrawNotice.type === 'success'
-                                                            ? t('hub.account.cashoutModal.successTitle')
-                                                            : t('hub.account.cashoutModal.errorTitle')}
-                                                    </strong>
-                                                    <span>{withdrawNotice.message}</span>
-                                                </div>
-                                            </div>
-                                        ) : null}
                                         <section className="cashout-section">
                                             <label className="cashout-field__label" htmlFor="cashoutAmount">
                                                 {t('hub.account.cashoutModal.amountLabel')}
