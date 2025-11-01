@@ -928,7 +928,6 @@ export function NicknameScreen({
                 onCopyWallet={handleCopyWallet}
                 walletCopyLabel={copyLabel}
                 inGameBalance={balance}
-                snakeColors={skinColors}
                 selectedSkinLabel={selectedSkinLabel}
                 betValue={betValue}
                 serverRegion={t('serverBrowser.game.regionValue')}
