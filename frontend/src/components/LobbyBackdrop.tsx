@@ -27,6 +27,12 @@ interface LobbySnakeConfig {
   scale: { amplitude: number; speed: number; phase?: number }
 }
 
+type OscillationConfig = {
+  amplitude: number
+  frequency: number
+  phase?: number
+}
+
 interface LissajousOptions {
   radiusX: number
   radiusY: number
@@ -36,6 +42,20 @@ interface LissajousOptions {
   twistFrequency: number
   twistPhase?: number
   offsetPhase?: number
+  centerOffsetX?: number
+  centerOffsetY?: number
+  radiusSwayX?: OscillationConfig
+  radiusSwayY?: OscillationConfig
+  driftX?: OscillationConfig
+  driftY?: OscillationConfig
+}
+
+function sampleOscillation(osc: OscillationConfig | undefined, time: number): number {
+  if (!osc || osc.amplitude === 0) {
+    return 0
+  }
+
+  return Math.sin(time * osc.frequency + (osc.phase ?? 0)) * osc.amplitude
 }
 
 function createLissajousPath({
@@ -46,19 +66,29 @@ function createLissajousPath({
   twistAmplitude,
   twistFrequency,
   twistPhase = 0,
-  offsetPhase = 0
+  offsetPhase = 0,
+  centerOffsetX = 0,
+  centerOffsetY = 0,
+  radiusSwayX,
+  radiusSwayY,
+  driftX,
+  driftY
 }: LissajousOptions) {
   return (time: number, dims: { width: number; height: number }) => {
-    const centerX = dims.width / 2
-    const centerY = dims.height / 2
+    const centerX = dims.width / 2 + centerOffsetX
+    const centerY = dims.height / 2 + centerOffsetY
+    const radiusXWithSway = radiusX + sampleOscillation(radiusSwayX, time)
+    const radiusYWithSway = radiusY + sampleOscillation(radiusSwayY, time)
     const x =
       centerX +
-      Math.cos(time * frequencyX + offsetPhase) * radiusX +
-      Math.sin(time * twistFrequency + twistPhase) * twistAmplitude
+      Math.cos(time * frequencyX + offsetPhase) * radiusXWithSway +
+      Math.sin(time * twistFrequency + twistPhase) * twistAmplitude +
+      sampleOscillation(driftX, time)
     const y =
       centerY +
-      Math.sin(time * frequencyY + offsetPhase * 0.82) * radiusY +
-      Math.cos(time * twistFrequency + twistPhase * 1.12) * twistAmplitude * 0.6
+      Math.sin(time * frequencyY + offsetPhase * 0.82) * radiusYWithSway +
+      Math.cos(time * twistFrequency + twistPhase * 1.12) * twistAmplitude * 0.6 +
+      sampleOscillation(driftY, time)
     return { x, y }
   }
 }
@@ -78,14 +108,20 @@ export function LobbyBackdrop({ visible }: LobbyBackdropProps) {
         delay: 0,
         speed: 0.8,
         path: createLissajousPath({
-          radiusX: 150,
-          radiusY: 95,
-          frequencyX: 0.85,
-          frequencyY: 0.68,
-          twistAmplitude: 38,
-          twistFrequency: 1.4,
+          radiusX: 170,
+          radiusY: 105,
+          frequencyX: 0.82,
+          frequencyY: 0.66,
+          twistAmplitude: 48,
+          twistFrequency: 1.44,
           twistPhase: 0.6,
-          offsetPhase: 0.2
+          offsetPhase: 0.2,
+          centerOffsetX: -70,
+          centerOffsetY: -18,
+          radiusSwayX: { amplitude: 28, frequency: 0.38, phase: 0.5 },
+          radiusSwayY: { amplitude: 18, frequency: 0.42, phase: 1.1 },
+          driftX: { amplitude: 120, frequency: 0.18, phase: -0.4 },
+          driftY: { amplitude: 36, frequency: 0.22, phase: 0.8 }
         }),
         bob: { amplitude: 14, speed: 1.6 },
         rotation: { amplitude: 4.5, speed: 0.65 },
@@ -103,14 +139,20 @@ export function LobbyBackdrop({ visible }: LobbyBackdropProps) {
         delay: 2.6,
         speed: 0.72,
         path: createLissajousPath({
-          radiusX: 130,
-          radiusY: 90,
-          frequencyX: 0.68,
-          frequencyY: 0.92,
-          twistAmplitude: 46,
-          twistFrequency: 1.1,
+          radiusX: 150,
+          radiusY: 100,
+          frequencyX: 0.66,
+          frequencyY: 0.9,
+          twistAmplitude: 52,
+          twistFrequency: 1.16,
           twistPhase: 1.7,
-          offsetPhase: 0.9
+          offsetPhase: 0.9,
+          centerOffsetX: -58,
+          centerOffsetY: 24,
+          radiusSwayX: { amplitude: 22, frequency: 0.34, phase: 0.2 },
+          radiusSwayY: { amplitude: 16, frequency: 0.36, phase: 0.7 },
+          driftX: { amplitude: 110, frequency: 0.16, phase: 0.35 },
+          driftY: { amplitude: 42, frequency: 0.21, phase: 1.1 }
         }),
         bob: { amplitude: 16, speed: 1.4, phase: 0.6 },
         rotation: { amplitude: 3.5, speed: 0.55, phase: 0.4 },
@@ -128,14 +170,20 @@ export function LobbyBackdrop({ visible }: LobbyBackdropProps) {
         delay: 1.4,
         speed: 0.88,
         path: createLissajousPath({
-          radiusX: 160,
-          radiusY: 105,
-          frequencyX: 0.94,
-          frequencyY: 0.74,
-          twistAmplitude: 52,
-          twistFrequency: 1.55,
+          radiusX: 190,
+          radiusY: 112,
+          frequencyX: 0.9,
+          frequencyY: 0.72,
+          twistAmplitude: 56,
+          twistFrequency: 1.6,
           twistPhase: 1.1,
-          offsetPhase: 0.4
+          offsetPhase: 0.4,
+          centerOffsetX: 76,
+          centerOffsetY: -22,
+          radiusSwayX: { amplitude: 30, frequency: 0.36, phase: 0.3 },
+          radiusSwayY: { amplitude: 20, frequency: 0.4, phase: 0.9 },
+          driftX: { amplitude: 130, frequency: 0.2, phase: 0.6 },
+          driftY: { amplitude: 44, frequency: 0.24, phase: -0.2 }
         }),
         bob: { amplitude: 18, speed: 1.5, phase: 0.2 },
         rotation: { amplitude: 5, speed: 0.7, phase: 0.5 },
@@ -153,14 +201,20 @@ export function LobbyBackdrop({ visible }: LobbyBackdropProps) {
         delay: 3.8,
         speed: 0.78,
         path: createLissajousPath({
-          radiusX: 140,
-          radiusY: 96,
-          frequencyX: 0.76,
-          frequencyY: 0.84,
-          twistAmplitude: 44,
-          twistFrequency: 1.28,
+          radiusX: 165,
+          radiusY: 104,
+          frequencyX: 0.74,
+          frequencyY: 0.82,
+          twistAmplitude: 50,
+          twistFrequency: 1.34,
           twistPhase: 2.1,
-          offsetPhase: 1.4
+          offsetPhase: 1.4,
+          centerOffsetX: 64,
+          centerOffsetY: 26,
+          radiusSwayX: { amplitude: 24, frequency: 0.32, phase: 0.1 },
+          radiusSwayY: { amplitude: 18, frequency: 0.34, phase: 0.5 },
+          driftX: { amplitude: 118, frequency: 0.17, phase: -0.7 },
+          driftY: { amplitude: 40, frequency: 0.2, phase: -1.3 }
         }),
         bob: { amplitude: 17, speed: 1.3, phase: 0.8 },
         rotation: { amplitude: 4, speed: 0.6, phase: 0.65 },
