@@ -16,10 +16,14 @@ export function CashoutControl({ state, buttonRef, onClick }: CashoutControlProp
         type="button"
         disabled={state.disabled}
         aria-disabled={state.disabled ? 'true' : 'false'}
+        aria-label={state.label}
         ref={buttonRef}
         onClick={onClick}
       >
-        {state.label}
+        <span className="cashout-button__text">{state.label}</span>
+        <span className="cashout-button__icon" aria-hidden="true">
+          💰
+        </span>
       </button>
       <div id="cashoutHint" className="cashout-hint">
         {state.hint}
