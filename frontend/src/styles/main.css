@@ -242,37 +242,27 @@ canvas {
 
 .lobby-backdrop__snake {
     position: absolute;
+    top: 50%;
+    left: 50%;
     width: clamp(260px, 28vw, 420px);
-    opacity: 0.8;
+    opacity: 0.82;
     filter: drop-shadow(0 40px 80px rgba(0, 0, 0, 0.55));
-}
-
-.lobby-backdrop__snake--left {
-    left: max(-10vw, -160px);
-}
-
-.lobby-backdrop__snake--right {
-    right: max(-10vw, -160px);
-}
-
-.lobby-backdrop__snake--top {
-    top: clamp(6vh, 10vw, 18vh);
-}
-
-.lobby-backdrop__snake--bottom {
-    bottom: clamp(6vh, 10vw, 18vh);
+    transform: translate(-50%, -50%) translate3d(var(--lobby-x, 0px), var(--lobby-y, 0px), 0);
+    transition: filter 0.4s ease;
+    will-change: transform;
 }
 
 .lobby-backdrop__snake-canvas {
     display: block;
-    animation: lobby-slide var(--lobby-duration, 20s) ease-in-out infinite alternate;
     transform: translate3d(0, 0, 0);
+    will-change: transform;
 }
 
 .lobby-backdrop__snake-figure {
     display: inline-block;
-    animation: lobby-float calc(var(--lobby-duration, 20s) * 0.9) ease-in-out infinite alternate;
+    transform: translate3d(0, 0, 0);
     transition: filter 0.4s ease;
+    will-change: transform;
 }
 
 .lobby-backdrop__snake-figure canvas {
@@ -282,28 +272,6 @@ canvas {
 
 .lobby-backdrop__snake--right .lobby-backdrop__snake-figure canvas {
     transform: scaleX(-1);
-}
-
-@keyframes lobby-slide {
-    from {
-        transform: translate3d(0, calc(var(--lobby-float, 18px) * -0.4), 0);
-    }
-
-    to {
-        transform: translate3d(var(--lobby-drift, 16px), calc(var(--lobby-float, 18px) * 0.6), 0);
-    }
-}
-
-@keyframes lobby-float {
-    from {
-        transform: translate3d(0, 0, 0) scale(0.98) rotate(-2deg);
-        opacity: 0.75;
-    }
-
-    to {
-        transform: translate3d(0, calc(var(--lobby-float, 18px) * 0.5), 0) scale(1.03) rotate(2deg);
-        opacity: 1;
-    }
 }
 
 #scorePanel {
