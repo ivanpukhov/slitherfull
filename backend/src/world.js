@@ -199,6 +199,7 @@ class World {
         this.maxFood = Number.isFinite(cfg.maxFood)
             ? Math.max(0, Math.floor(cfg.maxFood))
             : Infinity
+        this.regularFoodCount = 0
         this.nextFoodId = 1
         this.tickId = 0
         this.centerX = cfg.width / 2
@@ -238,7 +239,11 @@ class World {
     }
 
     removeFoodById(id) {
-        if (!this.foods.has(id)) return false
+        const food = this.foods.get(id)
+        if (!food) return false
+        if (food.countsTowardsLimit) {
+            this.regularFoodCount = Math.max(0, this.regularFoodCount - 1)
+        }
         const cellKey = this.foodCells.get(id)
         if (cellKey !== undefined) {
             this.foodSpatial.removeKey(id, cellKey)
@@ -249,17 +254,8 @@ class World {
 
     spawnFoodAt(x, y, value = 1, options = {}) {
         const force = Boolean(options.force)
-        if (!force && this.foods.size >= this.maxFood) return null
-        if (force && this.foods.size >= this.maxFood) {
-            const needed = this.foods.size - this.maxFood + 1
-            for (let i = 0; i < needed; i++) {
-                const oldest = this.foods.keys().next()
-                if (!oldest || oldest.done) break
-                this.removeFoodById(oldest.value)
-                if (this.foods.size < this.maxFood) break
-            }
-            if (this.foods.size >= this.maxFood) return null
-        }
+        const countsTowardsLimit = options.countsTowardsLimit !== false
+        if (!force && countsTowardsLimit && this.regularFoodCount >= this.maxFood) return null
         const pos = projectToCircle(this.centerX, this.centerY, this.radius, x, y)
         const id = "f" + (this.nextFoodId++)
         const palette = options.palette || this.foodPalette
@@ -268,15 +264,27 @@ class World {
         const createdAt = Date.now()
         const pulse = typeof options.pulse === 'number' ? options.pulse : Math.random() * Math.PI * 2
         const betValue = typeof options.betValue === 'number' ? Math.max(0, Math.floor(options.betValue)) : 0
-        const f = { id, x: pos.x, y: pos.y, v: value, color, big, pulse, createdAt, betValue }
+        const f = {
+            id,
+            x: pos.x,
+            y: pos.y,
+            v: value,
+            color,
+            big,
+            pulse,
+            createdAt,
+            betValue,
+            countsTowardsLimit
+        }
         this.foods.set(id, f)
         const key = this.foodSpatial.add(id, f.x, f.y)
         this.foodCells.set(id, key)
+        if (countsTowardsLimit) this.regularFoodCount++
         return f
     }
 
     spawnFood() {
-        if (this.foods.size >= this.maxFood) return null
+        if (this.regularFoodCount >= this.maxFood) return null
         const p = randomPointInCircle(this.centerX, this.centerY, this.radius)
         return this.spawnFoodAt(p.x, p.y, 1)
     }
@@ -500,9 +508,7 @@ class World {
                 const f = this.foods.get(id)
                 if (!f) continue
                 if (dist2(p.x, p.y, f.x, f.y) <= this.cfg.foodPickupRadius * this.cfg.foodPickupRadius) {
-                    this.foodSpatial.removeKey(id, this.foodCells.get(id))
-                    this.foodCells.delete(id)
-                    this.foods.delete(id)
+                    this.removeFoodById(id)
                     p.length += f.v
                     if (f.betValue) {
                         const betIncrement = Math.max(0, Math.floor(f.betValue))
@@ -512,7 +518,7 @@ class World {
                             this.notifyBalance(p)
                         }
                     }
-                    if (this.foods.size < this.cfg.targetFood) this.spawnFood()
+                    if (f.countsTowardsLimit && this.regularFoodCount < this.cfg.targetFood) this.spawnFood()
                 }
             }
         }
@@ -593,7 +599,8 @@ class World {
                     color: GOLDEN_FOOD_COLOR,
                     big: true,
                     betValue: GOLDEN_FOOD_VALUE_CENTS,
-                    force: true
+                    force: true,
+                    countsTowardsLimit: false
                 })
                 if (!created) break
             }
@@ -611,7 +618,8 @@ class World {
                 const created = this.spawnFoodAt(clamped.x, clamped.y, value, {
                     palette,
                     big: value >= this.cfg.bigFoodThreshold,
-                    force: true
+                    force: true,
+                    countsTowardsLimit: false
                 })
                 if (!created) break
                 remaining -= value
@@ -622,7 +630,11 @@ class World {
                 const target = points[index]
                 const clamped = projectToCircle(this.centerX, this.centerY, this.radius, target.x, target.y)
                 const value = Math.min(remaining, 2)
-                const created = this.spawnFoodAt(clamped.x, clamped.y, value, { palette, force: true })
+                const created = this.spawnFoodAt(clamped.x, clamped.y, value, {
+                    palette,
+                    force: true,
+                    countsTowardsLimit: false
+                })
                 if (!created) break
                 remaining -= value
                 index = (index - 1 + points.length) % points.length
@@ -765,7 +777,7 @@ class World {
 
     tick(dt) {
         this.tickId++
-        if (this.foods.size < this.cfg.targetFood && Math.random() < this.cfg.foodSpawnChance) this.spawnFood()
+        if (this.regularFoodCount < this.cfg.targetFood && Math.random() < this.cfg.foodSpawnChance) this.spawnFood()
         this.stepMovement(dt)
         this.rebuildSpatial()
         this.stepFoodPickup()
