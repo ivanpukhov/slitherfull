@@ -4205,6 +4205,21 @@ body.is-touch .cashout-button {
     }
 }
 
+@media (max-width: 470px) {
+    .damn-card {
+        width: min(90vw, 100%);
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .damn-card__header,
+    .damn-card__filters,
+    .damn-side-actions,
+    .damn-wallet__actions {
+        width: 100%;
+    }
+}
+
 .damn-lobby__topbar {
     display: flex;
     flex-wrap: wrap;
