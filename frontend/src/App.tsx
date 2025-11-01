@@ -70,6 +70,11 @@ function GameView() {
     }).format((priceUsd as number) || 0)}`
   }, [locale, winningsLeaderboard.data?.priceUsd])
   const accountStateSyncedRef = useRef(false)
+  const transferToastStateRef = useRef({
+    pending: game.transfer.pending,
+    message: game.transfer.message,
+    status: game.transfer.status
+  })
 
   useCanvas({ canvasRef, controller: game.controller })
   usePointerControls({ controller: game.controller, canvasRef, cashoutButtonRef })
@@ -84,6 +89,27 @@ function GameView() {
     }
     clearLastResult()
   }, [clearLastResult, isFullScreenResult, lastResult, pushToast])
+
+  useEffect(() => {
+    const previous = transferToastStateRef.current
+    const current = {
+      pending: game.transfer.pending,
+      message: game.transfer.message,
+      status: game.transfer.status
+    }
+    const fallbackMessage = current.message || t('app.transferFallback')
+    if (!previous.pending && current.pending) {
+      pushToast({ type: 'info', message: fallbackMessage, duration: 10000 })
+    } else if (previous.pending && !current.pending) {
+      const toastType = current.status === 'error' ? 'error' : 'success'
+      const resolvedMessage = current.message || fallbackMessage
+      pushToast({ type: toastType, message: resolvedMessage, duration: 10000 })
+    } else if (!current.pending && previous.message !== current.message && current.status === 'error') {
+      const resolvedMessage = current.message || fallbackMessage
+      pushToast({ type: 'error', message: resolvedMessage, duration: 10000 })
+    }
+    transferToastStateRef.current = current
+  }, [game.transfer.message, game.transfer.pending, game.transfer.status, pushToast, t])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -469,9 +495,6 @@ function GameView() {
         startDisabled={startDisabled}
         startLabel={startLabel}
         startDisabledHint={startHint}
-        cashoutPending={game.cashout.pending}
-        transferPending={game.transfer.pending}
-        transferMessage={game.transfer.message}
         onWithdraw={handleWithdraw}
         withdrawPending={withdrawPending}
         playerStats={playerStats.data ?? null}
