@@ -45,9 +45,6 @@ interface NicknameScreenProps {
     startDisabled: boolean
     startDisabledHint?: string
     startLabel?: string
-    cashoutPending?: boolean
-    transferPending?: boolean
-    transferMessage?: string
     onWithdraw?: (destination: string) => Promise<void> | void
     withdrawPending?: boolean
     playerStats?: PlayerStatsData | null
@@ -84,9 +81,6 @@ export function NicknameScreen({
                                    startDisabled,
                                    startDisabledHint,
                                    startLabel,
-                                   cashoutPending,
-                                   transferPending,
-                                   transferMessage,
                                    onWithdraw,
                                    withdrawPending,
                                    playerStats,
@@ -579,23 +573,6 @@ export function NicknameScreen({
                     </div>
                     <div className="damn-hero__tagline">{t('lobby.hero.tagline')}</div>
                 </div>
-
-                {(cashoutPending || transferPending) && (
-                    <div className={`damn-status${cashoutPending ? ' damn-status--cashout' : ''}`}>
-                        <div className="damn-status__indicator"/>
-                        <div className="damn-status__body">
-                            <div className="damn-status__title">
-                                {cashoutPending ? t('lobby.status.cashoutTitle') : t('lobby.status.transferTitle')}
-                            </div>
-                            <p className="damn-status__text">
-                                {transferMessage ||
-                                    (cashoutPending
-                                        ? t('lobby.status.cashoutMessage')
-                                        : t('lobby.status.transferMessage'))}
-                            </p>
-                        </div>
-                    </div>
-                )}
 
                 <div className="damn-grid">
                     <div className="damn-column damn-column--left">

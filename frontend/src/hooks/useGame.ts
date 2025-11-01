@@ -166,6 +166,8 @@ export interface PerformanceMetrics {
   lastBroadcast: number
 }
 
+export type TransferStatus = 'idle' | 'pending' | 'success' | 'error'
+
 interface GameUIState {
   score: number
   scoreMeta: string
@@ -183,6 +185,7 @@ interface GameUIState {
   transfer: {
     pending: boolean
     message: string
+    status: TransferStatus
   }
 }
 
@@ -266,7 +269,8 @@ const initialUI: GameUIState = {
   retryBetValue: '',
   transfer: {
     pending: false,
-    message: ''
+    message: '',
+    status: 'idle'
   }
 }
 
@@ -366,10 +370,13 @@ export class GameController {
     this.notify()
   }
 
-  setTransferState(pending: boolean, message?: string) {
+  setTransferState(pending: boolean, message?: string, status?: TransferStatus) {
+    const resolvedStatus: TransferStatus =
+      status ?? (pending ? 'pending' : message ? 'success' : 'idle')
     this.state.ui.transfer = {
       pending,
-      message: message ?? (pending ? translate('game.transfer.pendingMessage') : '')
+      message: message ?? (pending ? translate('game.transfer.pendingMessage') : ''),
+      status: resolvedStatus
     }
     this.notify()
   }
@@ -391,7 +398,7 @@ export class GameController {
     }
     this.state.account = next
     if (this.state.ui.transfer.pending) {
-      this.state.ui.transfer = { pending: false, message: '' }
+      this.state.ui.transfer = { pending: false, message: '', status: 'idle' }
     }
     this.refreshCashoutState()
     this.notify()
@@ -508,7 +515,8 @@ export class GameController {
     }
     this.state.ui.transfer = {
       pending: true,
-      message: translate('game.cashout.transferMessage')
+      message: translate('game.cashout.transferMessage'),
+      status: 'pending'
     }
     this.state.ui.lastResult = {
       title: translate('game.cashout.result.title'),
