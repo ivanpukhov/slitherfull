@@ -101,6 +101,58 @@ function computePathLength(points) {
     return sum
 }
 
+function sampleEvenlyAlongPath(points, count) {
+    const result = []
+    if (!Array.isArray(points) || points.length === 0 || count <= 0) return result
+    if (points.length === 1) {
+        const only = points[0]
+        for (let i = 0; i < count; i++) {
+            result.push({ x: only.x, y: only.y })
+        }
+        return result
+    }
+
+    const totalLength = computePathLength(points)
+    if (!Number.isFinite(totalLength) || totalLength <= 0) {
+        const fallback = points[points.length - 1]
+        for (let i = 0; i < count; i++) {
+            result.push({ x: fallback.x, y: fallback.y })
+        }
+        return result
+    }
+
+    const step = totalLength / count
+    let accumulated = 0
+    let nextDistance = step / 2
+
+    for (let i = 1; i < points.length && result.length < count; i++) {
+        const start = points[i - 1]
+        const end = points[i]
+        let segLen = Math.hypot(end.x - start.x, end.y - start.y)
+        if (!Number.isFinite(segLen) || segLen <= 0) {
+            continue
+        }
+
+        while (accumulated + segLen >= nextDistance && result.length < count) {
+            const t = (nextDistance - accumulated) / segLen
+            result.push({
+                x: start.x + (end.x - start.x) * t,
+                y: start.y + (end.y - start.y) * t
+            })
+            nextDistance += step
+        }
+
+        accumulated += segLen
+    }
+
+    const fallback = points[points.length - 1]
+    while (result.length < count) {
+        result.push({ x: fallback.x, y: fallback.y })
+    }
+
+    return result
+}
+
 function trimPathToLength(player, maxLength) {
     const target = Math.max(0, maxLength)
     while (player.path.length > 1 && player.pathLen > target) {
@@ -505,25 +557,23 @@ class World {
 
         const goldenPieces = Math.max(0, Math.floor(bounty / GOLDEN_FOOD_VALUE_CENTS))
         if (goldenPieces > 0) {
-            const stride = Math.max(1, Math.floor(points.length / goldenPieces))
-            for (let i = 0; i < goldenPieces; i++) {
-                    const index = Math.max(0, points.length - 1 - i * stride)
-                    const target = points[index]
-                    const clamped = projectToCircle(this.centerX, this.centerY, this.radius, target.x, target.y)
-                    const piecesLeft = goldenPieces - i
-                    let segmentValue = 0
-                    if (lengthRemaining > 0 && piecesLeft > 0) {
-                        segmentValue = Math.max(1, Math.floor(lengthRemaining / piecesLeft))
-                        segmentValue = Math.min(lengthRemaining, segmentValue)
-                        lengthRemaining -= segmentValue
-                    }
-                    this.spawnFoodAt(clamped.x, clamped.y, Math.max(1, segmentValue), {
-                        color: GOLDEN_FOOD_COLOR,
-                        big: true,
-                        betValue: GOLDEN_FOOD_VALUE_CENTS
-                    })
-                    if (this.foods.size >= this.maxFood) break
+            const goldenPositions = sampleEvenlyAlongPath(points, goldenPieces)
+            for (let i = 0; i < goldenPositions.length; i++) {
+                const target = goldenPositions[i]
+                const clamped = projectToCircle(this.centerX, this.centerY, this.radius, target.x, target.y)
+                const piecesLeft = goldenPositions.length - i
+                let segmentValue = 0
+                if (lengthRemaining > 0 && piecesLeft > 0) {
+                    segmentValue = Math.max(1, Math.floor(lengthRemaining / piecesLeft))
+                    segmentValue = Math.min(lengthRemaining, segmentValue)
+                    lengthRemaining -= segmentValue
                 }
+                this.spawnFoodAt(clamped.x, clamped.y, Math.max(1, segmentValue), {
+                    color: GOLDEN_FOOD_COLOR,
+                    big: true,
+                    betValue: GOLDEN_FOOD_VALUE_CENTS
+                })
+                if (this.foods.size >= this.maxFood) break
             }
         }
 
