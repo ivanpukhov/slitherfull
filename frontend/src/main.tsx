@@ -5,6 +5,7 @@ import App from './App'
 import { TermsOfService } from './pages/TermsOfService'
 import { PrivacyPolicy } from './pages/PrivacyPolicy'
 import './styles/main.css'
+import { ToastProvider } from './hooks/useToast'
 
 const router = createBrowserRouter([
   { path: '/', element: <App /> },
@@ -16,6 +17,8 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <ToastProvider>
+      <RouterProvider router={router} />
+    </ToastProvider>
   </React.StrictMode>
 )

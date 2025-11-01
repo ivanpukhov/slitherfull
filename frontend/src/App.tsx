@@ -18,6 +18,7 @@ import { AuthModal } from './components/AuthModal'
 import { AdminDashboard } from './components/AdminDashboard'
 import { ResultModal } from './components/ResultModal'
 import { LobbyBackdrop } from './components/LobbyBackdrop'
+import { useToast } from './hooks/useToast'
 
 function GameView() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -31,10 +32,10 @@ function GameView() {
   const playerStats = usePlayerStats({ token: auth.token, days: 30 })
   const refreshPlayerStats = playerStats.refresh
   const [withdrawPending, setWithdrawPending] = useState(false)
-  const [withdrawStatus, setWithdrawStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [startProcessing, setStartProcessing] = useState(false)
   const [nicknameUpdateError, setNicknameUpdateError] = useState<string | null>(null)
+  const { pushToast } = useToast()
   const connection = useConnection({
     controller: game.controller,
     token: auth.token,
@@ -43,6 +44,11 @@ function GameView() {
   })
   const controller = game.controller
   const { setNickname, setBetValue, setRetryBetValue, setNicknameVisible, clearLastResult } = game
+  const lastResult = game.lastResult
+  const isFullScreenResult = Boolean(
+    lastResult &&
+      (lastResult.variant === 'death' || (lastResult.variant === 'cashout' && !game.transfer.pending))
+  )
   const winningsEntries = useMemo(() => winningsLeaderboard.data?.entries ?? [], [winningsLeaderboard.data])
   const topWinningsEntries = useMemo(() => winningsEntries.slice(0, 5), [winningsEntries])
   const totalWinningsUsd = useMemo(
@@ -67,6 +73,17 @@ function GameView() {
 
   useCanvas({ canvasRef, controller: game.controller })
   usePointerControls({ controller: game.controller, canvasRef, cashoutButtonRef })
+
+  useEffect(() => {
+    if (!lastResult) return
+    if (isFullScreenResult) return
+    const messageParts = [lastResult.title, ...lastResult.details]
+    const message = messageParts.filter(Boolean).join(' • ')
+    if (message) {
+      pushToast({ type: 'info', message })
+    }
+    clearLastResult()
+  }, [clearLastResult, isFullScreenResult, lastResult, pushToast])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -133,13 +150,14 @@ function GameView() {
   const handleWithdraw = useCallback(
     async (destination: string) => {
       if (typeof wallet.withdrawAll !== 'function') {
-        throw new Error(t('app.errors.cashoutUnavailable'))
+        const message = t('app.errors.cashoutUnavailable')
+        pushToast({ type: 'error', message })
+        throw new Error(message)
       }
       setWithdrawPending(true)
-      setWithdrawStatus(null)
       try {
         const result = await wallet.withdrawAll(destination)
-        setWithdrawStatus({
+        pushToast({
           type: 'success',
           message: result?.message ?? t('app.withdraw.successFallback')
         })
@@ -147,13 +165,13 @@ function GameView() {
         refreshPlayerStats()
       } catch (error) {
         const message = (error as Error)?.message || t('app.withdraw.errorFallback')
-        setWithdrawStatus({ type: 'error', message })
+        pushToast({ type: 'error', message })
         throw error
       } finally {
         setWithdrawPending(false)
       }
     },
-    [refreshPlayerStats, t, wallet]
+    [pushToast, refreshPlayerStats, t, wallet]
   )
 
   useEffect(() => {
@@ -369,7 +387,6 @@ function GameView() {
   const isAuthenticated = auth.status === 'authenticated' && Boolean(auth.user)
   useEffect(() => {
     if (!isAuthenticated) {
-      setWithdrawStatus(null)
       setWithdrawPending(false)
     }
   }, [isAuthenticated])
@@ -457,7 +474,6 @@ function GameView() {
         transferMessage={game.transfer.message}
         onWithdraw={handleWithdraw}
         withdrawPending={withdrawPending}
-        withdrawStatus={withdrawStatus}
         playerStats={playerStats.data ?? null}
         playerStatsLoading={playerStats.loading}
         isAuthenticated={isAuthenticated}
@@ -475,8 +491,8 @@ function GameView() {
         onLogout={auth.logout}
       />
       <ResultModal
-        open={Boolean(game.lastResult)}
-        result={game.lastResult}
+        open={isFullScreenResult}
+        result={isFullScreenResult ? lastResult : null}
         balanceCents={effectiveBetBalance}
         retryBetValue={game.retryBetValue}
         onRetryBetChange={handleRetryBetChange}
