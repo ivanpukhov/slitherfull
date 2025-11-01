@@ -773,14 +773,62 @@ export function NicknameScreen({
                                     <img src={wallet} alt=""/>
                                     <h2 className="damn-card__title">{t('lobby.wallet.title')}</h2>
                                 </div>
-                                <button
-                                    type="button"
-                                    className="damn-link-button"
-                                    onClick={handleCopyWallet}
-                                    disabled={!walletAddress}
-                                >
-                                    {copyLabel}
-                                </button>
+                                <div className="damn-card__actions">
+                                    <button
+                                        type="button"
+                                        className="damn-link-button"
+                                        onClick={handleCopyWallet}
+                                        disabled={!walletAddress}
+                                    >
+                                        <span className="damn-link-button__icon" aria-hidden="true">
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="16"
+                                                height="16"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            >
+                                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                            </svg>
+                                        </span>
+                                        <span className="damn-link-button__label">{copyLabel}</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="damn-link-button"
+                                        onClick={handleWalletRefresh}
+                                        disabled={walletLoading}
+                                    >
+                                        <span className="damn-link-button__icon" aria-hidden="true">
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="16"
+                                                height="16"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            >
+                                                <polyline points="23 4 23 10 17 10"/>
+                                                <polyline points="1 20 1 14 7 14"/>
+                                                <path d="M3.51 9a9 9 0 0 1 14.88-3.36L23 10"/>
+                                                <path d="M20.49 15a9 9 0 0 1-14.88 3.36L1 14"/>
+                                            </svg>
+                                        </span>
+                                        <span className="damn-link-button__label">
+                                            {walletLoading
+                                                ? t('lobby.wallet.refreshing')
+                                                : t('hub.account.refreshBalance')}
+                                        </span>
+                                    </button>
+                                </div>
                             </header>
                             <div className="damn-wallet__balance">
                                 <span className="damn-wallet__value">{formatUsd(balance)}</span>
