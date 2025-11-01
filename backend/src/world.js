@@ -13,7 +13,6 @@ const BET_AMOUNTS_CENTS = [100, 500, 2000]
 const BET_COMMISSION_RATE = 0.2
 const GOLDEN_FOOD_VALUE_CENTS = 20
 const GOLDEN_FOOD_COLOR = '#facc15'
-const GOLDEN_FOOD_FEE_CENTS = GOLDEN_FOOD_VALUE_CENTS
 
 const SKIN_PRESETS = {
     default: ['#38bdf8'],
@@ -504,12 +503,10 @@ class World {
 
         let lengthRemaining = totalLength
 
-        const goldenBudget = Math.max(0, bounty - GOLDEN_FOOD_FEE_CENTS)
-        if (goldenBudget >= GOLDEN_FOOD_VALUE_CENTS) {
-            const goldenPieces = Math.max(0, Math.floor(goldenBudget / GOLDEN_FOOD_VALUE_CENTS))
-            if (goldenPieces > 0) {
-                const stride = Math.max(1, Math.floor(points.length / goldenPieces))
-                for (let i = 0; i < goldenPieces; i++) {
+        const goldenPieces = Math.max(0, Math.floor(bounty / GOLDEN_FOOD_VALUE_CENTS))
+        if (goldenPieces > 0) {
+            const stride = Math.max(1, Math.floor(points.length / goldenPieces))
+            for (let i = 0; i < goldenPieces; i++) {
                     const index = Math.max(0, points.length - 1 - i * stride)
                     const target = points[index]
                     const clamped = projectToCircle(this.centerX, this.centerY, this.radius, target.x, target.y)
