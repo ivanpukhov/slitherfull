@@ -4181,11 +4181,11 @@ body.is-touch .cashout-button {
 @media (max-width: 540px) {
     .damn-hero__brand-main,
     .damn-hero__brand-accent {
-        font-size: clamp(32px, 18vw, 44px);
+        font-size: 48px !important;
     }
 
     .damn-hero__tagline {
-        font-size: clamp(14px, 4.5vw, 18px);
+        font-size: 14px !important;
     }
 
     .damn-card__header {
