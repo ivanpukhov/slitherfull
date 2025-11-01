@@ -549,10 +549,7 @@
         bottom: calc(70px + var(--safe-bottom));
     }
 
-    .panel.game-leaderboard{
-        width: 100px !important;
-        height: 20px;
-    }
+
 }
 
 .cashout-button {
