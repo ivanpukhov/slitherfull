@@ -458,13 +458,17 @@ export function NicknameScreen({
 
     const handleOpenServerBrowser = useCallback(
         (nextTab: ServerBrowserTab = 'account') => {
+            if (!isAuthenticated) {
+                onRequireAuth()
+                return
+            }
             if (nextTab === 'account') {
                 setNicknameFeedback(null)
             }
             setServerBrowserTab(nextTab)
             setServerBrowserOpen(true)
         },
-        []
+        [isAuthenticated, onRequireAuth]
     )
 
     const handleWalletOpen = useCallback(
