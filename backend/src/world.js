@@ -237,8 +237,29 @@ class World {
         return SKIN_PRESETS[skin] || SKIN_PRESETS.default
     }
 
+    removeFoodById(id) {
+        if (!this.foods.has(id)) return false
+        const cellKey = this.foodCells.get(id)
+        if (cellKey !== undefined) {
+            this.foodSpatial.removeKey(id, cellKey)
+            this.foodCells.delete(id)
+        }
+        return this.foods.delete(id)
+    }
+
     spawnFoodAt(x, y, value = 1, options = {}) {
-        if (this.foods.size >= this.maxFood) return null
+        const force = Boolean(options.force)
+        if (!force && this.foods.size >= this.maxFood) return null
+        if (force && this.foods.size >= this.maxFood) {
+            const needed = this.foods.size - this.maxFood + 1
+            for (let i = 0; i < needed; i++) {
+                const oldest = this.foods.keys().next()
+                if (!oldest || oldest.done) break
+                this.removeFoodById(oldest.value)
+                if (this.foods.size < this.maxFood) break
+            }
+            if (this.foods.size >= this.maxFood) return null
+        }
         const pos = projectToCircle(this.centerX, this.centerY, this.radius, x, y)
         const id = "f" + (this.nextFoodId++)
         const palette = options.palette || this.foodPalette
@@ -568,12 +589,13 @@ class World {
                     segmentValue = Math.min(lengthRemaining, segmentValue)
                     lengthRemaining -= segmentValue
                 }
-                this.spawnFoodAt(clamped.x, clamped.y, Math.max(1, segmentValue), {
+                const created = this.spawnFoodAt(clamped.x, clamped.y, Math.max(1, segmentValue), {
                     color: GOLDEN_FOOD_COLOR,
                     big: true,
-                    betValue: GOLDEN_FOOD_VALUE_CENTS
+                    betValue: GOLDEN_FOOD_VALUE_CENTS,
+                    force: true
                 })
-                if (this.foods.size >= this.maxFood) break
+                if (!created) break
             }
         }
 
@@ -586,12 +608,13 @@ class World {
                 const base = Math.max(3, Math.round(lengthRemaining / pieces))
                 const value = Math.min(remaining, Math.round(base * rnd(0.8, 1.3)))
                 const clamped = projectToCircle(this.centerX, this.centerY, this.radius, target.x, target.y)
-                this.spawnFoodAt(clamped.x, clamped.y, value, {
+                const created = this.spawnFoodAt(clamped.x, clamped.y, value, {
                     palette,
-                    big: value >= this.cfg.bigFoodThreshold
+                    big: value >= this.cfg.bigFoodThreshold,
+                    force: true
                 })
+                if (!created) break
                 remaining -= value
-                if (this.foods.size >= this.maxFood) break
             }
 
             let index = points.length - 1
@@ -599,9 +622,9 @@ class World {
                 const target = points[index]
                 const clamped = projectToCircle(this.centerX, this.centerY, this.radius, target.x, target.y)
                 const value = Math.min(remaining, 2)
-                this.spawnFoodAt(clamped.x, clamped.y, value, { palette })
+                const created = this.spawnFoodAt(clamped.x, clamped.y, value, { palette, force: true })
+                if (!created) break
                 remaining -= value
-                if (this.foods.size >= this.maxFood) break
                 index = (index - 1 + points.length) % points.length
             }
         }
