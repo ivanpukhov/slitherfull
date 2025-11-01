@@ -310,17 +310,30 @@
       "verifying": "Verificando...",
       "signIn": "Iniciar sesión",
       "signOut": "Cerrar sesión",
+      "roleDisplay": "Sesión iniciada como {{role}}",
       "error": "Error: {{message}}"
+    },
+    "roles": {
+      "viewer": "Observador",
+      "manager": "Gestor",
+      "superadmin": "Superadministrador"
+    },
+    "navigation": {
+      "overview": "Resumen",
+      "audit": "Auditoría"
     },
     "dashboard": {
       "title": "Resumen de billetera",
       "subtitle": "Se actualiza automáticamente después de iniciar sesión",
       "gameWallet": "Billetera del juego",
-      "totalSol": "Total SOL"
+      "totalSol": "Total SOL",
+      "totalBanned": "Usuarios bloqueados",
+      "error": "No se pudo cargar el resumen: {{message}}"
     },
     "common": {
       "refresh": "Actualizar",
-      "refreshing": "Actualizando..."
+      "refreshing": "Actualizando...",
+      "cancel": "Cancelar"
     },
     "transfers": {
       "title": "Transferencias",
@@ -352,17 +365,81 @@
         "insufficientFunds": "Fondos insuficientes",
         "senderNotFound": "Remitente no encontrado",
         "recipientNotFound": "Destinatario no encontrado",
-        "sameUser": "No puedes transferirte a ti mismo"
+        "sameUser": "No puedes transferirte a ti mismo",
+        "transfer_failed": "La transferencia falló",
+        "noPermission": "No tienes permisos para transferir"
       }
     },
     "table": {
+      "title": "Cuentas de usuario",
+      "hint": "Instantánea en vivo de los saldos",
       "id": "ID",
       "email": "Correo",
       "nickname": "Apodo",
       "wallet": "Billetera",
       "sol": "Saldo (SOL)",
       "lamports": "Lamports",
-      "inGameBalance": "Saldo en juego"
+      "inGameBalance": "Saldo en juego",
+      "status": "Estado",
+      "actions": "Acciones"
+    },
+    "users": {
+      "status": {
+        "active": "Activo",
+        "banned": "Bloqueado",
+        "suspended": "Suspendido"
+      },
+      "actions": {
+        "ban": "Bloquear",
+        "unban": "Desbloquear"
+      },
+      "confirmBanTitle": "Bloquear usuario",
+      "confirmBanMessage": "¿Seguro que quieres bloquear al usuario #{{id}}? Se desconectará de inmediato.",
+      "confirmUnbanTitle": "Desbloquear usuario",
+      "confirmUnbanMessage": "¿Restablecer acceso para el usuario #{{id}}?",
+      "errors": {
+        "ban_failed": "No se pudo bloquear al usuario",
+        "unban_failed": "No se pudo desbloquear al usuario",
+        "unauthorized": "No tienes permisos para esta acción"
+      }
+    },
+    "metrics": {
+      "title": "Métricas en vivo",
+      "refresh": "Recargar",
+      "refreshing": "Actualizando...",
+      "empty": "Las métricas aparecerán cuando haya actividad",
+      "error": "Error en la transmisión de métricas: {{message}}"
+    },
+    "audit": {
+      "title": "Auditoría",
+      "error": "No se pudieron obtener los registros: {{message}}",
+      "empty": "No hay eventos que coincidan con los filtros",
+      "filters": {
+        "search": "Buscar",
+        "searchPlaceholder": "Correo, asunto o metadatos",
+        "action": "Acción",
+        "role": "Rol",
+        "from": "Desde",
+        "to": "Hasta",
+        "any": "Cualquiera"
+      },
+      "actions": {
+        "login": "Inicio de sesión",
+        "logout": "Cierre de sesión",
+        "transfer": "Transferencia",
+        "ban": "Bloqueo",
+        "unban": "Desbloqueo",
+        "update_role": "Rol actualizado"
+      },
+      "table": {
+        "timestamp": "Marca de tiempo",
+        "actor": "Actor",
+        "role": "Rol",
+        "action": "Acción",
+        "subject": "Sujeto",
+        "metadata": "Metadatos",
+        "metadataSummary": "Ver detalles"
+      }
     }
   },
   "deathScreen": {

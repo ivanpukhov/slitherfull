@@ -22,6 +22,148 @@
       "solAmount": "{{amount}} SOL"
     }
   },
+  "admin": {
+    "portal": {
+      "title": "Админ-панель",
+      "fields": {
+        "email": "Email",
+        "password": "Пароль"
+      },
+      "verifying": "Проверяем...",
+      "signIn": "Войти",
+      "signOut": "Выйти",
+      "roleDisplay": "Вошли как {{role}}",
+      "error": "Ошибка: {{message}}"
+    },
+    "roles": {
+      "viewer": "Наблюдатель",
+      "manager": "Менеджер",
+      "superadmin": "Суперадмин"
+    },
+    "navigation": {
+      "overview": "Обзор",
+      "audit": "Аудит"
+    },
+    "dashboard": {
+      "title": "Обзор кошельков",
+      "subtitle": "Обновляется автоматически после входа",
+      "gameWallet": "Кошелёк игры",
+      "totalSol": "Всего SOL",
+      "totalBanned": "Заблокировано",
+      "error": "Не удалось загрузить обзор: {{message}}"
+    },
+    "common": {
+      "refresh": "Обновить",
+      "refreshing": "Обновляем...",
+      "cancel": "Отмена"
+    },
+    "transfers": {
+      "title": "Переводы",
+      "typeLabel": "Тип перевода",
+      "types": {
+        "gameToUser": "Кошелёк игры → Игрок",
+        "userToGame": "Игрок → Кошелёк игры",
+        "userToUser": "Игрок → Игрок"
+      },
+      "senderLabel": "Отправитель",
+      "recipientLabel": "Получатель",
+      "selectUser": "Выберите пользователя",
+      "amountLabel": "Сумма (в кредитах)",
+      "processing": "Выполняем...",
+      "submit": "Перевести",
+      "success": "Перевод выполнен",
+      "validation": {
+        "invalidAmount": "Введите корректную сумму",
+        "selectRecipient": "Выберите получателя",
+        "selectSender": "Выберите отправителя",
+        "selectBoth": "Выберите отправителя и получателя",
+        "sameUser": "Нельзя перевести самому себе"
+      },
+      "errors": {
+        "invalidAmount": "Некорректная сумма",
+        "missingRecipient": "Выберите получателя",
+        "missingSender": "Выберите отправителя",
+        "missingBoth": "Выберите отправителя и получателя",
+        "insufficientFunds": "Недостаточно средств",
+        "senderNotFound": "Отправитель не найден",
+        "recipientNotFound": "Получатель не найден",
+        "sameUser": "Нельзя перевести самому себе",
+        "transfer_failed": "Перевод не выполнен",
+        "noPermission": "Недостаточно прав для перевода"
+      }
+    },
+    "table": {
+      "title": "Пользователи",
+      "hint": "Текущие балансы кошельков",
+      "id": "ID",
+      "email": "Email",
+      "nickname": "Ник",
+      "wallet": "Кошелёк",
+      "sol": "Баланс (SOL)",
+      "lamports": "Лампортов",
+      "inGameBalance": "Баланс в игре",
+      "status": "Статус",
+      "actions": "Действия"
+    },
+    "users": {
+      "status": {
+        "active": "Активен",
+        "banned": "Заблокирован",
+        "suspended": "Приостановлен"
+      },
+      "actions": {
+        "ban": "Заблокировать",
+        "unban": "Разблокировать"
+      },
+      "confirmBanTitle": "Заблокировать пользователя",
+      "confirmBanMessage": "Заблокировать пользователя #{{id}}? Он будет немедленно отключён.",
+      "confirmUnbanTitle": "Разблокировать пользователя",
+      "confirmUnbanMessage": "Вернуть доступ пользователю #{{id}}?",
+      "errors": {
+        "ban_failed": "Не удалось заблокировать пользователя",
+        "unban_failed": "Не удалось разблокировать пользователя",
+        "unauthorized": "Недостаточно прав для действия"
+      }
+    },
+    "metrics": {
+      "title": "Живые метрики",
+      "refresh": "Обновить",
+      "refreshing": "Обновляем...",
+      "empty": "Метрики появятся при активности",
+      "error": "Ошибка потока метрик: {{message}}"
+    },
+    "audit": {
+      "title": "Аудит",
+      "error": "Не удалось получить логи: {{message}}",
+      "empty": "Нет событий по выбранным фильтрам",
+      "filters": {
+        "search": "Поиск",
+        "searchPlaceholder": "Email, объект или метаданные",
+        "action": "Действие",
+        "role": "Роль",
+        "from": "С",
+        "to": "По",
+        "any": "Любое"
+      },
+      "actions": {
+        "login": "Вход",
+        "logout": "Выход",
+        "transfer": "Перевод",
+        "ban": "Блокировка",
+        "unban": "Разблокировка",
+        "update_role": "Изменение роли"
+      },
+      "table": {
+        "timestamp": "Время",
+        "actor": "Пользователь",
+        "role": "Роль",
+        "action": "Действие",
+        "subject": "Объект",
+        "metadata": "Метаданные",
+        "metadataSummary": "Показать"
+      }
+    }
+  },
   "app": {
     "errors": {
       "cashoutUnavailable": "Функция вывода временно недоступна"

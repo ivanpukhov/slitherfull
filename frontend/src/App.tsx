@@ -15,7 +15,6 @@ import { GameLeaderboard } from './components/Leaderboard'
 import { CashoutControl } from './components/CashoutControl'
 import { NicknameScreen } from './components/NicknameScreen'
 import { AuthModal } from './components/AuthModal'
-import { AdminDashboard } from './components/AdminDashboard'
 import { ResultModal } from './components/ResultModal'
 import { LobbyBackdrop } from './components/LobbyBackdrop'
 import { useToast } from './hooks/useToast'
@@ -538,10 +537,6 @@ function GameView() {
 }
 
 function App() {
-  const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
-  if (isAdminRoute) {
-    return <AdminDashboard />
-  }
   return <GameView />
 }
 

@@ -1,104 +1,51 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
-import { getIntlLocale, useTranslation } from '../hooks/useTranslation'
+import { FormEvent, useCallback, useMemo, useState } from 'react'
+import { AdminPortalLayout } from './AdminPortalLayout'
+import { useAdminOverview, type AdminTransferPayload } from '../hooks/useAdminOverview'
+import { useAdminMetrics } from '../hooks/useAdminMetrics'
+import { useTranslation, getIntlLocale } from '../hooks/useTranslation'
+import type { AdminSession } from '../hooks/useAdminSession'
+import { AdminMetricsBoard } from './AdminMetricsBoard'
 
-interface AdminUser {
-  id: number
-  email: string
-  nickname: string
-  walletAddress: string
-  walletLamports: number
-  walletSol: number
-  inGameBalance: number
+interface ConfirmationModalState {
+  userId: number
+  action: 'ban' | 'unban'
 }
-
-interface AdminOverview {
-  users: AdminUser[]
-  gameWallet: {
-    walletAddress: string
-    walletLamports: number
-    walletSol: number
-  }
-}
-
-type TransferKind = 'game_to_user' | 'user_to_game' | 'user_to_user'
-
-const TRANSFER_ERROR_MESSAGE_KEYS: Record<string, string> = {
-  invalid_amount: 'admin.transfers.errors.invalidAmount',
-  missing_destination_user_id: 'admin.transfers.errors.missingRecipient',
-  missing_source_user_id: 'admin.transfers.errors.missingSender',
-  missing_user_id: 'admin.transfers.errors.missingBoth',
-  insufficient_funds: 'admin.transfers.errors.insufficientFunds',
-  source_user_not_found: 'admin.transfers.errors.senderNotFound',
-  destination_user_not_found: 'admin.transfers.errors.recipientNotFound',
-  same_user_transfer: 'admin.transfers.errors.sameUser'
-}
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://191.101.184.209:8080'
-const STORAGE_KEY = 'admin_basic_token'
 
 export function AdminDashboard() {
-  const [email, setEmail] = useState('admin@tend.kz')
-  const [password, setPassword] = useState('')
-  const [token, setToken] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return null
-    return window.localStorage.getItem(STORAGE_KEY)
-  })
-  const [overview, setOverview] = useState<AdminOverview | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [transferKind, setTransferKind] = useState<TransferKind>('game_to_user')
+  return (
+    <AdminPortalLayout titleKey="admin.dashboard.title">
+      {(session) => <AdminOverviewView session={session} />}
+    </AdminPortalLayout>
+  )
+}
+
+function AdminOverviewView({ session }: { session: AdminSession }) {
+  const { t, locale } = useTranslation()
+  const [transferKind, setTransferKind] = useState<'game_to_user' | 'user_to_game' | 'user_to_user'>('game_to_user')
   const [transferFromUserId, setTransferFromUserId] = useState('')
   const [transferToUserId, setTransferToUserId] = useState('')
   const [transferAmount, setTransferAmount] = useState('')
+  const [transferResult, setTransferResult] = useState<{ error?: string; success?: string } | null>(null)
   const [transferLoading, setTransferLoading] = useState(false)
-  const [transferError, setTransferError] = useState<string | null>(null)
-  const [transferSuccess, setTransferSuccess] = useState<string | null>(null)
-  const { t, locale } = useTranslation()
+  const [confirmation, setConfirmation] = useState<ConfirmationModalState | null>(null)
 
-  const fetchOverview = useCallback(
-    async (basicToken: string) => {
-      if (!basicToken) return
-      setLoading(true)
-      setError(null)
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/admin/overview`, {
-          headers: {
-            Authorization: `Basic ${basicToken}`
-          }
-        })
-        if (!res.ok) {
-          throw new Error('unauthorized')
-        }
-        const data = await res.json()
-        setOverview(data.data)
-        return data.data as AdminOverview
-      } catch (err) {
-        const message = (err as Error).message || 'request_failed'
-        setError(message)
-        setOverview(null)
-        if (message === 'unauthorized') {
-          if (typeof window !== 'undefined') {
-            window.localStorage.removeItem(STORAGE_KEY)
-          }
-          setToken(null)
-        }
-        return null
-      } finally {
-        setLoading(false)
-      }
-    },
-    []
-  )
+  const { overview, loading, error, refresh, transfer, banUser, unbanUser } = useAdminOverview(session.token)
+  const canManageUsers = overview?.permissions?.canManageUsers ?? session.role === 'superadmin'
+  const canTransfer = overview?.permissions?.canTransfer ?? session.role !== 'viewer'
+  const canViewMetrics = overview?.permissions?.canViewMetrics ?? session.role !== 'viewer'
+  const metrics = useAdminMetrics(session.token, canViewMetrics)
 
-  useEffect(() => {
-    if (token) {
-      fetchOverview(token)
-    }
-  }, [fetchOverview, token])
+  const totalSol = useMemo(() => {
+    if (!overview) return 0
+    const walletSol = overview.gameWallet.walletSol || 0
+    const usersSol = overview.users.reduce((sum, user) => sum + (user.walletSol || 0), 0)
+    return walletSol + usersSol
+  }, [overview])
 
-  useEffect(() => {
-    setTransferError(null)
-    setTransferSuccess(null)
+  const userOptions = useMemo(() => overview?.users ?? [], [overview])
+
+  const resetTransferState = useCallback(() => {
+    setTransferResult(null)
     if (transferKind === 'game_to_user') {
       setTransferFromUserId('')
     }
@@ -107,173 +54,149 @@ export function AdminDashboard() {
     }
   }, [transferKind])
 
-  const handleSubmit = useCallback(
-    async (event: FormEvent) => {
-      event.preventDefault()
-      const normalizedEmail = email.trim()
-      const basic = btoa(`${normalizedEmail}:${password}`)
-      window.localStorage.setItem(STORAGE_KEY, basic)
-      setToken(basic)
-      await fetchOverview(basic)
+  const handleTransferChange = useCallback(
+    (kind: 'game_to_user' | 'user_to_game' | 'user_to_user') => {
+      setTransferKind(kind)
+      resetTransferState()
     },
-    [email, password, fetchOverview]
+    [resetTransferState]
   )
-
-  const handleLogout = useCallback(() => {
-    window.localStorage.removeItem(STORAGE_KEY)
-    setToken(null)
-    setOverview(null)
-    setPassword('')
-  }, [])
-
-  const totalSol = useMemo(() => {
-    if (!overview) return 0
-    return overview.users.reduce((sum, user) => sum + (user.walletSol || 0), overview.gameWallet.walletSol || 0)
-  }, [overview])
-
-  const userOptions = useMemo(() => overview?.users ?? [], [overview])
 
   const handleTransfer = useCallback(
     async (event: FormEvent) => {
       event.preventDefault()
-      if (!token) return
-      const amountValue = Number(transferAmount)
-      if (!Number.isFinite(amountValue) || amountValue <= 0) {
-        setTransferError(t('admin.transfers.validation.invalidAmount'))
-        setTransferSuccess(null)
+      if (!canTransfer) {
+        setTransferResult({ error: t('admin.transfers.errors.noPermission') })
         return
       }
-
-      const payload: Record<string, unknown> = { amount: amountValue }
-
-      if (transferKind === 'game_to_user') {
-        if (!transferToUserId) {
-          setTransferError(t('admin.transfers.validation.selectRecipient'))
-          setTransferSuccess(null)
-          return
-        }
-        payload.fromType = 'game'
-        payload.toType = 'user'
-        payload.toUserId = Number(transferToUserId)
-      } else if (transferKind === 'user_to_game') {
+      const amountValue = Number(transferAmount)
+      if (!Number.isFinite(amountValue) || amountValue <= 0) {
+        setTransferResult({ error: t('admin.transfers.validation.invalidAmount') })
+        return
+      }
+      const payload: AdminTransferPayload = {
+        amount: amountValue,
+        fromType: transferKind === 'game_to_user' ? 'game' : 'user',
+        toType: transferKind === 'user_to_game' ? 'game' : 'user'
+      }
+      if (transferKind !== 'game_to_user') {
         if (!transferFromUserId) {
-          setTransferError(t('admin.transfers.validation.selectSender'))
-          setTransferSuccess(null)
+          setTransferResult({ error: t('admin.transfers.validation.selectSender') })
           return
         }
-        payload.fromType = 'user'
-        payload.toType = 'game'
         payload.fromUserId = Number(transferFromUserId)
-      } else {
-        if (!transferFromUserId || !transferToUserId) {
-          setTransferError(t('admin.transfers.validation.selectBoth'))
-          setTransferSuccess(null)
+      }
+      if (transferKind !== 'user_to_game') {
+        if (!transferToUserId) {
+          setTransferResult({ error: t('admin.transfers.validation.selectRecipient') })
           return
         }
-        if (transferFromUserId === transferToUserId) {
-          setTransferError(t('admin.transfers.validation.sameUser'))
-          setTransferSuccess(null)
-          return
-        }
-        payload.fromType = 'user'
-        payload.toType = 'user'
-        payload.fromUserId = Number(transferFromUserId)
         payload.toUserId = Number(transferToUserId)
-      }
-
-      setTransferLoading(true)
-      setTransferError(null)
-      setTransferSuccess(null)
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/admin/transfer`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Basic ${token}`
-          },
-          body: JSON.stringify(payload)
-        })
-        const data = await res.json().catch(() => null)
-        if (!res.ok) {
-          const message = data?.error || 'transfer_failed'
-          throw new Error(message)
+        if (payload.fromUserId && payload.toUserId === payload.fromUserId) {
+          setTransferResult({ error: t('admin.transfers.validation.sameUser') })
+          return
         }
-        setTransferSuccess(t('admin.transfers.success'))
-        setTransferAmount('')
-        await fetchOverview(token)
-      } catch (err) {
-        const code = (err as Error).message || 'transfer_failed'
-        setTransferError(getTransferErrorMessage(code, t) || code)
-      } finally {
-        setTransferLoading(false)
       }
+      setTransferLoading(true)
+      setTransferResult(null)
+      const result = await transfer(payload)
+      if (result.ok) {
+        setTransferAmount('')
+        setTransferResult({ success: t('admin.transfers.success') })
+      } else if (result.error) {
+        const errorKey = `admin.transfers.errors.${result.error}`
+        const translated = t(errorKey)
+        setTransferResult({ error: translated === errorKey ? result.error : translated })
+      }
+      setTransferLoading(false)
     },
-    [fetchOverview, t, token, transferAmount, transferFromUserId, transferKind, transferToUserId]
+    [canTransfer, t, transferAmount, transferKind, transferFromUserId, transferToUserId, transfer]
   )
 
-  if (!token || !overview) {
-    return (
-      <div className="admin-wrapper">
-        <div className="admin-card">
-          <h1>{t('admin.portal.title')}</h1>
-          <form onSubmit={handleSubmit} className="admin-form">
-            <label>
-              {t('admin.portal.fields.email')}
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            </label>
-            <label>
-              {t('admin.portal.fields.password')}
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </label>
-            <button type="submit" disabled={loading}>
-              {loading ? t('admin.portal.verifying') : t('admin.portal.signIn')}
-            </button>
-            {error && <div className="admin-error">{t('admin.portal.error', { message: error })}</div>}
-          </form>
-        </div>
-      </div>
-    )
-  }
+  const handleBan = useCallback(
+    async (userId: number) => {
+      if (!canManageUsers) return
+      const result = await banUser(userId)
+      if (!result.ok && result.error) {
+        const errorKey = `admin.users.errors.${result.error}`
+        const translated = t(errorKey)
+        setTransferResult({ error: translated === errorKey ? result.error : translated })
+      }
+      setConfirmation(null)
+    },
+    [banUser, canManageUsers, t]
+  )
+
+  const handleUnban = useCallback(
+    async (userId: number) => {
+      if (!canManageUsers) return
+      const result = await unbanUser(userId)
+      if (!result.ok && result.error) {
+        const errorKey = `admin.users.errors.${result.error}`
+        const translated = t(errorKey)
+        setTransferResult({ error: translated === errorKey ? result.error : translated })
+      }
+      setConfirmation(null)
+    },
+    [canManageUsers, t, unbanUser]
+  )
 
   return (
-    <div className="admin-wrapper">
-      <div className="admin-card">
-        <div className="admin-header">
-          <div>
-            <h1>{t('admin.dashboard.title')}</h1>
-            <p className="admin-subtitle">{t('admin.dashboard.subtitle')}</p>
-          </div>
-          <div className="admin-actions">
-            <button type="button" onClick={() => fetchOverview(token)} disabled={loading}>
-              {loading ? t('admin.common.refreshing') : t('admin.common.refresh')}
-            </button>
-            <button type="button" className="admin-secondary" onClick={handleLogout}>
-              {t('admin.portal.signOut')}
-            </button>
-          </div>
+    <div className="admin-card">
+      <div className="admin-header">
+        <div>
+          <p className="admin-subtitle">{t('admin.dashboard.subtitle')}</p>
+          {error && <div className="admin-error">{t('admin.dashboard.error', { message: error })}</div>}
         </div>
-        <div className="admin-summary">
-          <div>
-            <span className="summary-label">{t('admin.dashboard.gameWallet')}</span>
-            <span className="summary-value">{overview.gameWallet.walletSol.toFixed(3)} SOL</span>
-            <span className="summary-address">{overview.gameWallet.walletAddress}</span>
-          </div>
-          <div>
-            <span className="summary-label">{t('admin.dashboard.totalSol')}</span>
-            <span className="summary-value">{totalSol.toFixed(3)} SOL</span>
-          </div>
+        <div className="admin-actions">
+          <button type="button" onClick={refresh} disabled={loading}>
+            {loading ? t('admin.common.refreshing') : t('admin.common.refresh')}
+          </button>
         </div>
-        <div className="admin-transfer">
+      </div>
+
+      <div className="admin-summary">
+        <div>
+          <span className="summary-label">{t('admin.dashboard.gameWallet')}</span>
+          <span className="summary-value">{overview?.gameWallet.walletSol.toFixed(3) ?? '0.000'} SOL</span>
+          <span className="summary-address">{overview?.gameWallet.walletAddress}</span>
+        </div>
+        <div>
+          <span className="summary-label">{t('admin.dashboard.totalSol')}</span>
+          <span className="summary-value">{totalSol.toFixed(3)} SOL</span>
+        </div>
+        {overview?.totals?.totalBanned !== undefined && (
+          <div>
+            <span className="summary-label">{t('admin.dashboard.totalBanned')}</span>
+            <span className="summary-value">{overview.totals.totalBanned}</span>
+          </div>
+        )}
+      </div>
+
+      {canViewMetrics && (
+        <section className="admin-section">
+          <div className="admin-section-header">
+            <h2>{t('admin.metrics.title')}</h2>
+            <button type="button" className="admin-secondary" onClick={metrics.refresh} disabled={metrics.loading}>
+              {metrics.loading ? t('admin.metrics.refreshing') : t('admin.metrics.refresh')}
+            </button>
+          </div>
+          {metrics.error && <div className="admin-error">{t('admin.metrics.error', { message: metrics.error })}</div>}
+          <AdminMetricsBoard
+            metrics={metrics.metrics}
+            locale={getIntlLocale(locale)}
+            emptyLabel={t('admin.metrics.empty')}
+          />
+        </section>
+      )}
+
+      {canTransfer && (
+        <section className="admin-section">
           <h2>{t('admin.transfers.title')}</h2>
-          <form onSubmit={handleTransfer}>
+          <form onSubmit={handleTransfer} className="admin-transfer-form">
             <label>
               {t('admin.transfers.typeLabel')}
-              <select value={transferKind} onChange={(event) => setTransferKind(event.target.value as TransferKind)}>
+              <select value={transferKind} onChange={(event) => handleTransferChange(event.target.value as typeof transferKind)}>
                 <option value="game_to_user">{t('admin.transfers.types.gameToUser')}</option>
                 <option value="user_to_game">{t('admin.transfers.types.userToGame')}</option>
                 <option value="user_to_user">{t('admin.transfers.types.userToUser')}</option>
@@ -319,9 +242,16 @@ export function AdminDashboard() {
             <button type="submit" disabled={transferLoading}>
               {transferLoading ? t('admin.transfers.processing') : t('admin.transfers.submit')}
             </button>
-            {transferError && <div className="admin-error">{transferError}</div>}
-            {transferSuccess && <div className="admin-success">{transferSuccess}</div>}
+            {transferResult?.error && <div className="admin-error">{transferResult.error}</div>}
+            {transferResult?.success && <div className="admin-success">{transferResult.success}</div>}
           </form>
+        </section>
+      )}
+
+      <section className="admin-section">
+        <div className="admin-section-header">
+          <h2>{t('admin.table.title')}</h2>
+          <span className="admin-table-hint">{t('admin.table.hint')}</span>
         </div>
         <div className="admin-table">
           <table>
@@ -334,10 +264,12 @@ export function AdminDashboard() {
                 <th>{t('admin.table.sol')}</th>
                 <th>{t('admin.table.lamports')}</th>
                 <th>{t('admin.table.inGameBalance')}</th>
+                <th>{t('admin.table.status')}</th>
+                {canManageUsers && <th>{t('admin.table.actions')}</th>}
               </tr>
             </thead>
             <tbody>
-              {overview.users.map((user) => (
+              {overview?.users.map((user) => (
                 <tr key={user.id}>
                   <td>{user.id}</td>
                   <td>{user.email}</td>
@@ -346,17 +278,61 @@ export function AdminDashboard() {
                   <td>{user.walletSol.toFixed(3)}</td>
                   <td>{user.walletLamports.toLocaleString(getIntlLocale(locale))}</td>
                   <td>{user.inGameBalance}</td>
+                  <td>
+                    <span className={`admin-status admin-status-${user.status}`}>
+                      {t(`admin.users.status.${user.status}`)}
+                    </span>
+                  </td>
+                  {canManageUsers && (
+                    <td>
+                      {user.status === 'banned' ? (
+                        <button type="button" className="admin-link" onClick={() => setConfirmation({ userId: user.id, action: 'unban' })}>
+                          {t('admin.users.actions.unban')}
+                        </button>
+                      ) : (
+                        <button type="button" className="admin-link warning" onClick={() => setConfirmation({ userId: user.id, action: 'ban' })}>
+                          {t('admin.users.actions.ban')}
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
+
+      {confirmation && (
+        <div className="admin-modal-backdrop">
+          <div className="admin-modal">
+            <h3>
+              {confirmation.action === 'ban'
+                ? t('admin.users.confirmBanTitle')
+                : t('admin.users.confirmUnbanTitle')}
+            </h3>
+            <p>
+              {confirmation.action === 'ban'
+                ? t('admin.users.confirmBanMessage', { id: confirmation.userId })
+                : t('admin.users.confirmUnbanMessage', { id: confirmation.userId })}
+            </p>
+            <div className="admin-modal-actions">
+              <button type="button" className="admin-secondary" onClick={() => setConfirmation(null)}>
+                {t('admin.common.cancel')}
+              </button>
+              {confirmation.action === 'ban' ? (
+                <button type="button" className="admin-danger" onClick={() => handleBan(confirmation.userId)}>
+                  {t('admin.users.actions.ban')}
+                </button>
+              ) : (
+                <button type="button" className="admin-link" onClick={() => handleUnban(confirmation.userId)}>
+                  {t('admin.users.actions.unban')}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
-}
-
-function getTransferErrorMessage(code: string, t: ReturnType<typeof useTranslation>['t']) {
-  const key = TRANSFER_ERROR_MESSAGE_KEYS[code]
-  return key ? t(key) : null
 }

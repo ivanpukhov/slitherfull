@@ -303,17 +303,30 @@
       "verifying": "Weryfikacja...",
       "signIn": "Zaloguj się",
       "signOut": "Wyloguj się",
+      "roleDisplay": "Zalogowano jako {{role}}",
       "error": "Błąd: {{message}}"
+    },
+    "roles": {
+      "viewer": "Podgląd",
+      "manager": "Menadżer",
+      "superadmin": "Superadministrator"
+    },
+    "navigation": {
+      "overview": "Przegląd",
+      "audit": "Audyt"
     },
     "dashboard": {
       "title": "Przegląd portfela",
       "subtitle": "Aktualizuje się automatycznie po zalogowaniu",
       "gameWallet": "Portfel gry",
-      "totalSol": "Całkowite SOL"
+      "totalSol": "Całkowite SOL",
+      "totalBanned": "Zablokowani użytkownicy",
+      "error": "Nie udało się wczytać danych: {{message}}"
     },
     "common": {
       "refresh": "Odśwież",
-      "refreshing": "Odświeżanie..."
+      "refreshing": "Odświeżanie...",
+      "cancel": "Anuluj"
     },
     "transfers": {
       "title": "Przelewy",
@@ -345,17 +358,81 @@
         "insufficientFunds": "Za mało środków w portfelu",
         "senderNotFound": "Nadawca nie znaleziony",
         "recipientNotFound": "Odbiorca nie znaleziony",
-        "sameUser": "Nie możesz wysłać do siebie"
+        "sameUser": "Nie możesz wysłać do siebie",
+        "transfer_failed": "Transfer nie powiódł się",
+        "noPermission": "Brak uprawnień do wykonania transferu"
       }
     },
     "table": {
+      "title": "Konta użytkowników",
+      "hint": "Aktualne salda portfeli",
       "id": "ID",
       "email": "Email",
       "nickname": "Pseudonim",
       "wallet": "Portfel",
       "sol": "Saldo (SOL)",
       "lamports": "Lamporty",
-      "inGameBalance": "Saldo w grze"
+      "inGameBalance": "Saldo w grze",
+      "status": "Status",
+      "actions": "Akcje"
+    },
+    "users": {
+      "status": {
+        "active": "Aktywny",
+        "banned": "Zablokowany",
+        "suspended": "Zawieszony"
+      },
+      "actions": {
+        "ban": "Zablokuj",
+        "unban": "Odblokuj"
+      },
+      "confirmBanTitle": "Zablokuj użytkownika",
+      "confirmBanMessage": "Czy na pewno zablokować użytkownika #{{id}}? Zostanie natychmiast rozłączony.",
+      "confirmUnbanTitle": "Odblokuj użytkownika",
+      "confirmUnbanMessage": "Przywrócić dostęp dla użytkownika #{{id}}?",
+      "errors": {
+        "ban_failed": "Nie udało się zablokować użytkownika",
+        "unban_failed": "Nie udało się odblokować użytkownika",
+        "unauthorized": "Brak uprawnień do tej akcji"
+      }
+    },
+    "metrics": {
+      "title": "Metriki na żywo",
+      "refresh": "Przeładuj",
+      "refreshing": "Aktualizowanie...",
+      "empty": "Metriki pojawią się, gdy pojawi się aktywność",
+      "error": "Błąd strumienia metryk: {{message}}"
+    },
+    "audit": {
+      "title": "Audyt",
+      "error": "Nie udało się pobrać logów: {{message}}",
+      "empty": "Brak zdarzeń spełniających kryteria",
+      "filters": {
+        "search": "Szukaj",
+        "searchPlaceholder": "Email, obiekt lub metadane",
+        "action": "Akcja",
+        "role": "Rola",
+        "from": "Od",
+        "to": "Do",
+        "any": "Dowolnie"
+      },
+      "actions": {
+        "login": "Logowanie",
+        "logout": "Wylogowanie",
+        "transfer": "Transfer",
+        "ban": "Blokada",
+        "unban": "Odblokowanie",
+        "update_role": "Zmieniono rolę"
+      },
+      "table": {
+        "timestamp": "Czas",
+        "actor": "Użytkownik",
+        "role": "Rola",
+        "action": "Akcja",
+        "subject": "Obiekt",
+        "metadata": "Metadane",
+        "metadataSummary": "Pokaż dane"
+      }
     }
   },
   "deathScreen": {

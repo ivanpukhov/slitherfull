@@ -310,17 +310,30 @@
       "verifying": "Verifying...",
       "signIn": "Sign in",
       "signOut": "Sign out",
+      "roleDisplay": "Signed in as {{role}}",
       "error": "Error: {{message}}"
+    },
+    "roles": {
+      "viewer": "Viewer",
+      "manager": "Manager",
+      "superadmin": "Super admin"
+    },
+    "navigation": {
+      "overview": "Overview",
+      "audit": "Audit trail"
     },
     "dashboard": {
       "title": "Wallet overview",
       "subtitle": "Updated automatically after sign-in",
       "gameWallet": "Game wallet",
-      "totalSol": "Total SOL"
+      "totalSol": "Total SOL",
+      "totalBanned": "Banned users",
+      "error": "Failed to load overview: {{message}}"
     },
     "common": {
       "refresh": "Refresh",
-      "refreshing": "Refreshing..."
+      "refreshing": "Refreshing...",
+      "cancel": "Cancel"
     },
     "transfers": {
       "title": "Transfers",
@@ -352,17 +365,81 @@
         "insufficientFunds": "Not enough funds in the wallet",
         "senderNotFound": "Sender not found",
         "recipientNotFound": "Recipient not found",
-        "sameUser": "You cannot transfer to yourself"
+        "sameUser": "You cannot transfer to yourself",
+        "transfer_failed": "Transfer failed",
+        "noPermission": "You do not have permission to transfer"
       }
     },
     "table": {
+      "title": "User accounts",
+      "hint": "Live snapshot of wallet balances",
       "id": "ID",
       "email": "Email",
       "nickname": "Nickname",
       "wallet": "Wallet",
       "sol": "Balance (SOL)",
       "lamports": "Lamports",
-      "inGameBalance": "In-game balance"
+      "inGameBalance": "In-game balance",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "users": {
+      "status": {
+        "active": "Active",
+        "banned": "Banned",
+        "suspended": "Suspended"
+      },
+      "actions": {
+        "ban": "Ban",
+        "unban": "Unban"
+      },
+      "confirmBanTitle": "Ban user",
+      "confirmBanMessage": "Are you sure you want to ban user #{{id}}? They will be disconnected immediately.",
+      "confirmUnbanTitle": "Unban user",
+      "confirmUnbanMessage": "Restore access for user #{{id}}?",
+      "errors": {
+        "ban_failed": "Unable to ban user",
+        "unban_failed": "Unable to unban user",
+        "unauthorized": "You do not have permission for this action"
+      }
+    },
+    "metrics": {
+      "title": "Live metrics",
+      "refresh": "Reload",
+      "refreshing": "Updating...",
+      "empty": "Metrics will appear once activity starts",
+      "error": "Metrics stream error: {{message}}"
+    },
+    "audit": {
+      "title": "Audit trail",
+      "error": "Unable to fetch audit logs: {{message}}",
+      "empty": "No audit events match the selected filters",
+      "filters": {
+        "search": "Search",
+        "searchPlaceholder": "Email, subject or metadata",
+        "action": "Action",
+        "role": "Role",
+        "from": "From",
+        "to": "To",
+        "any": "Any"
+      },
+      "actions": {
+        "login": "Login",
+        "logout": "Logout",
+        "transfer": "Transfer",
+        "ban": "Ban",
+        "unban": "Unban",
+        "update_role": "Role updated"
+      },
+      "table": {
+        "timestamp": "Timestamp",
+        "actor": "Actor",
+        "role": "Role",
+        "action": "Action",
+        "subject": "Subject",
+        "metadata": "Metadata",
+        "metadataSummary": "View payload"
+      }
     }
   },
   "deathScreen": {
