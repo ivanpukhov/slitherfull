@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Route, Routes } from 'react-router-dom'
 import { useGame } from './hooks/useGame'
 import { useCanvas } from './hooks/useCanvas'
 import { useConnection } from './hooks/useConnection'
@@ -16,6 +17,8 @@ import { CashoutControl } from './components/CashoutControl'
 import { NicknameScreen } from './components/NicknameScreen'
 import { AuthModal } from './components/AuthModal'
 import { AdminDashboard } from './components/AdminDashboard'
+import { TermsOfService } from './pages/TermsOfService'
+import { PrivacyPolicy } from './pages/PrivacyPolicy'
 import { ResultModal } from './components/ResultModal'
 import { LobbyBackdrop } from './components/LobbyBackdrop'
 import { useToast } from './hooks/useToast'
@@ -538,11 +541,16 @@ function GameView() {
 }
 
 function App() {
-  const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
-  if (isAdminRoute) {
-    return <AdminDashboard />
-  }
-  return <GameView />
+  return (
+    <Routes>
+      <Route path="/" element={<GameView />} />
+      <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/terms-of-service" element={<TermsOfService />} />
+      <Route path="/terms-of-service.html" element={<TermsOfService />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/privacy-policy.html" element={<PrivacyPolicy />} />
+    </Routes>
+  )
 }
 
 export default App

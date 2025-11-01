@@ -16,6 +16,16 @@ npm run dev
 ```
 The dev server reads API/WS endpoints from the root `.env` file (`VITE_API_BASE_URL`, `VITE_WS_URL`). Tokens are stored in `localStorage` under `slither_token`.
 
+## Production routing
+- The Vite dev server is configured with `historyApiFallback` so that navigating directly to `/admin` during development loads the SPA without a 404.
+- For production, configure your reverse proxy (nginx, Caddy, Express, etc.) to rewrite unknown paths back to `index.html`. Example nginx snippet:
+  ```nginx
+  location / {
+    try_files $uri /index.html;
+  }
+  ```
+- If deploying to Netlify or Render, the `public/_redirects` file already contains `/* /index.html 200` to ensure `/admin` and any other client-side route resolves correctly.
+
 ## UX notes
 - If the token becomes invalid the connection hook logs the user out and reopens the auth modal.
 - Successful cashouts trigger a `cashout_confirmed` event which updates both the in-game HUD and the persisted balance via the backend.
