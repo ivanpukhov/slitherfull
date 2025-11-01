@@ -566,6 +566,16 @@
     pointer-events: auto;
 }
 
+.cashout-button__text {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cashout-button__icon {
+    display: none;
+}
+
 .cashout-button:disabled,
 .cashout-button[aria-disabled="true"] {
     cursor: default;
@@ -4123,6 +4133,97 @@ body.is-touch .cashout-button {
     }
 }
 
+
+body.is-touch .game-hud {
+    pointer-events: none;
+}
+
+body.is-touch #leaderboard {
+    display: none !important;
+}
+
+body.is-touch #scorePanel {
+    top: auto;
+    right: auto;
+    bottom: calc(var(--safe-bottom) + 18px);
+    left: calc(var(--safe-left) + 18px);
+    transform: none;
+    min-width: 0 !important;
+    max-width: none !important;
+    width: auto !important;
+    padding: 0;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    pointer-events: none;
+    display: block;
+    z-index: 8;
+}
+
+body.is-touch #scorePanel::before,
+body.is-touch #scorePanel::after {
+    display: none;
+}
+
+body.is-touch #scorePanel .label,
+body.is-touch #scorePanel .performance,
+body.is-touch #scoreMeta {
+    display: none;
+}
+
+body.is-touch #scoreValue {
+    margin: 0;
+    font-size: clamp(1.1rem, 6vw, 1.6rem);
+    font-weight: 700;
+    background: none;
+    color: rgba(248, 250, 252, 0.95);
+    text-shadow: 0 0 12px rgba(15, 23, 42, 0.45);
+}
+
+body.is-touch #cashoutControl {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--safe-bottom) + 18px);
+    transform: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 9;
+}
+
+body.is-touch .cashout-button {
+    pointer-events: auto;
+    width: clamp(56px, 20vw, 72px);
+    height: clamp(56px, 20vw, 72px);
+    padding: 0;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(0.75rem, 3.2vw, 0.95rem);
+    font-weight: 700;
+    text-transform: uppercase;
+    box-shadow: 0 14px 28px rgba(249, 115, 22, 0.4);
+}
+
+body.is-touch .cashout-button__text {
+    display: none;
+}
+
+body.is-touch .cashout-button__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1.4rem, 6vw, 1.8rem);
+}
+
+body.is-touch #cashoutControl .cashout-hint {
+    display: none;
+}
 
 /* DamnBruh lobby redesign */
 .overlay--lobby {
