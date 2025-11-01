@@ -481,7 +481,7 @@ function GameView() {
         winningsLoading={winningsLeaderboard.loading}
         winningsError={winningsLeaderboard.error}
         winningsPriceHint={winningsPriceHint}
-        activePlayers={game.leaderboard.length}
+        activePlayers={game.activePlayers}
         totalWinningsUsd={totalWinningsUsd}
         totalWinningsSol={totalWinningsSol}
         authToken={auth.token}

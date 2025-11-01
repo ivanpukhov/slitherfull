@@ -190,6 +190,7 @@ interface InternalState {
   snakes: Map<string, SnakeState>
   foods: Map<string, FoodState>
   leaderboard: LeaderboardEntry[]
+  activePlayers: number
   meId: string | null
   meName: string
   alive: boolean
@@ -290,6 +291,7 @@ export class GameController {
       snakes: new Map(),
       foods: new Map(),
       leaderboard: [],
+      activePlayers: 0,
       meId: null,
       meName: '',
       alive: false,
@@ -325,6 +327,13 @@ export class GameController {
 
   setNickname(name: string) {
     this.state.ui.nickname = name
+    this.notify()
+  }
+
+  setActivePlayers(count: number) {
+    const sanitized = Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0
+    if (sanitized === this.state.activePlayers) return
+    this.state.activePlayers = sanitized
     this.notify()
   }
 
@@ -635,6 +644,10 @@ export class GameController {
     return this.state.leaderboard
   }
 
+  getActivePlayers() {
+    return this.state.activePlayers
+  }
+
   getAccount() {
     return this.state.account
   }
@@ -825,6 +838,10 @@ export class GameController {
 
     if (snapshot.you && typeof snapshot.you.length === 'number') {
       this.updateScoreHUD(Math.floor(snapshot.you.length))
+    }
+
+    if (typeof snapshot.activePlayers === 'number') {
+      this.setActivePlayers(snapshot.activePlayers)
     }
 
     if (snapshot.you && typeof snapshot.you.alive === 'boolean') {
@@ -1291,6 +1308,7 @@ export function useGame() {
   const [snakes, setSnakes] = useState<Map<string, SnakeState>>(new Map(controller.getSnakes()))
   const [foods, setFoods] = useState<Map<string, FoodState>>(new Map(controller.getFoods()))
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([...controller.getLeaderboard()])
+  const [activePlayers, setActivePlayers] = useState<number>(controller.getActivePlayers())
   const [ui, setUI] = useState<GameUIState>({ ...controller.getUI() })
   const [performance, setPerformance] = useState<PerformanceMetrics>({ ...controller.getPerformance() })
 
@@ -1300,6 +1318,7 @@ export function useGame() {
       setSnakes(new Map(controller.getSnakes()))
       setFoods(new Map(controller.getFoods()))
       setLeaderboard([...controller.getLeaderboard()])
+      setActivePlayers(controller.getActivePlayers())
       setUI({ ...controller.getUI() })
       setPerformance({ ...controller.getPerformance() })
     })
@@ -1332,6 +1351,7 @@ export function useGame() {
     betValue: ui.betValue,
     retryBetValue: ui.retryBetValue,
     performance,
+    activePlayers,
     setNickname: (value: string) => controller.setNickname(value),
     setSelectedSkin: (skin: string) => controller.setSelectedSkin(skin),
     setBetValue: (value: string) => controller.setBetValue(value),

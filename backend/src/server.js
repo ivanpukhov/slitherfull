@@ -196,7 +196,8 @@ wss.on('connection', (ws) => {
                     minLength: cfg.minLength,
                     baseLength: cfg.baseLength,
                     balance: Math.max(0, Math.floor(player.balance || 0)),
-                    currentBet: Math.max(0, Math.floor(player.currentBet || 0))
+                    currentBet: Math.max(0, Math.floor(player.currentBet || 0)),
+                    activePlayers: activeUsers.size
                 })
                 return
             }
@@ -302,7 +303,8 @@ setInterval(() => {
             },
             players: aoi.players,
             foods: aoi.foods,
-            leaderboard // 👈 added here
+            leaderboard,
+            activePlayers: activeUsers.size
         })
     }
 }, Math.floor(1000 / cfg.snapshotRate))

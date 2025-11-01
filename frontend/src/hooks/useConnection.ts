@@ -125,6 +125,9 @@ export function useConnection({ controller, token, onAuthError, onBalanceUpdate 
             }
             controller.setAlive(true)
             controller.setCashoutPending(false)
+            if (typeof message.activePlayers === 'number') {
+              controller.setActivePlayers(message.activePlayers)
+            }
             const nextBalance =
               typeof message.balance === 'number'
                 ? Math.max(0, Math.floor(message.balance))
